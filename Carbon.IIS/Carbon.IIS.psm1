@@ -21,7 +21,6 @@ $InformationPreference = 'Continue'
 # module in development has its functions in the Functions directory.
 $moduleRoot = $PSScriptRoot
 
-
 if( [Environment]::SystemDirectory )
 {
     $microsoftWebAdministrationPath =
@@ -29,29 +28,6 @@ if( [Environment]::SystemDirectory )
     if( (Test-Path -Path $microsoftWebAdministrationPath) )
     {
         Add-Type -Path $microsoftWebAdministrationPath
-    }
-
-    # Compile.
-    $csharpRoot = Join-Path -Path $moduleRoot -ChildPath 'C#'
-    $csharpFiles = @(
-        'HttpHeader.cs',
-        'HttpRedirectConfigurationSection.cs',
-        'MimeMap.cs'
-    )
-
-    $refFolder = Join-Path -Path (Split-Path ([PSObject].Assembly.Location) ) -ChildPath 'ref'
-    $refs = & {
-            $microsoftWebAdministrationPath | Write-Output
-            Join-Path -Path $refFolder -ChildPath 'mscorlib.dll'
-        } |
-        Where-Object { Test-Path -Path $_ }
-
-    foreach( $filename in $csharpFiles )
-    {
-        $csharpPath = Join-Path -Path $csharpRoot -ChildPath $filename
-        $code = Get-Content -Path $csharpPath -Raw
-        Write-Debug "Compiling $($filename)."
-        Add-Type -TypeDefinition $code -ReferencedAssemblies $refs
     }
 }
 

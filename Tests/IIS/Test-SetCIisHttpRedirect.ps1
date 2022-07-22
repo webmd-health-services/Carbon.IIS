@@ -39,36 +39,36 @@ function Test-ShouldRedirectSite
     Assert-Redirects
     Assert-FileDoesNotExist $webConfig # make sure committed to applicationHost.config
     $settings = Get-CIisHttpRedirect -SiteName $SiteName
-    Assert-True $settings.Enabled
-    Assert-Equal 'http://www.example.com' $settings.Destination
-    Assert-False $settings.ExactDestination
-    Assert-False $settings.ChildOnly
-    Assert-Equal Found $settings.HttpResponseStatus
+    Assert-True $settings.GetAttributeValue('Enabled')
+    Assert-Equal 'http://www.example.com' $settings.GetAttributeValue('destination')
+    Assert-False $settings.GetAttributeValue('exactDestination')
+    Assert-False $settings.GetAttributeValue('childOnly')
+    Assert-Equal 302 $settings.GetAttributeValue('httpResponseStatus')
 }
 
 function Test-ShouldSetREdirectCustomizations
 {
-    Set-CIisHttpRedirect -SiteName $SiteName -Destination 'http://www.example.com' -HttpResponseStatus 'Permanent' -ExactDestination -ChildOnly
+    Set-CIisHttpRedirect -SiteName $SiteName -Destination 'http://www.example.com' -HttpResponseStatus 301 -ExactDestination -ChildOnly
     Assert-Redirects
     $settings = Get-CIisHttpRedirect -SiteName $SiteName
-    Assert-Equal 'http://www.example.com' $settings.Destination
-    Assert-Equal 'Permanent' $settings.HttpResponseStatus
-    Assert-True $settings.ExactDestination
-    Assert-True $settings.ChildOnly
+    Assert-Equal 'http://www.example.com' $settings.GetAttributeValue('destination')
+    Assert-Equal 301 $settings.GetAttributeValue('httpResponseStatus')
+    Assert-True $settings.GetAttributeValue('exactDestination')
+    Assert-True $settings.GetAttributeValue('childOnly')
 }
 
 function Test-ShouldSetToDefaultValues
 {
-    Set-CIisHttpRedirect -SiteName $SiteName -Destination 'http://www.example.com' -HttpResponseStatus 'Permanent' -ExactDestination -ChildOnly
+    Set-CIisHttpRedirect -SiteName $SiteName -Destination 'http://www.example.com' -HttpResponseStatus 302 -ExactDestination -ChildOnly
     Assert-Redirects
     Set-CIisHttpRedirect -SiteName $SiteName -Destination 'http://www.example.com'
     Assert-Redirects
 
     $settings = Get-CIisHttpRedirect -SiteName $SiteName
-    Assert-Equal 'http://www.example.com' $settings.Destination
-    Assert-Equal 'Found' $settings.HttpResponseStatus
-    Assert-False $settings.ExactDestination 'exact destination not reverted'
-    Assert-False $settings.ChildOnly 'child only not reverted'
+    Assert-Equal 'http://www.example.com' $settings.GetAttributeValue('destination')
+    Assert-Equal 302 $settings.GetAttributeValue('httpResponseStatus')
+    Assert-False $settings.GetAttributeValue('exactDestination') 'exact destination not reverted'
+    Assert-False $settings.GetAttributeValue('childOnly') 'child only not reverted'
 }
 
 function Test-ShouldSetRedirectOnPath
@@ -79,8 +79,8 @@ function Test-ShouldSetRedirectOnPath
     Assert-True ($content -match 'NewWebsite') 'Redirected root page'
     
     $settings = Get-CIisHttpREdirect -SiteName $SiteName -Path SubFolder
-    Assert-True $settings.Enabled
-    Assert-Equal 'http://www.example.com' $settings.Destination
+    Assert-True $settings.GetAttributeValue('enabled')
+    Assert-Equal 'http://www.example.com' $settings.GetAttributeValue('destination')
 }
 
 function Read-Url($Path = '')

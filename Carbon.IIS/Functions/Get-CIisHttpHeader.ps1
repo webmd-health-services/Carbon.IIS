@@ -6,15 +6,11 @@ function Get-CIisHttpHeader
     Gets the HTTP headers for a website or directory under a website.
     
     .DESCRIPTION
-    For each custom HTTP header defined under a website and/or a sub-directory under a website, returns a `Carbon.Iis.HttpHeader` object.  This object has two properties:
+    For each custom HTTP header defined under a website and/or a sub-directory under a website, returns an object with
+    these properties:
     
      * Name: the name of the HTTP header
      * Value: the value of the HTTP header
-    
-    Beginning with Carbon 2.0.1, this function is available only if IIS is installed.
-
-    .OUTPUTS
-    Carbon.Iis.HttpHeader.
     
     .LINK
     Set-CIisHttpHeader
@@ -36,30 +32,31 @@ function Get-CIisHttpHeader
     #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
-        [string]
         # The name of the website whose headers to return.
-        $SiteName,
+        [Parameter(Mandatory)]
+        [String] $SiteName,
         
-        [Alias('Path')]
-        [string]
         # The optional path under `SiteName` whose headers to return.
-        $VirtualPath = '',
+        [Alias('Path')]
+        [String] $VirtualPath = '',
         
-        [string]
-        # The name of the HTTP header to return.  Optional.  If not given, all headers are returned.  Wildcards supported.
-        $Name = '*'
+        # The name of the HTTP header to return.  Optional.  If not given, all headers are returned.  Wildcards
+        # supported.
+        [String] $Name = '*'
     )
 
     Set-StrictMode -Version 'Latest'
-
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
     $httpProtocol = Get-CIisConfigurationSection -SiteName $SiteName `
-                                                -VirtualPath $VirtualPath `
-                                                -SectionPath 'system.webServer/httpProtocol'
+                                                 -VirtualPath $VirtualPath `
+                                                 -SectionPath 'system.webServer/httpProtocol'
     $httpProtocol.GetCollection('customHeaders') |
         Where-Object { $_['name'] -like $Name } |
-        ForEach-Object { New-Object Carbon.Iis.HttpHeader $_['name'],$_['value'] }
+        ForEach-Object { 
+            $header = [pscustomobject]@{ Name = $_['name']; Value = $_['value'] }
+            $header.pstypenames.Insert(0, 'Carbon.Iis.HttpHeader')
+            $header | Write-Output
+        }
 }
 

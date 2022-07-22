@@ -45,9 +45,10 @@ function Set-CIisHttpRedirect
         [Parameter(Mandatory)]
         [String] $Destination,
         
-        [Carbon.Iis.HttpResponseStatus]
-        # The HTTP status code to use.  Default is `Found`.  Should be one of `Found` (HTTP 302), `Permanent` (HTTP 301), or `Temporary` (HTTP 307).
+        # The HTTP status code to use.  Default is `Found`.  Should be one of `301` (`Permanent`), `302` (`Found`), or
+        # `307` (`Temporary`).
         [Alias('StatusCode')]
+        [ValidateSet(301, 302, 307)]
         [int] $HttpResponseStatus = 302,
         
         # Redirect all requests to exact destination (instead of relative to destination).  I have no idea what this means.  [Maybe TechNet can help.](http://technet.microsoft.com/en-us/library/cc732969(v=WS.10).aspx)
@@ -58,15 +59,14 @@ function Set-CIisHttpRedirect
     )
     
     Set-StrictMode -Version 'Latest'
-
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
     $settings = Get-CIisHttpRedirect -SiteName $SiteName -Path $VirtualPath
-    $settings.Enabled = $true
-    $settings.Destination = $destination
-    $settings.HttpResponseStatus = $HttpResponseStatus
-    $settings.ExactDestination = $ExactDestination
-    $settings.ChildOnly = $ChildOnly
+    $settings.SetAttributeValue('enabled', $true)
+    $settings.SetAttributeValue('destination',  $destination)
+    $settings.SetAttributeValue('httpResponseStatus', $HttpResponseStatus)
+    $settings.SetAttributeValue('exactDestination', [bool]$ExactDestination)
+    $settings.SetAttributeValue('childOnly', [bool]$ChildOnly)
     	
     if( $pscmdlet.ShouldProcess( (Join-CIisVirtualPath $SiteName $VirtualPath), "set HTTP redirect settings" ) ) 
     {
