@@ -1,20 +1,16 @@
 
-PublishOn:
-- main
-- prerelease
-
 Build:
 - Version:
     Path: Carbon.IIS\Carbon.IIS.psd1
     Prerelease:
-    - "*/*": alpha$(WHISKEY_BUILD_NUMBER)
-    - develop: rc$(WHISKEY_BUILD_NUMBER)
+    - "*/*": alpha1
+    - develop: rc1
 
 # Update the AppVeyor build/version number.
 - Exec:
       OnlyBy: BuildServer
       Path: appveyor
-      Argument: [ UpdateBuild, -Version, $(WHISKEY_SEMVER2) ]
+      Argument: [ UpdateBuild, -Version, "$(WHISKEY_SEMVER2)+$(WHISKEY_BUILD_NUMBER)" ]
 
 # Dot-sourcing files is expensive. Move all functions into .psm1 file to improve import speed. Do this before testing
 # to ensure the module still works.
@@ -30,7 +26,12 @@ Build:
 
 - PowerShell:
     ExceptDuring: Clean
-    Path: init.ps1
+    ScriptBlock: |
+       if( -not (Get-Module -ListAvailable -Name 'Prism') )
+        {
+            Find-Module -Name 'Prism' | Select-Object -First 1 | Install-Module -Force -Scope CurrentUser
+        }
+        prism install | Format-Table -Auto
 
 - PowerShell:
     OnlyDuring: Clean
@@ -75,13 +76,30 @@ Build:
         'PowerShellGallery'
     ]
 
-- Pester:
-    Configuration: 
-        Run: 
-            Path: Tests\*.Tests.ps1
-            Exit: true
-            Throw: true
-        TestResult:
-            Enabled: true
-            OutputPath: .output\pester.xml
-            TestSuiteName: Template-PSModule-OSS-Apache2.0
+- PowerShell:
+    ScriptBlock: |
+        .\Tools\Blade\blade.ps1 -Path ".\Tests\IIS" -XmlLogPath ".\.output\blade.xml"
+
+        if( (Test-Path -Path 'env:APPVEYOR_JOB_ID') )
+        {
+            Write-Host "Uploading test results" -NoNewLine
+            $uploadUrl = "https://ci.appveyor.com/api/testresults/nunit/$$($env:APPVEYOR_JOB_ID)"
+            Write-Host " to $$($uploadUrl)."
+            [Net.WebClient]::New().UploadFile($uploadUrl, (Resolve-Path '.\.output\blade.xml'))
+        }
+
+        if( $LastBladeResult.Errors -or $LastBladeResult.Failures )
+        {
+            $numErrors = $LastBladeResult.Errors
+            $numFailures = $LastBladeResult.Failures
+            $msg = "Blade tests failed with $$($numErrors) error(s) and $$($numFailures) failure(s)."
+            throw $msg
+        }
+
+- Pester4:
+    Script:
+    - Tests\Carbon.IIS.Tests.ps1
+    - Tests\Import-Carbon.IIS.Tests.ps1
+    - Tests\Install-CIisAppPool.Tests.ps1
+    - Tests\Install-CIisWebsite.Tests.ps1
+    - Tests\Set-CIisWebsiteID.Tests.ps1

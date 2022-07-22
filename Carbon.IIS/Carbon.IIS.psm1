@@ -14,11 +14,72 @@
 
 #Requires -Version 5.1
 Set-StrictMode -Version 'Latest'
+$InformationPreference = 'Continue'
 
 # Functions should use $moduleRoot as the relative root from which to find
 # things. A published module has its function appended to this file, while a 
 # module in development has its functions in the Functions directory.
 $moduleRoot = $PSScriptRoot
+
+
+if( [Environment]::SystemDirectory )
+{
+    $microsoftWebAdministrationPath =
+        Join-Path -Path ([Environment]::SystemDirectory) -ChildPath 'inetsrv\Microsoft.Web.Administration.dll'
+    if( (Test-Path -Path $microsoftWebAdministrationPath) )
+    {
+        Add-Type -Path $microsoftWebAdministrationPath
+    }
+
+    # Compile.
+    $csharpRoot = Join-Path -Path $moduleRoot -ChildPath 'C#'
+    $csharpFiles = @(
+        'HttpHeader.cs',
+        'HttpRedirectConfigurationSection.cs',
+        'MimeMap.cs'
+    )
+
+    $refFolder = Join-Path -Path (Split-Path ([PSObject].Assembly.Location) ) -ChildPath 'ref'
+    $refs = & {
+            $microsoftWebAdministrationPath | Write-Output
+            Join-Path -Path $refFolder -ChildPath 'mscorlib.dll'
+        } |
+        Where-Object { Test-Path -Path $_ }
+
+    foreach( $filename in $csharpFiles )
+    {
+        $csharpPath = Join-Path -Path $csharpRoot -ChildPath $filename
+        $code = Get-Content -Path $csharpPath -Raw
+        Write-Debug "Compiling $($filename)."
+        Add-Type -TypeDefinition $code -ReferencedAssemblies $refs
+    }
+}
+
+if( -not (Test-CTypeDataMember -TypeName 'Microsoft.Web.Administration.Site' -MemberName 'PhysicalPath') )
+{
+    Update-TypeData -TypeName 'Microsoft.Web.Administration.Site' `
+                    -MemberType ScriptProperty `
+                    -MemberName 'PhysicalPath' `
+                    -Value { 
+                        $this.Applications |
+                            Where-Object { $_.Path -eq '/' } |
+                            Select-Object -ExpandProperty VirtualDirectories |
+                            Where-Object { $_.Path -eq '/' } |
+                            Select-Object -ExpandProperty PhysicalPath
+                    }
+}
+
+if( -not (Test-CTypeDataMember -TypeName 'Microsoft.Web.Administration.Application' -MemberName 'PhysicalPath') )
+{
+    Update-TypeData -TypeName 'Microsoft.Web.Administration.Application' `
+                    -MemberType ScriptProperty `
+                    -MemberName 'PhysicalPath' `
+                    -Value { 
+                        $this.VirtualDirectories |
+                            Where-Object { $_.Path -eq '/' } |
+                            Select-Object -ExpandProperty PhysicalPath
+                    }
+}
 
 # Store each of your module's functions in its own file in the Functions 
 # directory. On the build server, your module's functions will be appended to 
