@@ -53,6 +53,3 @@ function Uninstall-CIisWebsite
         }
     }
 }
-
-Set-Alias -Name 'Remove-CIisWebsite' -Value 'Uninstall-CIisWebsite'
-

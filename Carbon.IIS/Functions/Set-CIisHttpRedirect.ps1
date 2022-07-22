@@ -31,35 +31,30 @@ function Set-CIisHttpRedirect
 
     Redirects all requests to the `Peanuts` website to `http://new.peanuts.com` with a temporary HTTP status code.  You can also specify `Found` (HTTP 302), or `Permanent` (HTTP 301).
     #>
-    [CmdletBinding(SupportsShouldProcess=$true)]
+    [CmdletBinding(SupportsShouldProcess)]
     param(
-        [Parameter(Mandatory=$true)]
-        [string]
         # The site where the redirection should be setup.
-        $SiteName,
+        [Parameter(Mandatory)]
+        [String] $SiteName,
         
-        [Alias('Path')]
-        [string]
         # The optional path where redirection should be setup.
-        $VirtualPath = '',
+        [Alias('Path')]
+        [String] $VirtualPath = '',
         
-        [Parameter(Mandatory=$true)]
-        [string]
         # The destination to redirect to.
-        $Destination,
+        [Parameter(Mandatory)]
+        [String] $Destination,
         
         [Carbon.Iis.HttpResponseStatus]
         # The HTTP status code to use.  Default is `Found`.  Should be one of `Found` (HTTP 302), `Permanent` (HTTP 301), or `Temporary` (HTTP 307).
         [Alias('StatusCode')]
-        $HttpResponseStatus = [Carbon.Iis.HttpResponseStatus]::Found,
+        [int] $HttpResponseStatus = 302,
         
-        [Switch]
         # Redirect all requests to exact destination (instead of relative to destination).  I have no idea what this means.  [Maybe TechNet can help.](http://technet.microsoft.com/en-us/library/cc732969(v=WS.10).aspx)
-        $ExactDestination,
+        [switch] $ExactDestination,
         
-        [Switch]
         # Only redirect requests to content in site and/or path, but nothing below it.  I have no idea what this means.  [Maybe TechNet can help.](http://technet.microsoft.com/en-us/library/cc732969(v=WS.10).aspx)
-        $ChildOnly
+        [switch] $ChildOnly
     )
     
     Set-StrictMode -Version 'Latest'

@@ -26,7 +26,7 @@ Describe 'Set-CIisWebsiteID' {
     }
     
     AfterEach {
-        Remove-CIisWebsite $siteName
+        Uninstall-CIisWebsite $siteName
     }
     
     It 'should change ID' {

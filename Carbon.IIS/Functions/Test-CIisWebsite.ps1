@@ -42,6 +42,3 @@ function Test-CIisWebsite
         $manager.Dispose()
     }
 }
-
-Set-Alias -Name Test-IisWebsiteExists -Value Test-CIisWebsite
-

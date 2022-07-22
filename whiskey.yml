@@ -76,6 +76,23 @@ Build:
         'PowerShellGallery'
     ]
 
+# - Pester:
+#     Configuration:
+#         Run:
+#             Path: Tests\*.Tests.ps1
+#             ExcludePath:
+#             - "*\\Carbon.IIS.Tests.ps1"
+#             - "*\\Import-Carbon.IIS.Tests.ps1"
+#             - "*\\Install-CIisAppPool.Tests.ps1"
+#             - "*\\Install-CIisWebsite.Tests.ps1"
+#             - "*\\Set-CIisWebsiteID.Tests.ps1"
+#             Exit: true
+#             Throw: true
+#         TestResult:
+#             Enabled: true
+#             OutputPath: .output\pester.xml
+#             TestSuiteName: Carbon.IIS
+
 - PowerShell:
     ScriptBlock: |
         .\Tools\Blade\blade.ps1 -Path ".\Tests\IIS" -XmlLogPath ".\.output\blade.xml"

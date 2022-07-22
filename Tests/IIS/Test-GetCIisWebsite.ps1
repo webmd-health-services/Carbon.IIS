@@ -27,7 +27,7 @@ function Start-Test
 
 function Stop-Test
 {
-    Remove-CIisWebsite -Name $siteName
+    Uninstall-CIisWebsite -Name $siteName
 }
 
 function Test-ShouldReturnNullForNonExistentWebsite

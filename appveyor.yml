@@ -15,7 +15,7 @@ services:
 environment:
   WHISKEY_DISABLE_ERROR_FORMAT: True
   matrix:
-  - job_name: Windows Server 2016, Windows PowerShell 5.1
+  - job_name: Windows PowerShell 5.1
     job_group: ps
     appveyor_build_worker_image: Visual Studio 2017
 
@@ -32,9 +32,3 @@ for:
   build_script:
   - ps: .\build.ps1
 
-# Build in PowerShell
-- matrix:
-    only:
-    - job_group: pwsh
-  build_script:
-  - pwsh: ./build.ps1

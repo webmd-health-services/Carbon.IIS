@@ -120,7 +120,7 @@
     VariablesToExport = @()
 
     # Aliases to export from this module. Don't create/export aliases. It can pollute your user's sessions.
-    AliasesToExport = @('Remove-CIisWebsite')
+    # AliasesToExport = @()
 
     # DSC resources to export from this module
     # DscResourcesToExport = @()

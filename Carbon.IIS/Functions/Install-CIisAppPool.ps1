@@ -51,70 +51,41 @@ function Install-CIisAppPool
     [OutputType([Microsoft.Web.Administration.ApplicationPool])]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingUserNameAndPassWordParams","")]
     param(
-        [Parameter(Mandatory=$true)]
-        [string]
         # The app pool's name.
-        $Name,
+        [Parameter(Mandatory)]
+        [String] $Name,
         
-        [string]
-        [ValidateSet('v1.0','v1.1','v2.0','v4.0','')]
         # The managed .NET runtime version to use.  Default is 'v4.0'.  Valid values are `v1.0`, `v1.1`, `v2.0`, or `v4.0`. Use an empty string if you're using .NET Core or to set the .NET framework version to `No Managed Code`.
-        $ManagedRuntimeVersion = 'v4.0',
+        [ValidateSet('v1.0','v1.1','v2.0','v4.0','')]
+        [String] $ManagedRuntimeVersion = 'v4.0',
         
-        [int]
-        [ValidateScript({$_ -gt 0})]
         #Idle Timeout value in minutes. Default is 0.
-        $IdleTimeout = 0,
+        [ValidateScript({$_ -gt 0})]
+        [int] $IdleTimeout = 0,
         
-        [Switch]
         # Use the classic pipeline mode, i.e. don't use an integrated pipeline.
-        $ClassicPipelineMode,
+        [switch] $ClassicPipelineMode,
         
-        [Switch]
         # Enable 32-bit applications.
-        $Enable32BitApps,
+        [switch] $Enable32BitApps,
         
-        [string]
-        [ValidateSet('NetworkService','LocalService','LocalSystem')]
         # Run the app pool under the given local service account.  Valid values are `NetworkService`, `LocalService`, and `LocalSystem`.  The default is `ApplicationPoolIdentity`, which causes IIS to create a custom local user account for the app pool's identity.  The default is `ApplicationPoolIdentity`.
-        $ServiceAccount,
+        [ValidateSet('NetworkService', 'LocalService', 'LocalSystem')]
+        [String] $ServiceAccount,
         
-        [Parameter(ParameterSetName='AsSpecificUser',Mandatory=$true,DontShow=$true)]
-        [string]
-        # OBSOLETE. The `UserName` parameter will be removed in a future major version of Carbon. Use the `Credential` parameter instead.
-        $UserName,
-        
-        [Parameter(ParameterSetName='AsSpecificUser',Mandatory=$true,DontShow=$true)]
-        # OBSOLETE. The `Password` parameter will be removed in a future major version of Carbon. Use the `Credential` parameter instead.
-        $Password,
-
-        [Parameter(ParameterSetName='AsSpecificUserWithCredential',Mandatory=$true)]
-        [pscredential]
         # The credential to use to run the app pool.
         #
         # The `Credential` parameter is new in Carbon 2.0.
-        $Credential,
+        [Parameter(Mandatory, ParameterSetName='AsSpecificUserWithCredential')]
+        [pscredential] $Credential,
 
-        [Switch]
         # Return an object representing the app pool.
-        $PassThru
+        [switch] $PassThru
     )
 
     Set-StrictMode -Version 'Latest'
-
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
     
-    if( $PSCmdlet.ParameterSetName -like 'AsSpecificUser*' )
-    {
-        if( $PSCmdlet.ParameterSetName -notlike '*WithCredential' )
-        {
-            $msg = 'The Install-CIisAppPool function''s "UserName" and "Password" parameters are obsolete and will ' +
-                   'be removed in a future major version of Carbon. Please use the `Credential` parameter instead.'
-            Write-Warning $msg
-            $Credential = New-CCredential -UserName $UserName -Password $Password
-        }
-    }
-
     if( $PSCmdlet.ParameterSetName -eq 'AsSpecificUser' -and -not (Test-CIdentity -Name $Credential.UserName) )
     {
         Write-Error ('Identity {0} not found. {0} IIS websites and applications assigned to this app pool won''t run.' -f $Credential.UserName,$Name)

@@ -22,45 +22,45 @@ Install-CUser -Credential $credential -Description 'User for testing Carbon''s I
 function Assert-AppPoolExists
 {
     $exists = Test-CIisAppPool -Name $appPoolname
-    $exists | Should Be $true
+    $exists | Should -BeTrue
 }
     
 function Assert-ManagedRuntimeVersion($Version)
 {
     $apppool = Get-CIisAppPool -Name $appPoolName
-    $apppool.ManagedRuntimeVersion | Should Be $Version
+    $apppool.ManagedRuntimeVersion | Should -Be $Version
 }
     
 function Assert-ManagedPipelineMode($expectedMode)
 {
     $apppool = Get-CIisAppPool -Name $appPoolName
-    $apppool.ManagedPipelineMode | Should Be $expectedMode
+    $apppool.ManagedPipelineMode | Should -Be $expectedMode
 }
     
 function Assert-IdentityType($expectedIdentityType)
 {
     $appPool = Get-CIisAppPool -Name $appPoolName
-    $appPool.ProcessModel.IdentityType | Should Be $expectedIdentityType
+    $appPool.ProcessModel.IdentityType | Should -Be $expectedIdentityType
 }
     
 function Assert-IdleTimeout($expectedIdleTimeout)
 {
     $appPool = Get-CIisAppPool -Name $appPoolName
     $expectedIdleTimeoutTimespan = New-TimeSpan -minutes $expectedIdleTimeout
-    $appPool.ProcessModel.IdleTimeout | Should Be $expectedIdleTimeoutTimespan
+    $appPool.ProcessModel.IdleTimeout | Should -Be $expectedIdleTimeoutTimespan
 }
     
 function Assert-Identity($expectedUsername, $expectedPassword)
 {
     $appPool = Get-CIisAppPool -Name $appPoolName
-    $appPool.ProcessModel.UserName | Should Be $expectedUsername
-    $appPool.ProcessModel.Password | Should Be $expectedPassword
+    $appPool.ProcessModel.UserName | Should -Be $expectedUsername
+    $appPool.ProcessModel.Password | Should -Be $expectedPassword
 }
     
 function Assert-AppPool32BitEnabled([bool]$expected32BitEnabled)
 {
     $appPool = Get-CIisAppPool -Name $appPoolName
-    $appPool.Enable32BitAppOnWin64 | Should Be $expected32BitEnabled
+    $appPool.Enable32BitAppOnWin64 | Should -Be $expected32BitEnabled
 }
     
 function Assert-AppPool
@@ -92,25 +92,25 @@ function Assert-AppPool
         $AppPool = Get-CIisAppPool -Name $appPoolName
     }
     
-    $AppPool.ManagedRuntimeVersion | Should Be $ManangedRuntimeVersion
+    $AppPool.ManagedRuntimeVersion | Should -Be $ManangedRuntimeVersion
     $pipelineMode = 'Integrated'
     if( $ClassicPipelineMode )
     {
         $pipelineMode = 'Classic'
     }
-    $AppPool.ManagedPipelineMode | Should Be $pipelineMode
-    $AppPool.ProcessModel.IdentityType | Should Be $IdentityType
-    $AppPool.Enable32BitAppOnWin64 | Should Be ([bool]$Enable32Bit)
-    $AppPool.ProcessModel.IdleTimeout | Should Be $IdleTimeout
+    $AppPool.ManagedPipelineMode | Should -Be $pipelineMode
+    $AppPool.ProcessModel.IdentityType | Should -Be $IdentityType
+    $AppPool.Enable32BitAppOnWin64 | Should -Be ([bool]$Enable32Bit)
+    $AppPool.ProcessModel.IdleTimeout | Should -Be $IdleTimeout
     
     $MAX_TRIES = 20
     for ( $idx = 0; $idx -lt $MAX_TRIES; ++$idx )
     {
         $AppPool = Get-CIisAppPool -Name $appPoolName
-        $AppPool | Should Not BeNullOrEmpty
+        $AppPool | Should -Not -BeNullOrEmpty
         if( $AppPool.State )
         {
-            $AppPool.State | Should Be ([Microsoft.Web.Administration.ObjectState]::Started)
+            $AppPool.State | Should -Be ([Microsoft.Web.Administration.ObjectState]::Started)
             break
         }
         Start-Sleep -Milliseconds 1000
@@ -149,87 +149,75 @@ Describe 'Install-CIisAppPool' {
     
     It 'should create new app pool' {
         $result = Install-CIisAppPool -Name $appPoolName -PassThru
-        $result | Should Not BeNullOrEmpty
+        $result | Should -Not -BeNullOrEmpty
         Assert-AppPool $result
     }
     
     It 'should create new app pool but not r eturn object' {
         $result = Install-CIisAppPool -Name $appPoolName
-        $result | Should BeNullOrEmpty
+        $result | Should -BeNullOrEmpty
         $appPool = Get-CIisAppPool -Name $appPoolName
-        $appPool | Should Not BeNullOrEmpty
+        $appPool | Should -Not -BeNullOrEmpty
         Assert-AppPool $appPool
         
     }
     
     It 'should set managed runtime version' {
         $result = Install-CIisAppPool -Name $appPoolName -ManagedRuntimeVersion 'v2.0'
-        $result | Should BeNullOrEmpty
+        $result | Should -BeNullOrEmpty
         Assert-AppPoolExists
         Assert-ManagedRuntimeVersion 'v2.0'
     }
     
     It 'should set managed pipeline mode' {
         $result = Install-CIisAppPool -Name $appPoolName -ClassicPipelineMode
-        $result | Should BeNullOrEmpty
+        $result | Should -BeNullOrEmpty
         Assert-AppPoolExists
         Assert-ManagedPipelineMode 'Classic'
     }
     
     It 'should set identity as service account' {
         $result = Install-CIisAppPool -Name $appPoolName -ServiceAccount 'NetworkService'
-        $result | Should BeNullOrEmpty
+        $result | Should -BeNullOrEmpty
         Assert-AppPoolExists
         Assert-IdentityType 'NetworkService'
     }
     
-    It 'should set identity as specific user' {
-        $warnings = @()
-        $result = Install-CIisAppPool -Name $appPoolName -UserName $username -Password $password -WarningVariable 'warnings'
-        $result | Should BeNullOrEmpty
-        Assert-AppPoolExists
-        Assert-Identity $username $password
-        Assert-IdentityType 'SpecificUser'
-        Get-CPrivilege $username | Where-Object { $_ -eq 'SeBatchLogonRight' } | Should Not BeNullOrEmpty
-        $warnings.Count | Should Be 1
-        ($warnings[0] -like '*obsolete*') | Should Be $true
-    }
-    
     It 'should set identity with credential' {
         $credential = New-CCredential -UserName $username -Password $password
-        $credential | Should Not BeNullOrEmpty
+        $credential | Should -Not -BeNullOrEmpty
         $result = Install-CIisAppPool -Name $appPoolName -Credential $credential
-        $result | Should BeNullOrEmpty
+        $result | Should -BeNullOrEmpty
         Assert-AppPoolExists
         Assert-Identity $credential.UserName $credential.GetNetworkCredential().Password
         Assert-IdentityType 'Specificuser'
-        Get-CPrivilege $username | Where-Object { $_ -eq 'SeBatchLogonRight' } | Should Not BeNullOrEmpty
+        Get-CPrivilege $username | Where-Object { $_ -eq 'SeBatchLogonRight' } | Should -Not -BeNullOrEmpty
     }
     
     It 'should set idle timeout' {
         $result = Install-CIisAppPool -Name $appPoolName -IdleTimeout 55
-        $result | Should BeNullOrEmpty
+        $result | Should -BeNullOrEmpty
         Assert-AppPoolExists
         Assert-Idletimeout 55
     }
     
     It 'should enable32bit apps' {
         $result = Install-CIisAppPool -Name $appPoolName -Enable32BitApps
-        $result | Should BeNullOrEmpty
+        $result | Should -BeNullOrEmpty
         Assert-AppPoolExists
         Assert-AppPool32BitEnabled $true
     }
     
     It 'should handle app pool that exists' {
         $result = Install-CIisAppPool -Name $appPoolName
-        $result | Should BeNullOrEmpty
+        $result | Should -BeNullOrEmpty
         $result = Install-CIisAppPool -Name $appPoolName
-        $result | Should BeNullOrEmpty
+        $result | Should -BeNullOrEmpty
     }
     
     It 'should change settings on existing app pool' {
         $result = Install-CIisAppPool -Name $appPoolName
-        $result | Should BeNullOrEmpty
+        $result | Should -BeNullOrEmpty
         Assert-AppPoolExists
         Assert-ManagedRuntimeVersion 'v4.0'
         Assert-ManagedPipelineMode 'Integrated'
@@ -238,19 +226,13 @@ Describe 'Install-CIisAppPool' {
         Assert-AppPool32BitEnabled $false
     
         $result = Install-CIisAppPool -Name $appPoolName -ManagedRuntimeVersion 'v2.0' -ClassicPipeline -ServiceAccount 'LocalSystem' -Enable32BitApps
-        $result | Should BeNullOrEmpty
+        $result | Should -BeNullOrEmpty
         Assert-AppPoolExists
         Assert-ManagedRuntimeVersion 'v2.0'
         Assert-ManagedPipelineMode 'Classic'
         Assert-IdentityType 'LocalSystem'
         Assert-AppPool32BitEnabled $true
     
-    }
-    
-    It 'should accept secure string for app pool password' {
-        $securePassword = ConvertTo-SecureString -String $password -AsPlainText -Force
-        Install-CIisAppPool -Name $appPoolName -Username $username -Password $securePassword
-        Assert-Identity $username $password
     }
     
     It 'should convert32 bit app poolto64 bit' {
@@ -270,26 +252,27 @@ Describe 'Install-CIisAppPool' {
     It 'should start stopped app pool' {
         Install-CIisAppPool -Name $appPoolName 
         $appPool = Get-CIisAppPool -Name $appPoolName
-        $appPool | Should Not BeNullOrEmpty
+        $appPool | Should -Not -BeNullOrEmpty
         if( $appPool.state -ne [Microsoft.Web.Administration.ObjectState]::Stopped )
         { 
             Start-Sleep -Seconds 1
             $appPool.Stop()
         }
-        
+
         Install-CIisAppPool -Name $appPoolName
         $appPool = Get-CIisAppPool -Name $appPoolName
-        $appPool.state | Should Be ([Microsoft.Web.Administration.ObjectState]::Started)
+        $appPool.state | Should -Be ([Microsoft.Web.Administration.ObjectState]::Started)
     }
     
     It 'should fail if identity does not exist' {
-        $error.Clear()
-        Install-CIisAppPool -Name $appPoolName -Username 'IDoNotExist' -Password 'blahblah' -ErrorAction SilentlyContinue
-        (Test-CIisAppPool -Name $appPoolName) | Should Be $true
-        ($error.Count -ge 2) | Should Be $true
+        $Global:Error.Clear()
+        $cred = New-CCredential -UserName 'IDoNotExist' `
+                                -Password (ConvertTo-SecureString -String 'blahblah' -AsPlainText -Force)
+        Install-CIisAppPool -Name $appPoolName -Credential $cred -ErrorAction SilentlyContinue
+        (Test-CIisAppPool -Name $appPoolName) | Should -BeTrue
+        $Global:Error | Should -Match 'Identity ''IDoNotExist'' not found'
     }
-    
-    
+
 }
 
 Start-Test
