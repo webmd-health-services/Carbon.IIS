@@ -15,9 +15,29 @@ services:
 environment:
   WHISKEY_DISABLE_ERROR_FORMAT: True
   matrix:
-  - job_name: Windows PowerShell 5.1
+  - job_name: .NET 4.6.2
+    job_group: ps
+    appveyor_build_worker_image: Visual Studio 2013
+
+  - job_name: Windows 2012R2
+    job_group: ps
+    appveyor_build_worker_image: Visual Studio 2015
+
+  - job_name: Windows 2016
     job_group: ps
     appveyor_build_worker_image: Visual Studio 2017
+
+  - job_name: Windows 2019
+    job_group: ps
+    appveyor_build_worker_image: Visual Studio 2022
+
+  - job_name: PowerShell 6
+    job_group: pwsh
+    appveyor_build_worker_image: Visual Studio 2017
+
+  - job_name: PowerShell 7
+    job_group: pwsh
+    appveyor_build_worker_image: Visual Studio 2022
 
 
 artifacts:
@@ -32,3 +52,9 @@ for:
   build_script:
   - ps: .\build.ps1
 
+# Build in PowerShell
+- matrix:
+    only:
+    - job_group: pwsh
+  build_script:
+  - pwsh: ./build.ps1

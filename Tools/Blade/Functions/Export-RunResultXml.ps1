@@ -44,8 +44,8 @@ function Export-RunResultXml
         $cwd = (Get-Location).Path
         $osVersion = [Environment]::OSVersion.VersionString
         $platform = [Environment]::OSVersion.Platform
-        $clrVersion = $PSVersionTable.CLRVersion
-        $psVersion = $PSVersionTable.PSVersion
+        $clrVersion = $PSVersionTable['CLRVersion']
+        $psVersion = $PSVersionTable['PSVersion']
         $resultXml = [xml](@'
 <?xml version="1.0" encoding="utf-8" standalone="no"?>
 <test-results name="" total="" errors="" failures="" not-run="0" inconclusive="0" ignored="" skipped="0" invalid="0" date="{0:yyyy-MM-dd}" time="{0:HH:mm:ss}">

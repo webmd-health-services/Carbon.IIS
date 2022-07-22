@@ -3,6 +3,8 @@
 
 ## Upgrade Instructions
 
+If migrating from Carbon, follow these upgrade instructions.
+
 Replace usages of the `Install-CIisAppPool` function's `-UserName` and `-Password` arguments with the `-Credential`
 parameter:
 
@@ -27,8 +29,17 @@ usages to use the `GetAttributeValue` method instead, e.g. `GetAttributeValue('c
 `GetAttributeValue('destination')`, etc. The value of `httpResponseStatus` is now returned as an int, instead of an
 enumeration.
 
+Upgrade to PowerShell 5.1 or later. PowerShell 4 is no longer supported.
+
+## Added
+
+* Carbon.IIS now supports Windows PowerShell 5.1, PowerShell 6 and 7, Windows 8 and 10, and Windows Server 2012R2, 2016, and 2019.
+* Carbon.IIS now supports .NET Framework 4.6.2 and later.
+
+
 ## Removed
 
+* Carbon.IIS no longer works under PowerShell 4. Minimum PowerShell version is 5.1.
 * Removed the `-UserName` and `-Password` parameters from `Install-CIisAppPool`. Use its `-Credential` parameter
 instead.
 * Removed aliases `Test-IisAppPoolExists` (for `Test-CIisAppPool`), `Test-IisWebsiteExists` (for `Test-CIisWebsite`),

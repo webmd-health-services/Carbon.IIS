@@ -25,6 +25,11 @@ if( [Environment]::SystemDirectory )
 {
     $microsoftWebAdministrationPath =
         Join-Path -Path ([Environment]::SystemDirectory) -ChildPath 'inetsrv\Microsoft.Web.Administration.dll'
+    if( $PSVersionTable['PSVersion'].Major -eq 6 )
+    {
+        $microsoftWebAdministrationPath = Join-Path -Path $moduleRoot -ChildPath 'bin\Microsoft.Web.Administration.dll'
+    }
+    
     if( (Test-Path -Path $microsoftWebAdministrationPath) )
     {
         Add-Type -Path $microsoftWebAdministrationPath
