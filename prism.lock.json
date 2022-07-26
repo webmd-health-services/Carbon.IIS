@@ -1,0 +1,14 @@
+{
+  "PSModules": [
+    {
+      "name": "Carbon",
+      "version": "2.11.3",
+      "repositorySourceLocation": "https://www.powershellgallery.com/api/v2"
+    },
+    {
+      "name": "Carbon.Cryptography",
+      "version": "3.0.0",
+      "repositorySourceLocation": "https://www.powershellgallery.com/api/v2"
+    }
+  ]
+}

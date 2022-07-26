@@ -14,11 +14,50 @@
 
 #Requires -Version 5.1
 Set-StrictMode -Version 'Latest'
+$InformationPreference = 'Continue'
 
 # Functions should use $moduleRoot as the relative root from which to find
 # things. A published module has its function appended to this file, while a 
 # module in development has its functions in the Functions directory.
 $moduleRoot = $PSScriptRoot
+
+Import-Module -Name (Join-Path -Path $moduleRoot -ChildPath 'PSModules\Carbon.Core' -Resolve) `
+              -Function @('Add-CTypeData')
+
+if( [Environment]::SystemDirectory )
+{
+    $microsoftWebAdministrationPath =
+        Join-Path -Path ([Environment]::SystemDirectory) -ChildPath 'inetsrv\Microsoft.Web.Administration.dll'
+    if( $PSVersionTable['PSVersion'].Major -eq 6 )
+    {
+        $microsoftWebAdministrationPath = Join-Path -Path $moduleRoot -ChildPath 'bin\Microsoft.Web.Administration.dll'
+    }
+    
+    if( (Test-Path -Path $microsoftWebAdministrationPath) )
+    {
+        Add-Type -Path $microsoftWebAdministrationPath
+    }
+}
+
+Add-CTypeData -TypeName 'Microsoft.Web.Administration.Site' `
+              -MemberType ScriptProperty `
+              -MemberName 'PhysicalPath' `
+              -Value { 
+                    $this.Applications |
+                        Where-Object 'Path' -EQ '/' |
+                        Select-Object -ExpandProperty 'VirtualDirectories' |
+                        Where-Object 'Path' -EQ '/' |
+                        Select-Object -ExpandProperty 'PhysicalPath'
+                }
+
+Add-CTypeData -TypeName 'Microsoft.Web.Administration.Application' `
+              -MemberType ScriptProperty `
+              -MemberName 'PhysicalPath' `
+              -Value { 
+                    $this.VirtualDirectories |
+                        Where-Object 'Path' -EQ '/' |
+                        Select-Object -ExpandProperty 'PhysicalPath'
+                }
 
 # Store each of your module's functions in its own file in the Functions 
 # directory. On the build server, your module's functions will be appended to 
