@@ -32,6 +32,7 @@ Build:
             Find-Module -Name 'Prism' | Select-Object -First 1 | Install-Module -Force -Scope CurrentUser
         }
         prism install | Format-Table -Auto
+        prism install -Path .\Carbon.IIS\prism.json | Format-Table -Auto
 
 - PowerShell:
     OnlyDuring: Clean
@@ -48,6 +49,9 @@ Build:
     - LICENSE
     - NOTICE
     DestinationDirectory: Carbon.IIS
+
+- Delete:
+    Path: Carbon.IIS\prism.*
 
 - Zip:
     ArchivePath: .output\Carbon.IIS-$(WHISKEY_SEMVER2).zip

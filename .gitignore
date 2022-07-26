@@ -1,5 +1,5 @@
 /.output
-/PSModules
+PSModules
 /.vscode
 /Carbon.IIS/*.md
 /Carbon.IIS/LICENSE

@@ -21,6 +21,9 @@ $InformationPreference = 'Continue'
 # module in development has its functions in the Functions directory.
 $moduleRoot = $PSScriptRoot
 
+Import-Module -Name (Join-Path -Path $moduleRoot -ChildPath 'PSModules\Carbon.Core' -Resolve) `
+              -Function @('Add-CTypeData')
+
 if( [Environment]::SystemDirectory )
 {
     $microsoftWebAdministrationPath =
@@ -36,31 +39,25 @@ if( [Environment]::SystemDirectory )
     }
 }
 
-if( -not (Test-CTypeDataMember -TypeName 'Microsoft.Web.Administration.Site' -MemberName 'PhysicalPath') )
-{
-    Update-TypeData -TypeName 'Microsoft.Web.Administration.Site' `
-                    -MemberType ScriptProperty `
-                    -MemberName 'PhysicalPath' `
-                    -Value { 
-                        $this.Applications |
-                            Where-Object { $_.Path -eq '/' } |
-                            Select-Object -ExpandProperty VirtualDirectories |
-                            Where-Object { $_.Path -eq '/' } |
-                            Select-Object -ExpandProperty PhysicalPath
-                    }
-}
+Add-CTypeData -TypeName 'Microsoft.Web.Administration.Site' `
+              -MemberType ScriptProperty `
+              -MemberName 'PhysicalPath' `
+              -Value { 
+                    $this.Applications |
+                        Where-Object 'Path' -EQ '/' |
+                        Select-Object -ExpandProperty 'VirtualDirectories' |
+                        Where-Object 'Path' -EQ '/' |
+                        Select-Object -ExpandProperty 'PhysicalPath'
+                }
 
-if( -not (Test-CTypeDataMember -TypeName 'Microsoft.Web.Administration.Application' -MemberName 'PhysicalPath') )
-{
-    Update-TypeData -TypeName 'Microsoft.Web.Administration.Application' `
-                    -MemberType ScriptProperty `
-                    -MemberName 'PhysicalPath' `
-                    -Value { 
-                        $this.VirtualDirectories |
-                            Where-Object { $_.Path -eq '/' } |
-                            Select-Object -ExpandProperty PhysicalPath
-                    }
-}
+Add-CTypeData -TypeName 'Microsoft.Web.Administration.Application' `
+              -MemberType ScriptProperty `
+              -MemberName 'PhysicalPath' `
+              -Value { 
+                    $this.VirtualDirectories |
+                        Where-Object 'Path' -EQ '/' |
+                        Select-Object -ExpandProperty 'PhysicalPath'
+                }
 
 # Store each of your module's functions in its own file in the Functions 
 # directory. On the build server, your module's functions will be appended to 
