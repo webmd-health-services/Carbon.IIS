@@ -205,7 +205,7 @@ function Install-CIisWebsite
     if( $site.Applications.Count -eq 0 )
     {
         $rootApp = $site.Applications.Add('/', $PhysicalPath)
-        $modifed = $true
+        $modified = $true
     }
     else
     {
