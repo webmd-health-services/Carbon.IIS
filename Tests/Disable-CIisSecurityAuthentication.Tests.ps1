@@ -44,9 +44,9 @@ Describe 'Disable-CIisSecurityAuthentication' {
         Uninstall-CIisWebsite $script:siteName
     }
 
-    It 'should disable anonymous authentication on v dir' {
-        Disable-CIisSecurityAuthentication -SiteName $script:siteName -Path SubFolder -Anonymous
-        (Test-CIisSecurityAuthentication -SiteName $script:siteName -Path SubFolder -Anonymous) | Should -BeFalse
+    It 'should disable anonymous authentication on vdir' {
+        Disable-CIisSecurityAuthentication -SiteName $script:siteName -Path 'SubFolder' -Anonymous
+        (Test-CIisSecurityAuthentication -SiteName $script:siteName -Path 'SubFolder' -Anonymous) | Should -BeFalse
     }
 
     It 'should disable anonymous authentication' {
@@ -75,7 +75,7 @@ Describe 'Disable-CIisSecurityAuthentication' {
         (Test-CIisSecurityAuthentication -SiteName $script:siteName -Anonymous) | Should -BeFalse
     }
 
-    It 'should support what if' {
+    It 'should support WhatIf' {
         Enable-CIisSecurityAuthentication -SiteName $script:siteName -Anonymous
         (Test-CIisSecurityAuthentication -SiteName $script:siteName -Anonymous) | Should -BeTrue
         Disable-CIisSecurityAuthentication -SiteName $script:siteName -Anonymous -WhatIf
