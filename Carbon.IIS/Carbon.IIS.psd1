@@ -98,6 +98,7 @@
         'Join-CIisVirtualPath',
         'Lock-CIisConfigurationSection',
         'Remove-CIisMimeMap',
+        'Set-CIisAnonymousAuthentication',
         'Set-CIisConfigurationAttribute',
         'Set-CIisHttpHeader',
         'Set-CIisHttpRedirect',

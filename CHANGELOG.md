@@ -29,14 +29,21 @@ usages to use the `GetAttributeValue` method instead, e.g. `GetAttributeValue('c
 `GetAttributeValue('destination')`, etc. The value of `httpResponseStatus` is now returned as an int, instead of an
 enumeration.
 
+The `Install-CIisWebsite` function no longer sets the default anonymous authentication username on a website to nothing.
+New websites will now have the default anonymous authentication username of `IUSR`. To preserve the previous behavior,
+use the `Set-CIisAnonymousAuthentication`.
+
 Upgrade to PowerShell 5.1 or PowerShell 7. PowerShell 4 is no longer supported. Microsoft's web administration API
 doesn't work under PowerShell 6, so neither does Carbon.IIS.
+
+Windows 2008 is no longer supported. Minimum operating system is Windows 8.1 and Windows Server 2012 R2.
 
 ## Added
 
 * Carbon.IIS now supports
     * Windows PowerShell 5.1 (on .NET Framework 4.6.2 and later) and PowerShell 7
     * Windows 8 and 10, and Windows Server 2012R2, 2016, and 2019.
+* Function `Set-CIisAnonymousAuthentication` for configuring anonymous authentication.
 
 ## Fixed
 
