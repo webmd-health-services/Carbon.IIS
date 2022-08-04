@@ -1,12 +1,12 @@
 # Overview
 
-The "Carbon.IIS" module is a module for installing and managing IIS app pools, websites, applications, and configuring 
+The "Carbon.IIS" module is a module for installing and managing IIS app pools, websites, applications, and configuring
 other parts of IIS.
 
 # System Requirements
 
 * Windows PowerShell 5.1 and .NET 4.6.2+
-* PowerShell 6+
+* PowerShell 7+
 * Windows 8 and 10
 * Windows Server 2012R2, 2016, and 2019
 

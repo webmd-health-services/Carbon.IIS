@@ -25,16 +25,18 @@ Remove usages of `Carbon.Iis.HttpHeader`, `Carbon.Iis.HttpRedirectConfigurationS
 Update usages of return objects from the `Get-CIisHttpRedirect` function. The function no longer returns a
 `Carbon.Iis.HttpResponseStatus` object and instead returns a `Microsoft.Web.Administration.ConfigurationSection`.
 It no longer has `ChildOnly`, `Destination`, `Enabled`, `ExactDestination`, and `HttpResponseStatus` properties. Update
-usages to use the `GetAttributeValue` method instead, e.g. `GetAttributeValue('childOnly')`, 
+usages to use the `GetAttributeValue` method instead, e.g. `GetAttributeValue('childOnly')`,
 `GetAttributeValue('destination')`, etc. The value of `httpResponseStatus` is now returned as an int, instead of an
 enumeration.
 
-Upgrade to PowerShell 5.1 or later. PowerShell 4 is no longer supported.
+Upgrade to PowerShell 5.1 or PowerShell 7. PowerShell 4 is no longer supported. Microsoft's web administration API
+doesn't work under PowerShell 6, so neither does Carbon.IIS.
 
 ## Added
 
-* Carbon.IIS now supports Windows PowerShell 5.1, PowerShell 6 and 7, Windows 8 and 10, and Windows Server 2012R2, 2016, and 2019.
-* Carbon.IIS now supports .NET Framework 4.6.2 and later.
+* Carbon.IIS now supports
+    * Windows PowerShell 5.1 (on .NET Framework 4.6.2 and later) and PowerShell 7
+    * Windows 8 and 10, and Windows Server 2012R2, 2016, and 2019.
 
 
 ## Removed

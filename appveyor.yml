@@ -31,10 +31,6 @@ environment:
     job_group: ps
     appveyor_build_worker_image: Visual Studio 2022
 
-  - job_name: PowerShell 6
-    job_group: pwsh
-    appveyor_build_worker_image: Visual Studio 2017
-
   - job_name: PowerShell 7
     job_group: pwsh
     appveyor_build_worker_image: Visual Studio 2022
@@ -58,3 +54,4 @@ for:
     - job_group: pwsh
   build_script:
   - pwsh: ./build.ps1
+
