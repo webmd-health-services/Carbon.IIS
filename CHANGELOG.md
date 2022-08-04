@@ -44,6 +44,7 @@ Windows 2008 is no longer supported. Minimum operating system is Windows 8.1 and
     * Windows PowerShell 5.1 (on .NET Framework 4.6.2 and later) and PowerShell 7
     * Windows 8 and 10, and Windows Server 2012R2, 2016, and 2019.
 * Function `Set-CIisAnonymousAuthentication` for configuring anonymous authentication.
+* Function `Remove-CIisConfigurationAttribute` for removing attributes from configuration sections.
 
 ## Fixed
 

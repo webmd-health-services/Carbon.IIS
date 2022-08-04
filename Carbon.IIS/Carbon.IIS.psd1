@@ -97,6 +97,7 @@
         'Install-CIisWebsite',
         'Join-CIisVirtualPath',
         'Lock-CIisConfigurationSection',
+        'Remove-CIisConfigurationAttribute',
         'Remove-CIisMimeMap',
         'Set-CIisAnonymousAuthentication',
         'Set-CIisConfigurationAttribute',

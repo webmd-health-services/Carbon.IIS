@@ -1,0 +1,136 @@
+
+function Remove-CIisConfigurationAttribute
+{
+    <#
+    .SYNOPSIS
+    Removes an attribute from a configuration section.
+
+    .DESCRIPTION
+    The `Remove-CIisConfigurationAttribute` function removes/deletes an attribute from a website's configuration in the
+    IIS application host configuration file. Pass the website name to the `SiteName` parameter, the path to the
+    configuration section from which to remove the attribute to the `SectionPath` parameter, and the name of the
+    attribute to remove/delete to the `Name` parameter. The function deletes that attribute. If the attribute doesn't
+    exist, nothing happens.
+
+    To delete more than one attribute on a specific element at a ttime, either pass multiple names to the `Name`
+    parameter, or pipe the list of attributes to `Remove-CIisConfigurationAttribute`.
+
+    To delete/remove an attribute from the configuration of an application/virtual directory under a website, pass the
+    application/virtual diretory's name/path to the `VirtualPath` parameter.
+
+    The current value of the attribute is written to the information stream. To mask the attribute's value in output,
+    use the `Sensitive` switch. Attributes named `Password` are always masked.
+
+    .EXAMPLE
+    Remove-CIisConfigurationAttribute -SiteName 'MySite' -SectionPath 'system.webServer/security/authentication/anonymousAuthentication' -Name 'userName'
+
+    Demonstrates how to delete/remove the attribute from a website's configuration. In this example, the `userName`
+    attribute on the `system.webServer/security/authentication/anonymousAuthentication` configuration is deleted.
+
+    .EXAMPLE
+    Remove-CIisConfigurationAttribute -SiteName 'MySite' -VirtualPath 'myapp/appdir' -SectionPath 'system.webServer/security/authentication/anonymousAuthentication' -Name 'userName'
+
+    Demonstrates how to delete/remove the attribute from a website's path/application/virtual directory configuration.
+    In this example, the `userName` attribute on the `system.webServer/security/authentication/anonymousAuthentication`
+    for the '/myapp/appdir` directory is removed.
+    #>
+    [CmdletBinding(SupportsShouldProcess)]
+    param(
+        # The name of the website to configure.
+        [Parameter(Mandatory)]
+        [String] $SiteName,
+
+        # The virtual path to a directory, application, or virtual directory to configure.
+        [String] $VirtualPath = '',
+
+        # The configuration section path to configure, e.g.
+        # `system.webServer/security/authentication/basicAuthentication`. The path should *not* start with a forward
+        # slash.
+        [Parameter(Mandatory)]
+        [String] $SectionPath,
+
+        # The name of the attribute to remove/clear. If the attribute doesn't exist, nothing happens.
+        #
+        # You can pipe multiple names to clear/remove multiple attributes.
+        [Parameter(Mandatory, ValueFromPipeline)]
+        [Alias('Key')]
+        [String[]] $Name,
+
+        # If set, the current value of the attribute will be masked when written to the console.
+        [switch] $Sensitive
+    )
+
+    begin
+    {
+        Set-StrictMode -Version 'Latest'
+        Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
+
+        $section = Get-CIisConfigurationSection -SiteName $SiteName -VirtualPath $VirtualPath -SectionPath $SectionPath
+        if( -not $section )
+        {
+            return
+        }
+
+        $attrNameFieldLength =
+            $section.Attributes |
+            Select-Object -ExpandProperty 'Name' |
+            Select-Object -ExpandProperty 'Length' |
+            Measure-Object -Maximum |
+            Select-Object -ExpandProperty 'Maximum'
+        $nameFormat = "{0,-$($attrNameFieldLength)}"
+
+        $attrNames = [Collections.Arraylist]::New()
+
+        $basePrefix = "[IIS:/Sites/$(Join-CIisVirtualPath -Path $SiteName -ChildPath $VirtualPath):$($SectionPath)"
+    }
+
+    process
+    {
+        if( -not $section )
+        {
+            return
+        }
+
+        foreach( $nameItem in $Name )
+        {
+            $attr = $section.Attributes[$nameItem]
+            if( -not $attr )
+            {
+                $msg = "IIS configuration section ""$($SectionPath)"" doesn't have a ""$($nameItem)"" attribute."
+                Write-Error -Message $msg -ErrorAction $ErrorActionPreference
+                return
+            }
+
+            $nameItem = "$($nameItem.Substring(0, 1).ToLowerInvariant())$($nameItem.Substring(1, $nameItem.Length -1))"
+            $msgPrefix = "$($basePrefix)@$($nameFormat -f $nameItem)]  "
+
+            Write-Debug "$($msgPrefix)$($attr.IsInheritedFromDefaultValue)  $($attr.Value)  $($attr.Schema.DefaultValue)"
+            $hasDefaultValue = $attr.Value -eq $attr.Schema.DefaultValue
+            if( -not $attr.IsInheritedFromDefaultValue -and -not $hasDefaultValue )
+            {
+                $currentValue = $attr.Value
+                if( $Sensitive -or $nameItem -eq 'Password' )
+                {
+                    $currentValue = '*' * 8
+                }
+
+                Write-Information "$($msgPrefix)$($currentValue) ->"
+                [void]$attrNames.Add($nameItem)
+            }
+
+            $pathMsg = ''
+            if( $VirtualPath )
+            {
+                $pathMsg = " path '$($VirtualPath)'"
+            }
+
+            $target = "IIS website '$($SiteName)'$($pathMsg) configuration section '$($SectionPath)'"
+            $action = "remove attribute '$($nameItem)'"
+            if( $PSCmdlet.ShouldProcess($target, $action) )
+            {
+                # Fortunately, only actually persists changes to applicationHost.config if there are any changes.
+                $attr.Delete()
+            }
+        }
+    }
+}
