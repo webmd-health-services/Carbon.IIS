@@ -55,7 +55,7 @@ Build:
 
 - Zip:
     ArchivePath: .output\Carbon.IIS-$(WHISKEY_SEMVER2).zip
-    Path: 
+    Path:
     - Carbon.IIS
     Exclude:
     - "*.pdb"
@@ -80,22 +80,16 @@ Build:
         'PowerShellGallery'
     ]
 
-# - Pester:
-#     Configuration:
-#         Run:
-#             Path: Tests\*.Tests.ps1
-#             ExcludePath:
-#             - "*\\Carbon.IIS.Tests.ps1"
-#             - "*\\Import-Carbon.IIS.Tests.ps1"
-#             - "*\\Install-CIisAppPool.Tests.ps1"
-#             - "*\\Install-CIisWebsite.Tests.ps1"
-#             - "*\\Set-CIisWebsiteID.Tests.ps1"
-#             Exit: true
-#             Throw: true
-#         TestResult:
-#             Enabled: true
-#             OutputPath: .output\pester.xml
-#             TestSuiteName: Carbon.IIS
+- Pester:
+    Configuration:
+        Run:
+            Path: Tests\*.Tests.ps1
+            Exit: true
+            Throw: true
+        TestResult:
+            Enabled: true
+            OutputPath: .output\pester.xml
+            TestSuiteName: Carbon.IIS
 
 - PowerShell:
     ScriptBlock: |
@@ -116,11 +110,3 @@ Build:
             $msg = "Blade tests failed with $$($numErrors) error(s) and $$($numFailures) failure(s)."
             throw $msg
         }
-
-- Pester4:
-    Script:
-    - Tests\Carbon.IIS.Tests.ps1
-    - Tests\Import-Carbon.IIS.Tests.ps1
-    - Tests\Install-CIisAppPool.Tests.ps1
-    - Tests\Install-CIisWebsite.Tests.ps1
-    - Tests\Set-CIisWebsiteID.Tests.ps1

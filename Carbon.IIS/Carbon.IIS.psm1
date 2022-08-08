@@ -17,32 +17,97 @@ Set-StrictMode -Version 'Latest'
 $InformationPreference = 'Continue'
 
 # Functions should use $moduleRoot as the relative root from which to find
-# things. A published module has its function appended to this file, while a 
+# things. A published module has its function appended to this file, while a
 # module in development has its functions in the Functions directory.
 $moduleRoot = $PSScriptRoot
 
 Import-Module -Name (Join-Path -Path $moduleRoot -ChildPath 'PSModules\Carbon.Core' -Resolve) `
               -Function @('Add-CTypeData')
 
-if( [Environment]::SystemDirectory )
+function Test-MSWebAdministrationLoaded
 {
-    $microsoftWebAdministrationPath =
-        Join-Path -Path ([Environment]::SystemDirectory) -ChildPath 'inetsrv\Microsoft.Web.Administration.dll'
-    if( $PSVersionTable['PSVersion'].Major -eq 6 )
+    $serverMgrType =
+        [AppDomain]::CurrentDomain.GetAssemblies() |
+        Where-Object { $_.Location -and ($_.Location | Split-Path -Leaf) -eq 'Microsoft.Web.Administration.dll' }
+    return $null -ne $serverMgrType
+}
+
+$numErrorsAtStart = $Global:Error.Count
+if( -not (Test-MSWebAdministrationLoaded) )
+{
+    $pathsToTry = & {
+            # This is our preferred assembly. Always try it first.
+            if( [Environment]::SystemDirectory )
+            {
+                $msWebAdminPath = Join-Path -Path ([Environment]::SystemDirectory) `
+                                            -ChildPath 'inetsrv\Microsoft.Web.Administration.dll'
+                Get-Item -Path $msWebAdminPath -ErrorAction SilentlyContinue
+            }
+
+            # If any IIS module is installed, it might have a copy. Find them but make sure they are sorted from
+            # newest version to oldest version.
+            Get-Module -Name 'IISAdministration', 'WebAdministration' -ListAvailable |
+                Select-Object -ExpandProperty 'Path' |
+                Split-Path -Parent |
+                Get-ChildItem -Filter 'Microsoft.Web.Administration.dll' -Recurse -ErrorAction SilentlyContinue |
+                Sort-Object { [Version]$_.VersionInfo.FileVersion } -Descending
+        }
+
+    foreach( $pathToTry in $pathsToTry )
     {
-        $microsoftWebAdministrationPath = Join-Path -Path $moduleRoot -ChildPath 'bin\Microsoft.Web.Administration.dll'
+        try
+        {
+            Add-Type -Path $pathToTry.FullName
+            Write-Debug "Loaded required assembly Microsoft.Web.Administration from ""$($pathToTry)""."
+            break
+        }
+        catch
+        {
+            Write-Debug "Failed to load assembly ""$($pathToTry)"": $($_)."
+        }
     }
-    
-    if( (Test-Path -Path $microsoftWebAdministrationPath) )
+}
+
+if( -not (Test-MSWebAdministrationLoaded) )
+{
+    try
     {
-        Add-Type -Path $microsoftWebAdministrationPath
+        Add-Type -AssemblyName 'Microsoft.Web.Administration' `
+                 -ErrorAction SilentlyContinue `
+                 -ErrorVariable 'addTypeErrors'
+        if( -not $addTypeErrors )
+        {
+            Write-Debug "Loaded required assembly Microsoft.Web.Administration from GAC."
+        }
     }
+    catch
+    {
+    }
+}
+
+if( -not (Test-MSWebAdministrationLoaded) )
+{
+    Write-Error -Message "Unable to find and load required assembly Microsoft.Web.Administration." -ErrorAction Stop
+    return
+}
+
+$sm = [Microsoft.Web.Administration.ServerManager]::New()
+if( -not $sm -or $null -eq $sm.Sites )
+{
+    Write-Error -Message "Carbon.IIS is not supported on this version of PowerShell." -ErrorAction Stop
+    return
+}
+
+# We successfully loaded Microsoft.Web.Administration assembly, so remove the errors we encountered trying to do so.
+for( $idx = $Global:Error.Count ; $idx -gt $numErrorsAtStart ; --$idx )
+{
+    $Global:Error.RemoveAt(0)
 }
 
 Add-CTypeData -TypeName 'Microsoft.Web.Administration.Site' `
               -MemberType ScriptProperty `
               -MemberName 'PhysicalPath' `
-              -Value { 
+              -Value {
                     $this.Applications |
                         Where-Object 'Path' -EQ '/' |
                         Select-Object -ExpandProperty 'VirtualDirectories' |
@@ -53,14 +118,14 @@ Add-CTypeData -TypeName 'Microsoft.Web.Administration.Site' `
 Add-CTypeData -TypeName 'Microsoft.Web.Administration.Application' `
               -MemberType ScriptProperty `
               -MemberName 'PhysicalPath' `
-              -Value { 
+              -Value {
                     $this.VirtualDirectories |
                         Where-Object 'Path' -EQ '/' |
                         Select-Object -ExpandProperty 'PhysicalPath'
                 }
 
-# Store each of your module's functions in its own file in the Functions 
-# directory. On the build server, your module's functions will be appended to 
+# Store each of your module's functions in its own file in the Functions
+# directory. On the build server, your module's functions will be appended to
 # this file, so only dot-source files that exist on the file system. This allows
 # developers to work on a module without having to build it first. Grab all the
 # functions that are in their own files.
