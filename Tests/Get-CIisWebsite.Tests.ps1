@@ -28,6 +28,7 @@ BeforeAll {
 
 Describe 'Get-CIisWebsite' {
     BeforeAll {
+        Start-W3ServiceTestFixture
         Install-CIisAppPool -Name $script:appPoolName
         $bindings = @( 'http/*:8401:', 'https/*:8401:', 'http/1.2.3.4:80:', "http/5.6.7.8:80:$script:siteName" )
         Install-CIisWebsite -Name $script:siteName -Bindings $bindings -Path $TestDrive -AppPoolName $script:appPoolName
@@ -36,11 +37,22 @@ Describe 'Get-CIisWebsite' {
     AfterAll {
         Uninstall-CIisWebsite -Name $script:siteName
         Uninstall-CIisAppPool -Name $script:appPoolName
+        Complete-W3ServiceTestFixture
+    }
+
+    BeforeEach {
+        $Global:Error.Clear()
     }
 
     It 'should return null for non existent website' {
-        $website = Get-CIisWebsite -SiteName 'ISureHopeIDoNotExist'
+        $website = Get-CIisWebsite -SiteName 'ISureHopeIDoNotExist' -ErrorAction SilentlyContinue
         $website | Should -BeNullOrEmpty
+        $Global:Error | Should -Match '"ISureHopeIDoNotExist" does not exist'
+    }
+
+    It 'should ignore when a website does not exist' {
+        Get-CIisWebsite -SiteName 'fksjdfksdfklsdjfkl' -ErrorAction Ignore | Should -BeNullOrEmpty
+        $Global:Error | Should -BeNullOrEmpty
     }
 
     It 'should get website details' {
