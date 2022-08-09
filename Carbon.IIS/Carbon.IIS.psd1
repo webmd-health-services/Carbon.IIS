@@ -78,6 +78,7 @@
     # Functions to export from this module. Only list public function here.
     FunctionsToExport = @(
         'Add-CIisDefaultDocument',
+        'ConvertTo-CIisVirtualPath',
         'Disable-CIisSecurityAuthentication',
         'Enable-CIisDirectoryBrowsing',
         'Enable-CIisSecurityAuthentication',

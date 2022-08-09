@@ -41,6 +41,9 @@ behavior, use the `Set-CIisAnonymousAuthentication`.
 `Get-CIisWebsite` now writes an error if a specific website doesn't exist. If a usage doesn't care if the website
 exists or not, add `-ErrorAction SilentlyContinue` or `-ErrorAction Ignore`.
 
+The `Join-CIisVirtualPath` function's `ChildPath` parameter is now mandatory. If you have usages without a `ChildPath`
+parameter, switch to using the new `ConvertTo-CIisVirtualPath`.
+
 ## Added
 
 * Carbon.IIS now supports
@@ -48,11 +51,14 @@ exists or not, add `-ErrorAction SilentlyContinue` or `-ErrorAction Ignore`.
     * Windows 8 and 10, and Windows Server 2012R2, 2016, and 2019.
 * Function `Set-CIisAnonymousAuthentication` for configuring anonymous authentication.
 * Function `Remove-CIisConfigurationAttribute` for removing attributes from configuration sections.
+* Function `ConvertTo-CIisVirtualPath` for normalizing a virtual path (i.e. removing duplicate slashes, ensuring
+directory separators are `/`, etc.).
 
 ## Changes
 
 * `Get-CIisWebsite` now writes an error if a specific website doesn't exist.
-
+* The `Join-CIisVirtualPath` function's `ChildPath` parameter is now required. Usages that don't have a `ChildPath`
+argument should switch to `ConvertTo-CIisVirtualPath`.
 
 ## Fixed
 

@@ -16,13 +16,14 @@ Describe 'Join-CIisVirtualPath' {
     }
 
     It 'should join paths' {
-        (Join-CIisVirtualPath 'SiteName' 'Virtual') | Should -Be 'SiteName/Virtual'
+        (Join-CIisVirtualPath 'SiteName' 'Virtual')  | Should -Be 'SiteName/Virtual'
         (Join-CIisVirtualPath 'SiteName/' 'Virtual') | Should -Be 'SiteName/Virtual'
         (Join-CIisVirtualPath 'SiteName/' '/Virtual') | Should -Be 'SiteName/Virtual'
         (Join-CIisVirtualPath 'SiteName' '/Virtual') | Should -Be 'SiteName/Virtual'
         (Join-CIisVirtualPath 'SiteName\' 'Virtual') | Should -Be 'SiteName/Virtual'
         (Join-CIisVirtualPath 'SiteName\' '\Virtual') | Should -Be 'SiteName/Virtual'
         (Join-CIisVirtualPath 'SiteName' '\Virtual') | Should -Be 'SiteName/Virtual'
+        (Join-CIisVirtualPath 'SiteName' '') | Should -Be 'SiteName'
     }
 
 }
