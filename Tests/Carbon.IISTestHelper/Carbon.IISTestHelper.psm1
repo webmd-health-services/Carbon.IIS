@@ -1,26 +1,7 @@
 
+Set-StrictMode -Version 'Latest'
+
 $script:testNum = 0
-
-function New-TestDirectory
-{
-    $testDir = Join-Path -Path $TestDrive -ChildPath ($script:testNum++)
-    New-Item -Path $testDir -ItemType 'Directory' | Out-Null
-    Grant-CPermission -Path $TestDrive -Identity 'Everyone' -Permission 'FullControl'
-    return $testDir
-}
-
-function Start-W3ServiceTestFixture
-{
-    if( -not (Test-Path -Path 'env:APPVEYOR') )
-    {
-        return
-    }
-
-    Write-Debug '# Start-W3ServiceTestFixture'
-    Start-Service -Name 'WAS'
-    Start-Service -Name 'W3SVC'
-    Wait-W3Service | Format-Table | Out-String | Write-Debug
-}
 
 function Complete-W3ServiceTestFixture
 {
@@ -32,6 +13,138 @@ function Complete-W3ServiceTestFixture
     Write-Debug '# Complete-W3ServiceTestFixture'
     Stop-Service -Name 'W3SVC'
     Restart-Service -Name 'WAS'
+    Start-Service -Name 'W3SVC'
+    Wait-W3Service | Format-Table | Out-String | Write-Debug
+}
+
+function New-TestDirectory
+{
+    $testDir = Join-Path -Path $TestDrive -ChildPath ($script:testNum++)
+    New-Item -Path $testDir -ItemType 'Directory' | Out-Null
+    Grant-CPermission -Path $TestDrive -Identity 'Everyone' -Permission 'FullControl'
+    return $testDir
+}
+
+function Assert-UrlContent
+{
+    [CmdletBinding(DefaultParameterSetName='Throws')]
+    param(
+        [Parameter(Mandatory, Position=0)]
+        [Uri] $Url,
+
+        [Parameter(Mandatory, ParameterSetName='Matches')]
+        [Alias('Matches')]
+        [String] $Match,
+
+        [Parameter(Mandatory, ParameterSetName='Like')]
+        [Alias('IsLike')]
+        [String] $Like,
+
+        [Parameter(Mandatory, ParameterSetName='Is')]
+        [String] $Is
+    )
+
+    Write-Debug $Url
+    $tryFor = [TimeSpan]::New(0, 0, 1)
+    $duration =
+        [Diagnostics.Stopwatch]::StartNew() |
+        Add-Member -Name 'ToSecondsString' -MemberType ScriptMethod -Value {
+            return $this.Elapsed.TotalSeconds.ToString('0.000s')
+        } -PassThru
+
+    $content = ''
+    $requestOk = $false
+    do
+    {
+        try
+        {
+            $ProgressPreference = 'SilentlyContinue'
+            $response = Invoke-WebRequest -Uri $Url
+            $msg = "    $($duration.ToSecondsString())  $($response.StatusCode) $($response.StatusDescription)"
+            Write-Debug $msg
+
+            $content = $response.Content
+
+            if( $PSCmdlet.ParameterSetName -eq 'Matches' )
+            {
+                if( $content -match $Match)
+                {
+                    Write-Debug "    $($duration.ToSecondsString())  matches /$($Match)/"
+                    return
+                }
+                else
+                {
+                    Write-Debug "  ! $($duration.ToSecondsString())  matches /$($Match)/"
+                }
+            }
+            elseif( $PSCmdlet.ParameterSetName -eq 'Like' )
+            {
+                if( $content -Like $Like)
+                {
+                    Write-Debug "    $($duration.ToSecondsString())  like $($Like)"
+                    return
+                }
+                else
+                {
+                    Write-Debug "  ! $($duration.ToSecondsString())  like $($Like)"
+                }
+            }
+            elseif( $PSCmdlet.ParameterSetName -eq 'Is' )
+            {
+                if( $content -eq $Is)
+                {
+                    Write-Debug "    $($duration.ToSecondsString())  eq $($Is)"
+                    return
+                }
+                else
+                {
+                    Write-Debug "  ! $($duration.ToSecondsString())  eq $($Is)"
+                }
+            }
+            else
+            {
+                $requestOk = $true
+                break
+            }
+        }
+        catch
+        {
+            Write-Debug "  ! $($duration.ToSecondsString())  $($_)"
+        }
+
+        Start-Sleep -Milliseconds 100
+    }
+    while( $duration.Elapsed -lt $tryFor )
+
+    if( $PSCmdlet.ParameterSetName -eq 'Matches' )
+    {
+        $content | Should -Match $Match
+    }
+    elseif( $PSCmdlet.ParameterSetName -eq 'Like' )
+    {
+        $content | Should -BeLike $Like
+    }
+    elseif( $PSCmdlet.ParameterSetName -eq 'Is' )
+    {
+        $content | Should -Be $Is
+    }
+    elseif( -not $requestOK )
+    {
+        Write-Error "Request ""$($Url)"" failed: $($Global:Error[0])." -ErrorAction Stop
+    }
+}
+
+Set-Alias -Name 'ThenUrlContent' -Value 'Assert-UrlContent'
+
+function Start-W3ServiceTestFixture
+{
+    if( -not (Test-Path -Path 'env:APPVEYOR') )
+    {
+        return
+    }
+
+    Write-Debug '# Start-W3ServiceTestFixture'
+    Start-Service -Name 'WAS'
     Start-Service -Name 'W3SVC'
     Wait-W3Service | Format-Table | Out-String | Write-Debug
 }
@@ -57,4 +170,4 @@ function Wait-W3Service
     }
 }
 
-Export-ModuleMember -Function '*'
+Export-ModuleMember -Function '*' -Alias '*'
