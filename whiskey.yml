@@ -27,10 +27,6 @@ Build:
 - PowerShell:
     ExceptDuring: Clean
     ScriptBlock: |
-       if( -not (Get-Module -ListAvailable -Name 'Prism') )
-        {
-            Find-Module -Name 'Prism' | Select-Object -First 1 | Install-Module -Force -Scope CurrentUser
-        }
         prism install | Format-Table -Auto
         prism install -Path .\Carbon.IIS\prism.json | Format-Table -Auto
 
