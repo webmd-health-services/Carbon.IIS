@@ -48,15 +48,12 @@ Describe 'Set-CIisWebsiteID' {
     It 'should change ID' {
         $currentSite = Get-CIisWebsite -SiteName $script:siteName
         $currentSite | Should -Not -BeNullOrEmpty
-        # Make sure the website is already started.
-        $currentSite.Start()
 
         $newID = [int32](Get-Random -Maximum ([int32]::MaxValue) -Minimum 1)
         Set-CIisWebsiteID -SiteName $script:siteName -ID $newID -ErrorAction SilentlyContinue
 
         $updatedSite = Get-CIisWebsite -SiteName $script:siteName
         $updatedSite.ID | Should -Be $newID
-        $updatedSite.State | Should -Be 'Started'
     }
 
     It 'should detect duplicate IDs' {
@@ -110,12 +107,10 @@ Describe 'Set-CIisWebsiteID' {
     It 'should set same ID on same website' {
         $Global:Error.Clear()
         $currentSite = Get-CIisWebsite -SiteName $script:siteName
-        $currentSite.Start()
         Set-CIisWebsiteID -SiteName $script:siteName -ID $currentSite.ID -ErrorAction SilentlyContinue
         $Global:Error.Count | Should -Be 0
         $updatedSite = Get-CIisWebsite -SiteName $script:siteName
         $updatedSite.ID | Should -Be $currentSite.ID
-        $updatedSite.State | Should -Be 'Started'
     }
 
 }

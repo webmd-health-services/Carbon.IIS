@@ -20,16 +20,6 @@ BeforeAll {
 
     & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-CarbonTest.ps1' -Resolve)
 
-
-    function Read-Url
-    {
-        param(
-            [String] $Path = ''
-        )
-
-        return [Net.WebClient]::New().DownloadString( "http://localhost:$($script:port)/$($Path)" )
-    }
-
     function Assert-Redirects
     {
         param(
@@ -43,7 +33,7 @@ BeforeAll {
         {
             try
             {
-                $content = Read-Url $Path
+                $content = [Net.WebClient]::New().DownloadString( "http://localhost:$($script:port)/$($Path)" )
                 if( $content -match 'Example Domain' )
                 {
                     break
@@ -127,12 +117,13 @@ Describe 'Set-CIisHttpRedirect' {
     }
 
     It 'should set redirect on path' {
-        'NewWebsite' | Set-Content -Path (Join-Path -Path $script:testWebRoot -ChildPath 'NewWebsite.html')
+        $PSCommandPath | Set-Content -Path (Join-Path -Path $script:testWebRoot -ChildPath 'index.html') -NoNewLine
+
+        New-Item -Path (Join-Path -Path $script:testWebRoot -ChildPath 'SubFolder') -ItemType 'Directory'
 
         Set-CIisHttpRedirect -SiteName $script:siteName -VirtualPath 'SubFolder' -Destination 'http://www.example.com'
         Assert-Redirects -Path 'Subfolder'
-        $content = Read-Url -Path 'NewWebsite.html'
-        ($content -match 'NewWebsite') | Should -BeTrue
+        ThenUrlContent "http://localhost:$($script:port)/" -Is $PSCommandPath
 
         $settings = Get-CIisHttpRedirect -SiteName $script:siteName -Path 'SubFolder'
         $settings.GetAttributeValue('enabled') | Should -BeTrue

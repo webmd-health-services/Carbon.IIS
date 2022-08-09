@@ -86,23 +86,3 @@ Build:
             Enabled: true
             OutputPath: .output\pester.xml
             TestSuiteName: Carbon.IIS
-
-- PowerShell:
-    ScriptBlock: |
-        .\Tools\Blade\blade.ps1 -Path ".\Tests\IIS" -XmlLogPath ".\.output\blade.xml"
-
-        if( (Test-Path -Path 'env:APPVEYOR_JOB_ID') )
-        {
-            Write-Host "Uploading test results" -NoNewLine
-            $uploadUrl = "https://ci.appveyor.com/api/testresults/nunit/$$($env:APPVEYOR_JOB_ID)"
-            Write-Host " to $$($uploadUrl)."
-            [Net.WebClient]::New().UploadFile($uploadUrl, (Resolve-Path '.\.output\blade.xml'))
-        }
-
-        if( $LastBladeResult.Errors -or $LastBladeResult.Failures )
-        {
-            $numErrors = $LastBladeResult.Errors
-            $numFailures = $LastBladeResult.Failures
-            $msg = "Blade tests failed with $$($numErrors) error(s) and $$($numFailures) failure(s)."
-            throw $msg
-        }

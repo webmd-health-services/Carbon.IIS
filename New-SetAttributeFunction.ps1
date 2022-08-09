@@ -292,6 +292,14 @@ BeforeAll {
 }
 
 Describe 'Set-CIisAnonymousAuthentication' {
+    BeforeAll {
+        Start-W3ServiceTestFixture
+    }
+
+    AfterAll {
+        Complete-W3ServiceTestFixture
+    }
+
     BeforeEach {
         `$script:testWebRoot = New-TestDirectory
         Install-CIisWebsite -Name `$script:siteName -Path `$script:testWebRoot -Bindings "http://*:`$(`$script:port)"

@@ -37,7 +37,7 @@ BeforeAll {
     function Assert-WebsiteRunning($port)
     {
         $browser = New-Object Net.WebClient
-        $html = $browser.downloadString( "http://localhost:$port/NewWebsite.html" )
+        $html = $browser.downloadString( "http://localhost:$($port)/" )
         $html | Should -BeLike '*NewWebsite Test Page*'
     }
 
@@ -54,7 +54,7 @@ BeforeAll {
             $optionalParams['Bindings'] = $Bindings
         }
 
-        'NewWebsite Test Page' | Set-Content -Path (Join-Path -Path $script:testDir -ChildPath 'NewWebsite.html')
+        'NewWebsite Test Page' | Set-Content -Path (Join-Path -Path $script:testDir -ChildPath 'index.html')
         $site = Install-CIisWebsite -Name $script:siteName -Path $script:testDir @optionalParams
         $site | Should -BeNullOrEmpty
         $Global:Error.Count | Should -Be 0
@@ -86,7 +86,7 @@ BeforeAll {
             {
                 break
             }
-        
+
             try
             {
                 $website.Start()
@@ -99,7 +99,7 @@ BeforeAll {
             Start-Sleep -Milliseconds 100
         }
 	while( $tryNum -lt 100 )
-    
+
         $website.State | Should -Be 'Started'
     }
 
