@@ -26,12 +26,12 @@ function Get-CIisWebsite
     Returns all installed websites.
 
     .EXAMPLE
-    Get-CIisWebsite -SiteName 'WebsiteName'
+    Get-CIisWebsite -Name 'WebsiteName'
 
     Returns the details for the site named `WebsiteName`.
 
     .EXAMPLE
-    Get-CIisWebsite -SiteName 'fubar' -ErrorAction Ignore
+    Get-CIisWebsite -Name 'fubar' -ErrorAction Ignore
 
     Demonstrates how to ignore that a website doesn't exist by setting the `ErrorAction` parameter to `Ignore`.
     #>

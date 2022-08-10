@@ -6,9 +6,14 @@ function Install-CIisApplication
     Creates a new application under a website.
 
     .DESCRIPTION
-    Creates a new application at `VirtualPath` under website `SiteName` running the code found on the file system under `PhysicalPath`, i.e. if SiteName is is `example.com`, the application is accessible at `example.com/VirtualPath`.  If an application already exists at that path, it is removed first.  The application can run under a custom application pool using the optional `AppPoolName` parameter.  If no app pool is specified, the application runs under the same app pool as the website it runs under.
+    Creates a new application at `VirtualPath` under website `SiteName` running the code found on the file system under
+    `PhysicalPath`, i.e. if SiteName is is `example.com`, the application is accessible at `example.com/VirtualPath`.
+    If an application already exists at that path, it is removed first.  The application can run under a custom
+    application pool using the optional `AppPoolName` parameter.  If no app pool is specified, the application runs
+    under the same app pool as the website it runs under.
 
-    Beginning with Carbon 2.0, returns a `Microsoft.Web.Administration.Application` object for the new application if one is created or modified.
+    Beginning with Carbon 2.0, returns a `Microsoft.Web.Administration.Application` object for the new application if
+    one is created or modified.
 
     Beginning with Carbon 2.0, if no app pool name is given, existing application's are updated to use `DefaultAppPool`.
 
@@ -17,12 +22,14 @@ function Install-CIisApplication
     .EXAMPLE
     Install-CIisApplication -SiteName Peanuts -VirtualPath CharlieBrown -PhysicalPath C:\Path\To\CharlieBrown -AppPoolName CharlieBrownPool
 
-    Creates an application at `Peanuts/CharlieBrown` which runs from `Path/To/CharlieBrown`.  The application runs under the `CharlieBrownPool`.
+    Creates an application at `Peanuts/CharlieBrown` which runs from `Path/To/CharlieBrown`.  The application runs under
+    the `CharlieBrownPool`.
 
     .EXAMPLE
     Install-CIisApplication -SiteName Peanuts -VirtualPath Snoopy -PhysicalPath C:\Path\To\Snoopy
 
-    Create an application at Peanuts/Snoopy, which runs from C:\Path\To\Snoopy.  It uses the same application as the Peanuts website.
+    Create an application at Peanuts/Snoopy, which runs from C:\Path\To\Snoopy.  It uses the same application as the
+    Peanuts website.
     #>
     [CmdletBinding()]
     [OutputType([Microsoft.Web.Administration.Application])]
@@ -31,14 +38,12 @@ function Install-CIisApplication
         [Parameter(Mandatory)]
         [string] $SiteName,
 
-        # The name of the application.
+        # The path of the application.
         [Parameter(Mandatory)]
-        [Alias('Name')]
         [string] $VirtualPath,
 
         # The path to the application.
         [Parameter(Mandatory)]
-        [Alias('Path')]
         [string] $PhysicalPath,
 
         # The app pool for the application. Default is `DefaultAppPool`.
@@ -57,7 +62,7 @@ function Install-CIisApplication
         return
     }
 
-    $iisAppPath = Join-CIisVirtualPath $SiteName $VirtualPath
+    $iisAppPath = Join-CIisVirtualPath -Path $SiteName -ChildPath $VirtualPath
 
     $PhysicalPath = Resolve-CFullPath -Path $PhysicalPath
     if( -not (Test-Path $PhysicalPath -PathType Container) )
@@ -66,30 +71,25 @@ function Install-CIisApplication
         $null = New-Item $PhysicalPath -ItemType Directory
     }
 
-    $appPoolDesc = ''
-    if( $AppPoolName )
-    {
-        $appPoolDesc = '; appPool: {0}' -f $AppPoolName
-    }
-
     $apps = $site.GetCollection()
 
-    $appPath = "/{0}" -f $VirtualPath
+    $VirtualPath = $VirtualPath | ConvertTo-CIisVirtualPath
     $app = Get-CIisApplication -SiteName $SiteName -VirtualPath $VirtualPath
     $modified = $false
     if( -not $app )
     {
         Write-Verbose ('IIS://{0}: creating application' -f $iisAppPath)
-        $app = $apps.CreateElement('application') |
-                    Add-IisServerManagerMember -ServerManager $site.ServerManager -PassThru
-        $app['path'] = $appPath
+        $app =
+            $apps.CreateElement('application') |
+            Add-IisServerManagerMember -ServerManager $site.ServerManager -PassThru
+        $app['path'] = $VirtualPath
         $apps.Add( $app ) | Out-Null
         $modified = $true
     }
 
-    if( $app['path'] -ne $appPath )
+    if( $app['path'] -ne $VirtualPath )
     {
-        $app['path'] = $appPath
+        $app['path'] = $VirtualPath
         $modified = $true
     }
 
@@ -102,8 +102,7 @@ function Install-CIisApplication
     $vdir = $null
     if( $app | Get-Member 'VirtualDirectories' )
     {
-        $vdir = $app.VirtualDirectories |
-                    Where-Object { $_.Path -eq '/' }
+        $vdir = $app.VirtualDirectories | Where-Object 'Path' -EQ '/'
     }
 
     if( -not $vdir )
@@ -133,6 +132,4 @@ function Install-CIisApplication
     {
         return Get-CIisApplication -SiteName $SiteName -VirtualPath $VirtualPath
     }
-
 }
-
