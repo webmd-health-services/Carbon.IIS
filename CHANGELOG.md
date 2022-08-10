@@ -44,6 +44,11 @@ exists or not, add `-ErrorAction SilentlyContinue` or `-ErrorAction Ignore`.
 The `Join-CIisVirtualPath` function's `ChildPath` parameter is now mandatory. If you have usages without a `ChildPath`
 parameter, switch to using the new `ConvertTo-CIisVirtualPath`.
 
+The `Install-CIisVirtualDirectory` function's `VirtualPath` parameter was renamed to `Path`. Please update usages.
+
+Removed the `Install-CIisVirtualDirectory` function's `Path` parameter alias to the `PhysicalPath` parameter. Update
+usages.
+
 ## Added
 
 * Carbon.IIS now supports
@@ -53,6 +58,8 @@ parameter, switch to using the new `ConvertTo-CIisVirtualPath`.
 * Function `Remove-CIisConfigurationAttribute` for removing attributes from configuration sections.
 * Function `ConvertTo-CIisVirtualPath` for normalizing a virtual path (i.e. removing duplicate slashes, ensuring
 directory separators are `/`, etc.).
+* Function `Install-CIisVirtualDirectory` can now install virtual directories under applications, not just website root.
+Pass the application name to the `ApplicationPath` parameter.
 
 ## Changes
 

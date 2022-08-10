@@ -19,6 +19,20 @@ BeforeAll {
 
     & (Join-Path -Path $PSScriptRoot 'Initialize-CarbonTest.ps1' -Resolve)
 
+    function GivenApplication
+    {
+        param(
+            [String] $Named,
+
+            [String] $ServedFrom
+        )
+
+        Install-CIisApplication -SiteName $script:siteName `
+                                -VirtualPath $Named `
+                                -PhysicalPath (Join-Path -Path $script:vDirsRoot -ChildPath $ServedFrom) `
+                                -AppPoolName $script:siteName
+    }
+
     function GivenDirectory
     {
         param(
@@ -58,7 +72,9 @@ BeforeAll {
             [String] $VirtualPath,
 
             [Parameter(Mandatory)]
-            [String] $From
+            [String] $From,
+
+            [String] $UnderApplication = '/'
         )
 
         $script:webConfig | Should -Not -Exist
@@ -67,11 +83,12 @@ BeforeAll {
 
         $vDirPhysicalPath = Join-Path -Path $script:vDirsRoot -ChildPath $From
 
-        ThenUrlContent "http://localhost:$($script:port)/$($VirtualPath)" -Is $vDirPhysicalPath
+        $urlPath = Join-CIisVirtualPath -Path $UnderApplication -ChildPath $VirtualPath
+        ThenUrlContent "http://localhost:$($script:port)/$($urlPath)/" -Is $vDirPhysicalPath
 
         $website = Get-CIisWebsite -Name $script:siteName
         $website.Applications |
-            Where-Object 'Path' -eq '/' |
+            Where-Object 'Path' -eq $UnderApplication |
             Select-Object -ExpandProperty 'VirtualDirectories' |
             Where-Object 'physicalPath' -EQ $vDirPhysicalPath |
             Select-Object -ExpandProperty 'Path' |
@@ -83,7 +100,7 @@ Describe 'Install-CIisVirtualDirectory' {
     BeforeAll {
         Start-W3ServiceTestFixture
         Install-CIisAppPool -Name $script:siteName
-        # We create the directory outside the webroot to ensure vdir actually gets created. IF we create under the
+        # We create the directory outside the webroot to ensure vdir actually gets created. If we create under the
         # website root, there's no difference between a vdir and a regular directory.
         $script:vDirsRoot = New-TestDirectory
     }
@@ -158,5 +175,17 @@ Describe 'Install-CIisVirtualDirectory' {
         $app = Get-CIisApplication -SiteName $script:siteName
         $vdir = $app.VirtualDirectories['/VFive']
         $vdir.LogonMethod | Should -Be $defaultLogonMethod
+    }
+
+    It 'should create a virtual directory under an application' {
+        GivenDirectory 'Six'
+        GivenDirectory 'Seven'
+        GivenApplication -Named 'ASix' -ServedFrom 'Six'
+        WhenInstalling -WithArguments @{
+            'ApplicationPath' = 'ASix';
+            'VirtualPath' = 'VSeven';
+            'PhysicalPath' = 'Seven'
+        }
+        ThenRunning -UnderApplication '/ASix' 'VSeven' -From 'Seven'
     }
 }

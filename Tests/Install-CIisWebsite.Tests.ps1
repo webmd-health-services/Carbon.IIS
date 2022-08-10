@@ -187,7 +187,9 @@ Describe 'Install-CIisWebsite' {
         Invoke-NewWebsite -Bindings 'http/*:9876:'
         $Global:Error | Should -BeNullOrEmpty
         (Test-CIisWebsite -Name $script:siteName) | Should -BeTrue
-        Install-CIisVirtualDirectory -SiteName $script:siteName -VirtualPath '/ShouldStillHangAround' -PhysicalPath $PSScriptRoot
+        Install-CIisVirtualDirectory -SiteName $script:siteName `
+                                     -VirtualPath '/ShouldStillHangAround' `
+                                     -PhysicalPath $PSScriptRoot
 
         Invoke-NewWebsite
         $Global:Error | Should -BeNullOrEmpty
