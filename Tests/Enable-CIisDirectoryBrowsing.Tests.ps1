@@ -82,7 +82,7 @@ Describe 'Enable-CIisDirectoryBrowsing' {
         (Join-Path -Path $TestDrive -ChildPath $script:vDirName) |
             Set-Content -Path (Join-Path -Path $vdirRoot -ChildPath 'index.html') -NoNewline
         Install-CIisVirtualDirectory -SiteName $script:siteName -VirtualPath $script:vDirName -PhysicalPath $vdirRoot
-        Enable-CIisDirectoryBrowsing -SiteName $script:siteName -Path $script:vDirName
+        Enable-CIisDirectoryBrowsing -SiteName $script:siteName -VirtualPath $script:vDirName
 
         $script:webConfigPath | Should -Not -Exist
         ThenDirectoryBrowsingEnabled -UnderVirtualPath $script:vDirName

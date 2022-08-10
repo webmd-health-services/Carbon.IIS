@@ -41,7 +41,6 @@ function Set-CIisHttpRedirect
         [String] $SiteName,
 
         # The optional path where redirection should be setup.
-        [Alias('Path')]
         [String] $VirtualPath = '',
 
         # The destination to redirect to.

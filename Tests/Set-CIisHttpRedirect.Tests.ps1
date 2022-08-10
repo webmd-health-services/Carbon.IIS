@@ -125,7 +125,7 @@ Describe 'Set-CIisHttpRedirect' {
         Assert-Redirects -Path 'Subfolder'
         ThenUrlContent "http://localhost:$($script:port)/" -Is $PSCommandPath
 
-        $settings = Get-CIisHttpRedirect -SiteName $script:siteName -Path 'SubFolder'
+        $settings = Get-CIisHttpRedirect -SiteName $script:siteName -VirtualPath 'SubFolder'
         $settings.GetAttributeValue('enabled') | Should -BeTrue
         $settings.GetAttributeValue('destination') | Should -Be 'http://www.example.com'
     }

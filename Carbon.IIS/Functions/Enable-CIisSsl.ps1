@@ -6,7 +6,7 @@ function Enable-CIisSsl
     Turns on and configures SSL for a website or part of a website.
 
     .DESCRIPTION
-    This function enables SSL and optionally the site/directory to: 
+    This function enables SSL and optionally the site/directory to:
 
      * Require SSL (the `RequireSsl` switch)
      * Ignore/accept/require client certificates (the `AcceptClientCertificates` and `RequireClientCertificates` switches).
@@ -15,9 +15,9 @@ function Enable-CIisSsl
     By default, this function will enable SSL, make SSL connections optional, ignores client certificates, and not require 128-bit SSL.
 
     Changing any SSL settings will do you no good if the website doesn't have an SSL binding or doesn't have an SSL certificate.  The configuration will most likely succeed, but won't work in a browser.  So sad.
-    
+
     Beginning with IIS 7.5, the `Require128BitSsl` parameter won't actually change the behavior of a website since [there are no longer 128-bit crypto providers](https://forums.iis.net/p/1163908/1947203.aspx) in versions of Windows running IIS 7.5.
-    
+
     Beginning with Carbon 2.0.1, this function is available only if IIS is installed.
 
     .LINK
@@ -30,7 +30,7 @@ function Enable-CIisSsl
 
     .EXAMPLE
     Enable-CIisSsl -Site Peanuts -VirtualPath Snoopy/DogHouse -RequireSsl
-    
+
     Configures the `/Snoopy/DogHouse` directory in the `Peanuts` site to require SSL.  It also turns off any client certificate settings and makes 128-bit SSL optional.
 
     .EXAMPLE
@@ -51,42 +51,34 @@ function Enable-CIisSsl
     .LINK
     Set-CIisWebsiteSslCertificate
     #>
-    [CmdletBinding(SupportsShouldProcess=$true,DefaultParameterSetName='IgnoreClientCertificates')]
+    [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName='IgnoreClientCertificates')]
     param(
-        [Parameter(Mandatory=$true)]
-        [string]
         # The website whose SSL flags should be modifed.
-        $SiteName,
-        
-        [Alias('Path')]
-        [string]
+        [Parameter(Mandatory)]
+        [String] $SiteName,
+
         # The path to the folder/virtual directory/application under the website whose SSL flags should be set.
-        $VirtualPath = '',
-        
+        [String] $VirtualPath = '',
+
+        # Should SSL be required?
         [Parameter(ParameterSetName='IgnoreClientCertificates')]
         [Parameter(ParameterSetName='AcceptClientCertificates')]
-        [Parameter(Mandatory=$true,ParameterSetName='RequireClientCertificates')]
-        [Switch]
-        # Should SSL be required?
-        $RequireSsl,
-        
-        [Switch]
-        # Requires 128-bit SSL.  Only changes IIS behavior in IIS 7.0.
-        $Require128BitSsl,
-        
-        [Parameter(ParameterSetName='AcceptClientCertificates')]
-        [Switch]
-        # Should client certificates be accepted?
-        $AcceptClientCertificates,
-        
-        [Parameter(Mandatory=$true,ParameterSetName='RequireClientCertificates')]
-        [Switch]
-        # Should client certificates be required?  Also requires SSL ('RequireSsl` switch).
-        $RequireClientCertificates
-    )
-    
-    Set-StrictMode -Version 'Latest'
+        [Parameter(Mandatory, ParameterSetName='RequireClientCertificates')]
+        [switch] $RequireSsl,
 
+        # Requires 128-bit SSL.  Only changes IIS behavior in IIS 7.0.
+        [switch] $Require128BitSsl,
+
+        # Should client certificates be accepted?
+        [Parameter(ParameterSetName='AcceptClientCertificates')]
+        [switch] $AcceptClientCertificates,
+
+        # Should client certificates be required?  Also requires SSL ('RequireSsl` switch).
+        [Parameter(Mandatory, ParameterSetName='RequireClientCertificates')]
+        [switch] $RequireClientCertificates
+    )
+
+    Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
     $SslFlags_Ssl = 8
@@ -102,19 +94,19 @@ function Enable-CIisSsl
         $flags += 'Ssl'
         $intFlag = $intFlag -bor $SslFlags_Ssl
     }
-    
+
     if( $AcceptClientCertificates -or $RequireClientCertificates )
     {
         $flags += 'SslNegotiateCert'
         $intFlag = $intFlag -bor $SslFlags_SslNegotiateCert
     }
-    
+
     if( $RequireClientCertificates )
     {
         $flags += 'SslRequireCert'
         $intFlag = $intFlag -bor $SslFlags_SslRequireCert
     }
-    
+
     if( $Require128BitSsl )
     {
         $flags += 'Ssl128'

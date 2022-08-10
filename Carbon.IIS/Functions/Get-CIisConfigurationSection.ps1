@@ -27,7 +27,6 @@ function Get-CIisConfigurationSection
         $SiteName,
 
         [Parameter(ParameterSetName='ForSite')]
-        [Alias('Path')]
         [string]
         # The optional site path whose configuration should be returned.
         $VirtualPath = '',

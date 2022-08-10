@@ -36,7 +36,6 @@ function Disable-CIisSecurityAuthentication
         [String] $SiteName,
 
         # The optional path where authentication should be disabled.
-        [Alias('Path')]
         [String] $VirtualPath = '',
 
         # Disable anonymous authentication.

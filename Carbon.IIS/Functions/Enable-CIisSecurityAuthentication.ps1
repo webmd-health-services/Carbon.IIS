@@ -36,7 +36,6 @@ function Enable-CIisSecurityAuthentication
         [String] $SiteName,
 
         # The optional path where authentication should be set.
-        [Alias('Path')]
         [String] $VirtualPath = '',
 
         # Enable anonymous authentication.
