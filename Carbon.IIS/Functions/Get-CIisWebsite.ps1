@@ -39,7 +39,6 @@ function Get-CIisWebsite
     [OutputType([Microsoft.Web.Administration.Site])]
     param(
         # The name of the site to get.
-        [Alias('SiteName')]
         [String] $Name
     )
 

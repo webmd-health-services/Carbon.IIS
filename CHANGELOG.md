@@ -49,7 +49,25 @@ The `Install-CIisVirtualDirectory` function's `VirtualPath` parameter was rename
 Removed the `Install-CIisVirtualDirectory` function's `Path` parameter alias to the `PhysicalPath` parameter. Update
 usages.
 
+Removed `Path` parameter aliases. Update usages of the `Path` parameter on these functions to `VirtualPath`:
+* Disable-CIisSecurityAuthentication
+* Enable-CIisSecurityAuthentication
+* Enable-CIisSecurityAuthentication
+* Enable-CIisSsl
+* Get-CIisConfigurationSection
+* Get-CIisHttpHeader
+* Get-CIisHttpRedirect
+* Get-CIisMimeMap
+* Get-CIisSecurityAuthentication
+* Set-CIisHttpHeader
+* Set-CIisHttpRedirect
+* Set-CIisWindowsAuthentication
+* Test-CIisConfigurationSection
+* Test-CIisSecurityAuthentication
 
+Removed `SiteName` parameter aliases. Update usages of the `SiteName` parameter on these functions to `Name`:
+* Get-CIisWebsite
+* Install-CIisWebsite
 
 ## Added
 

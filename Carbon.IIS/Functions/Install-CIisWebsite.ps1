@@ -246,7 +246,7 @@ function Install-CIisWebsite
     $website = $null
     do
     {
-        $website = Get-CIisWebsite -SiteName $Name
+        $website = Get-CIisWebsite -Name $Name
         $tries += 1
         if($website.State -ne 'Unknown')
         {

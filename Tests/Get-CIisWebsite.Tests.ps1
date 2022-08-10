@@ -45,18 +45,18 @@ Describe 'Get-CIisWebsite' {
     }
 
     It 'should return null for non existent website' {
-        $website = Get-CIisWebsite -SiteName 'ISureHopeIDoNotExist' -ErrorAction SilentlyContinue
+        $website = Get-CIisWebsite -Name 'ISureHopeIDoNotExist' -ErrorAction SilentlyContinue
         $website | Should -BeNullOrEmpty
         $Global:Error | Should -Match '"ISureHopeIDoNotExist" does not exist'
     }
 
     It 'should ignore when a website does not exist' {
-        Get-CIisWebsite -SiteName 'fksjdfksdfklsdjfkl' -ErrorAction Ignore | Should -BeNullOrEmpty
+        Get-CIisWebsite -Name 'fksjdfksdfklsdjfkl' -ErrorAction Ignore | Should -BeNullOrEmpty
         $Global:Error | Should -BeNullOrEmpty
     }
 
     It 'should get website details' {
-        $website = Get-CIisWebsite -SiteName $script:siteName
+        $website = Get-CIisWebsite -Name $script:siteName
         $website | Should -Not -BeNullOrEmpty
         $website.Name | Should -Be $script:siteName
         ($website.ID -gt 0) | Should -BeTrue

@@ -37,23 +37,19 @@ function Get-CIisApplication
     [CmdletBinding()]
     [OutputType([Microsoft.Web.Administration.Application])]
     param(
-        [Parameter(Mandatory=$true)]
-        [string]
         # The site where the application is running.
-        $SiteName,
-        
-        [Parameter()]
-        [Alias('Name')]
-        [string]
+        [Parameter(Mandatory)]
+        [String] $SiteName,
+
         # The name of the application.  Default is to return all applications running under the website `$SiteName`.
-        $VirtualPath
+        [Alias('Name')]
+        [String] $VirtualPath
     )
 
     Set-StrictMode -Version 'Latest'
-
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
-    $site = Get-CIisWebsite -SiteName $SiteName
+    $site = Get-CIisWebsite -Name $SiteName
     if( -not $site )
     {
         return
@@ -66,7 +62,7 @@ function Get-CIisApplication
                 return ($_.Path -eq "/$VirtualPath")
             }
             return $true
-        } | 
+        } |
         Add-IisServerManagerMember -ServerManager $site.ServerManager -PassThru
 }
 

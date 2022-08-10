@@ -27,37 +27,31 @@ function Install-CIisApplication
     [CmdletBinding()]
     [OutputType([Microsoft.Web.Administration.Application])]
     param(
-        [Parameter(Mandatory=$true)]
-        [string]
         # The site where the application should be created.
-        $SiteName,
+        [Parameter(Mandatory)]
+        [string] $SiteName,
 
-        [Parameter(Mandatory=$true)]
-        [Alias('Name')]
-        [string]
         # The name of the application.
-        $VirtualPath,
+        [Parameter(Mandatory)]
+        [Alias('Name')]
+        [string] $VirtualPath,
 
-        [Parameter(Mandatory=$true)]
-        [Alias('Path')]
-        [string]
         # The path to the application.
-        $PhysicalPath,
+        [Parameter(Mandatory)]
+        [Alias('Path')]
+        [string] $PhysicalPath,
 
-        [string]
         # The app pool for the application. Default is `DefaultAppPool`.
-        $AppPoolName,
+        [string] $AppPoolName,
 
-        [Switch]
         # Returns IIS application object. This switch is new in Carbon 2.0.
-        $PassThru
+        [Switch] $PassThru
     )
 
     Set-StrictMode -Version 'Latest'
-
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
-    $site = Get-CIisWebsite -SiteName $SiteName
+    $site = Get-CIisWebsite -Name $SiteName
     if( -not $site )
     {
         return
