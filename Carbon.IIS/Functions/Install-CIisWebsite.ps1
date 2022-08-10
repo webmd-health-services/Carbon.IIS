@@ -1,15 +1,15 @@
 
 function Install-CIisWebsite
 {
-    <# 
+    <#
     .SYNOPSIS
     Installs a website.
 
     .DESCRIPTION
     `Install-CIisWebsite` installs an IIS website. Anonymous authentication is enabled, and the anonymous user is set to
     the website's application pool identity. Before Carbon 2.0, if a website already existed, it was deleted and
-    re-created. Beginning with Carbon 2.0, existing websites are modified in place. 
-    
+    re-created. Beginning with Carbon 2.0, existing websites are modified in place.
+
     If you don't set the website's app pool, IIS will pick one for you (usually `DefaultAppPool`), an
      `Install-CIisWebsite` will never manage the app pool for you (i.e. if someone changes it manually, this function
      won't set it back to the default). We recommend always supplying an app pool name, even if it is `DefaultAppPool`.
@@ -41,7 +41,7 @@ function Install-CIisWebsite
 
     .LINK
     Get-CIisWebsite
-    
+
     .LINK
     Uninstall-CIisWebsite
 
@@ -68,23 +68,23 @@ function Install-CIisWebsite
         # The name of the website.
         [Parameter(Position=0, Mandatory)]
         [String] $Name,
-        
+
         # The physical path (i.e. on the file system) to the website. If it doesn't exist, it will be created for you.
         [Parameter(Position=1, Mandatory)]
         [Alias('Path')]
         [String] $PhysicalPath,
-        
+
         # The site's network bindings.  Default is `http/*:80:`.  Bindings should be specified in
         # `protocol/IPAddress:Port:Hostname` format.
         #
-        #  * Protocol should be http or https. 
+        #  * Protocol should be http or https.
         #  * IPAddress can be a literal IP address or `*`, which means all of the computer's IP addresses.  This
         #  function does not validate if `IPAddress` is actually in use on this computer.
         #  * Leave hostname blank for non-named websites.
         [Parameter(Position=2)]
         [Alias('Bindings')]
         [String[]] $Binding = @('http/*:80:'),
-        
+
         # The name of the app pool under which the website runs.  The app pool must exist.  If not provided, IIS picks
         # one for you.  No whammy, no whammy! It is recommended that you create an app pool for each website. That's
         # what the IIS Manager does.
@@ -122,7 +122,7 @@ function Install-CIisWebsite
         Set-StrictMode -Version 'Latest'
 
         $InputObject -match $bindingRegex | Out-Null
-        [pscustomobject]@{ 
+        [pscustomobject]@{
                 'Protocol' = $Matches['Protocol'];
                 'IPAddress' = $Matches['IPAddress'];
                 'Port' = $Matches['Port'];
@@ -139,8 +139,8 @@ function Install-CIisWebsite
     {
         New-Item $PhysicalPath -ItemType Directory | Out-String | Write-Verbose
     }
-    
-    $invalidBindings = $Binding | Where-Object { $_ -notmatch $bindingRegex } 
+
+    $invalidBindings = $Binding | Where-Object { $_ -notmatch $bindingRegex }
     if( $invalidBindings )
     {
         $invalidBindings = $invalidBindings -join "`n`t"
@@ -200,12 +200,12 @@ function Install-CIisWebsite
         $site.Bindings.Add( $bindingToAdd.BindingInformation, $bindingToAdd.Protocol ) | Out-Null
         $modified = $true
     }
-    
+
     [Microsoft.Web.Administration.Application] $rootApp = $null
     if( $site.Applications.Count -eq 0 )
     {
         $rootApp = $site.Applications.Add('/', $PhysicalPath)
-        $modifed = $true
+        $modified = $true
     }
     else
     {
@@ -214,18 +214,18 @@ function Install-CIisWebsite
 
     if( $site.PhysicalPath -ne $PhysicalPath )
     {
-        Write-IisVerbose $Name 'PhysicalPath' $site.PhysicalPath $PhysicalPath 
+        Write-IisVerbose $Name 'PhysicalPath' $site.PhysicalPath $PhysicalPath
         [Microsoft.Web.Administration.VirtualDirectory] $vdir =
             $rootApp.VirtualDirectories | Where-Object 'Path' -EQ '/'
         $vdir.PhysicalPath = $PhysicalPath
         $modified = $true
     }
-    
+
     if( $AppPoolName )
     {
         if( $rootApp.ApplicationPoolName -ne $AppPoolName )
         {
-            Write-IisVerbose $Name 'AppPool' $rootApp.ApplicationPoolName $AppPoolName 
+            Write-IisVerbose $Name 'AppPool' $rootApp.ApplicationPoolName $AppPoolName
             $rootApp.ApplicationPoolName = $AppPoolName
             $modified = $true
         }
@@ -235,17 +235,11 @@ function Install-CIisWebsite
     {
         $site.CommitChanges()
     }
-    
+
     if( $SiteID )
     {
         Set-CIisWebsiteID -SiteName $Name -ID $SiteID
     }
-    
-    # Make sure anonymous authentication is enabled and uses the application pool identity
-    $security = Get-CIisSecurityAuthentication -SiteName $Name -VirtualPath '/' -Anonymous
-    Write-IisVerbose $Name 'Anonymous Authentication UserName' $security['username'] ''
-    $security['username'] = ''
-    $security.CommitChanges()
 
     # Now, wait until site is actually running
     $tries = 0

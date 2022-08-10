@@ -78,6 +78,7 @@
     # Functions to export from this module. Only list public function here.
     FunctionsToExport = @(
         'Add-CIisDefaultDocument',
+        'ConvertTo-CIisVirtualPath',
         'Disable-CIisSecurityAuthentication',
         'Enable-CIisDirectoryBrowsing',
         'Enable-CIisSecurityAuthentication',
@@ -97,7 +98,10 @@
         'Install-CIisWebsite',
         'Join-CIisVirtualPath',
         'Lock-CIisConfigurationSection',
+        'Remove-CIisConfigurationAttribute',
         'Remove-CIisMimeMap',
+        'Set-CIisAnonymousAuthentication',
+        'Set-CIisConfigurationAttribute',
         'Set-CIisHttpHeader',
         'Set-CIisHttpRedirect',
         'Set-CIisMimeMap',

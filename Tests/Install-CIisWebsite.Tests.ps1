@@ -86,7 +86,7 @@ BeforeAll {
             {
                 break
             }
-
+        
             try
             {
                 $website.Start()
@@ -97,9 +97,9 @@ BeforeAll {
                 $Global:Error.RemoveAt(0)
             }
             Start-Sleep -Milliseconds 100
-
-        } while( $tryNum -lt 100 )
-
+        }
+	while( $tryNum -lt 100 )
+    
         $website.State | Should -Be 'Started'
     }
 
@@ -136,7 +136,7 @@ Describe 'Install-CIisWebsite' {
         $details.PhysicalPath | Should -Be $script:testDir
 
         $anonymousAuthInfo = Get-CIisSecurityAuthentication -Anonymous -SiteName $script:siteName
-        $anonymousAuthInfo['userName'] | Should -BeNullOrEmpty
+        $anonymousAuthInfo['userName'] | Should -Be 'IUSR'
 
         $website = Get-CIisWebsite -Name $script:siteName
         $website | Should -Not -BeNullOrEmpty
