@@ -135,7 +135,8 @@ Describe 'Remove-CIisConfigurationAttribute' {
     }
 
     AfterEach {
-        Copy-Item 'C:\Windows\System32\inetsrv\config\applicationHost.config' -Destination '.'
+        Copy-Item -Path 'C:\Windows\System32\inetsrv\config\applicationHost.config' `
+                  -Destination (Join-Path -Path $PSScriptRoot -ChildPath '..\.output')
         Uninstall-CIisWebsite -Name $script:siteName
     }
 
