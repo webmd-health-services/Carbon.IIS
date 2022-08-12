@@ -14,29 +14,40 @@
 BeforeAll {
     & (Join-Path -Path $PSScriptRoot 'Initialize-CarbonTest.ps1' -Resolve)
 
-    $script:siteName = 'TestSite'
-
-    function ThenError
+    function GivenWebsite
     {
+        [CmdletBinding()]
         param(
-            [Parameter(Mandatory)]
-            [switch] $IsEmpty
+            [String] $Named
         )
 
-        $Global:Error | Should -BeNullOrEmpty
+        Install-CIisWebsite -Name $Named -Path $script:testDir -Binding "http/*:80:$($Named).localhost"
+
     }
-    function ThenSiteDoesNotExist
+
+    function ThenSite
     {
         param(
-            [String] $Name = $script:siteName
+            [Parameter(Mandatory, Position=0)]
+            [String] $Named,
+
+            [switch] $Not,
+
+            [Parameter(Mandatory, ParameterSetName='Exists')]
+            [switch] $Exists
         )
 
-        Test-CIisWebsite -Name $Name | Should -BeFalse
+        Test-CIisWebsite -Name $Named | Should -Not:$Not -BeTrue
     }
 
     function WhenRemovingSite
     {
-        Uninstall-CIisWebsite $script:siteName
+        [CmdletBinding()]
+        param(
+            [hashtable] $WithArgs = @{}
+        )
+
+        Uninstall-CIisWebsite @WithArgs
     }
 }
 
@@ -51,23 +62,61 @@ Describe 'Uninstall-CIisWebsite' {
 
     BeforeEach {
         $script:testDir = New-TestDirectory
-        Install-CIisWebsite -Name $script:siteName -Path $script:testDir
         $Global:Error.Clear()
     }
 
     AfterEach {
-        Uninstall-CIisWebsite -Name $script:siteName
+        Get-CIisWebsite | Where-Object 'Name' -Like 'Uninstall*' | Uninstall-CIisWebsite
     }
 
     It 'should remove non existent site' {
-        WhenRemovingSite
-        ThenSiteDoesNotExist
-        ThenError -IsEmpty
+        WhenRemovingSite -WithArgs @{ Name = 'UninstallOne' }
+        ThenSite 'UninstallOne' -Not -Exists
+        ThenError -Empty
     }
 
     It 'should remove site' {
-        WhenRemovingSite
-        ThenSiteDoesNotExist
-        ThenError -IsEmpty
+        GivenWebsite 'UninstallTwo'
+        WhenRemovingSite -WithArgs @{ Name = 'UninstallTwo' }
+        ThenSite 'UninstallOne' -Not -Exists
+        ThenError -Empty
+    }
+
+    It 'should remove multiple sites' {
+        GivenWebsite 'UninstallThree'
+        GivenWebsite 'UninstallFour'
+        WhenRemovingSite -WithArgs @{ Name = @('UninstallThree', 'UninstallFour') }
+        ThenSite 'UninstallThree' -Not -Exists
+        ThenSite 'UninstallFour' -Not -Exists
+        ThenError -Empty
+    }
+
+    It 'should accept pipeline input of site objects' {
+        GivenWebsite 'UninstallFive'
+        GivenWebsite 'UninstallSix'
+        [Object[]] $sites = Get-CIisWebsite | Where-Object 'Name' -Like 'Uninstall*'
+        $sites.Count | Should -BeGreaterThan 1
+        $sites | Uninstall-CIisWebsite
+        ThenSite 'UninstallFive' -Not -Exists
+        ThenSite 'UninstallSix' -Not -Exists
+        ThenError -Empty
+    }
+
+    It 'should accept pipeline input of names' {
+        GivenWebsite 'UninstallSeven'
+        GivenWebsite 'UninstallEight'
+        [Object[]] $sites = Get-CIisWebsite | Where-Object 'Name' -Like 'Uninstall*'
+        $sites.Count | Should -BeGreaterThan 1
+        $sites.Name | Uninstall-CIisWebsite
+        ThenSite 'UninstallSeven' -Not -Exists
+        ThenSite 'UninstallEight' -Not -Exists
+        ThenError -Empty
+    }
+
+    It 'should support WhatIf' {
+        GivenWebsite 'UninstallNine'
+        WhenRemovingSite -WithArgs @{ Name = 'UninstallNine' ; WhatIf = $true }
+        ThenSite 'UninstallNine' -Exists
+        ThenError -Empty
     }
 }

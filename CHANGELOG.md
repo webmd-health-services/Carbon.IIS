@@ -90,6 +90,11 @@ Removed the `Name` paramater aliases. Update usages of the `Name` parameter on t
 directory separators are `/`, etc.).
 * Function `Install-CIisVirtualDirectory` can now install virtual directories under applications, not just website root.
 Pass the application name to the `ApplicationPath` parameter.
+* `Uninstall-CIisWebsite`:
+    * support for `WhatIf`
+    * support for piping in websites names or website objects
+    * information message when deleting a website
+
 
 ## Changes
 

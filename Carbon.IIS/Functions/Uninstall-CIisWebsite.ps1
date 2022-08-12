@@ -6,9 +6,7 @@ function Uninstall-CIisWebsite
     Removes a website
 
     .DESCRIPTION
-    Pretty simple: removes the website named `Name`.  If no website with that name exists, nothing happens.
-
-    Beginning with Carbon 2.0.1, this function is not available if IIS isn't installed.
+    Pretty simple: removes the website named `Name`. If no website with that name exists, nothing happens.
 
     .LINK
     Get-CIisWebsite
@@ -26,24 +24,51 @@ function Uninstall-CIisWebsite
 
     Removes the website whose ID is 1.
     #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
     param(
         # The name or ID of the website to remove.
-        [Parameter(Mandatory, Position=0)]
-        [String] $Name
+        [Parameter(Mandatory, Position=0, ValueFromPipeline, ValueFromPipelineByPropertyName)]
+        [String[]] $Name
     )
 
-    Set-StrictMode -Version 'Latest'
-    Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
-
-    if( Test-CIisWebsite -Name $Name )
+    begin
     {
+        Set-StrictMode -Version 'Latest'
+        Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
+
         $manager = New-CIisServerManager
+
+        $commitChanges = $false
+    }
+
+    process
+    {
+        foreach( $nameItem in $Name )
+        {
+            $site = $manager.Sites | Where-Object 'Name' -EQ $nameItem
+            if( -not $site )
+            {
+                return
+            }
+
+            $action = 'Remove IIS Website'
+            if( $PSCmdlet.ShouldProcess($nameItem, $action) )
+            {
+                Write-Information "Removing IIS website ""$($nameItem)""."
+                $manager.Sites.Remove( $site )
+                $commitChanges = $true
+            }
+        }
+    }
+
+    end
+    {
         try
         {
-            $site = $manager.Sites | Where-Object { $_.Name -eq $Name }
-            $manager.Sites.Remove( $site )
-            $manager.CommitChanges()
+            if( $commitChanges )
+            {
+                $manager.CommitChanges()
+            }
         }
         finally
         {
