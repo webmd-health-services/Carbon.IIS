@@ -27,8 +27,8 @@ function ConvertTo-Expression
         $errors = $null
         $ast = [System.Management.Automation.Language.Parser]::ParseInput($line, [ref]$tokens, [ref]$errors)
         [object[]]$formatArgs = $ast.FindAll({$args[0] -is [System.Management.Automation.Language.CommandAst]},$true) |
-            Select-Object -First 1 | 
-            Select-Object -ExpandProperty 'CommandElements' | 
+            Select-Object -First 1 |
+            Select-Object -ExpandProperty 'CommandElements' |
             Select-Object -Skip 1
 
         $result = $InputObject -f $formatArgs
@@ -83,7 +83,7 @@ Get-Item -Path $path | ForEach-Object {
             if( $line -match '\bAssert-(.+?)\b' )
             {
                 $assertion = $Matches[1]
-                $Matches | Out-String | Write-Debug 
+                $Matches | Out-String | Write-Debug
                 $errors = [Management.Automation.PSParseError[]] @()
                 $tokens = [System.Management.Automation.PsParser]::Tokenize( $line, [ref] $errors )
                 if( $errors )
@@ -91,7 +91,7 @@ Get-Item -Path $path | ForEach-Object {
                     Write-Error -Message ('There were errors parsing line ''{0}''.' -f $line)
                     return $line
                 }
-                
+
                 $line -match '^(\s*)' | Out-Null
                 $indent = $Matches[1]
                 switch ($assertion)
@@ -100,15 +100,15 @@ Get-Item -Path $path | ForEach-Object {
                     {
                         Write-Warning -Message ('Line {0} asserts a variable is not empty. If the variable is an array, it won''t work correctly in Pester.' -f $lineNum)
                         Write-Warning -Message ($line)
-                        return '{0} | Should BeNullOrEmpty' | ConvertTo-Expression
+                        return '{0} | Should -BeNullOrEmpty' | ConvertTo-Expression
                     }
                     'Equal'
                     {
-                        return '{1} | Should Be {0}' | ConvertTo-Expression
+                        return '{1} | Should -Be {0}' | ConvertTo-Expression
                     }
                     'Error'
                     {
-                        '{0}    $Global:Error.Count | Should BeGreaterThan 0' -f $indent
+                        '{0}    $Global:Error | Should -Not -BeNullOrEmpty' -f $indent
                         $regex = $line.Substring($tokens[-1].Start, $tokens[-1].Length)
                         if( $tokens[-1].Type -eq [Management.Automation.PSTokenType]::String -and $tokens[-2].Type -eq [Management.Automation.PSTokenType]::String )
                         {
@@ -122,41 +122,49 @@ Get-Item -Path $path | ForEach-Object {
                     }
                     'False'
                     {
-                        return '{0} | Should Be $false' | ConvertTo-Expression
+                        return '{0} | Should -BeFalse' | ConvertTo-Expression
+                    }
+                    'FileDoesNotExist'
+                    {
+                        return '{0} | Should -Not -Exist' | ConvertTo-Expression
+                    }
+                    'FileExists'
+                    {
+                        return '{0} | Should -Exist' | ConvertTo-Expression
                     }
                     'GreaterThan'
                     {
-                        return '{0} | Should BeGreaterThan {1}' | ConvertTo-Expression
+                        return '{0} | Should -BeGreaterThan {1}' | ConvertTo-Expression
                     }
                     'Is'
                     {
-                        return '{0} | Should BeOfType {1}' | ConvertTo-Expression
+                        return '{0} | Should -BeOfType {1}' | ConvertTo-Expression
                     }
                     'NoError'
                     {
-                        return '$Global:Error.Count | Should Be 0' | ConvertTo-Expression
+                        return '$Global:Error | Should -BeNullOrEmpty' | ConvertTo-Expression
                     }
                     'NotEmpty'
                     {
                         Write-Warning -Message ('Line {0} asserts a variable is empty. If the variable is an array, it won''t work correctly in Pester.' -f $lineNum)
                         Write-Warning -Message ($line)
-                        return '{0} | Should Not BeNullOrEmpty' | ConvertTo-Expression
+                        return '{0} | Should -Not -BeNullOrEmpty' | ConvertTo-Expression
                     }
                     'NotEqual'
                     {
-                        return '{1} | Should Not Be {0}' | ConvertTo-Expression
+                        return '{1} | Should -Not -Be {0}' | ConvertTo-Expression
                     }
                     'NotNull'
                     {
-                        return '{0} | Should Not BeNullOrEmpty' | ConvertTo-Expression
+                        return '{0} | Should -Not -BeNullOrEmpty' | ConvertTo-Expression
                     }
                     'Null'
                     {
-                        return '{0} | Should BeNullOrEmpty' | ConvertTo-Expression
+                        return '{0} | Should -BeNullOrEmpty' | ConvertTo-Expression
                     }
                     'True'
                     {
-                        return '{0} | Should Be $true' | ConvertTo-Expression
+                        return '{0} | Should -BeTrue' | ConvertTo-Expression
                     }
                 }
             }
@@ -167,7 +175,7 @@ Get-Item -Path $path | ForEach-Object {
             }
 
             return $line
-        } 
+        }
 
         '}'
     }
