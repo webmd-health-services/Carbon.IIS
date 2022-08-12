@@ -51,7 +51,7 @@ function Get-CIisWebsite
         return
     }
 
-    $mgr = New-Object 'Microsoft.Web.Administration.ServerManager'
+    $mgr = New-CIisServerManager
     $mgr.Sites |
         Where-Object {
             if( $Name )

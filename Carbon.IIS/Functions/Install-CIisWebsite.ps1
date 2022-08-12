@@ -163,7 +163,7 @@ function Install-CIisWebsite
     {
         Write-Verbose -Message ('Creating website ''{0}'' ({1}).' -f $Name,$PhysicalPath)
         $firstBinding = $Binding | Select-Object -First 1 | ConvertTo-Binding
-        $mgr = New-Object 'Microsoft.Web.Administration.ServerManager'
+        $mgr = New-CIisServerManager
         $site = $mgr.Sites.Add( $Name, $firstBinding.Protocol, $firstBinding.BindingInformation, $PhysicalPath )
         $mgr.CommitChanges()
     }

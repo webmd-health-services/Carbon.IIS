@@ -17,17 +17,15 @@ function Test-CIisWebsite
     #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
-        [string]
         # The name of the website whose existence to check.
-        $Name
+        [Parameter(Mandatory)]
+        [String] $Name
     )
-    
-    Set-StrictMode -Version 'Latest'
 
+    Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
-    $manager = New-Object 'Microsoft.Web.Administration.ServerManager'
+    $manager = New-CIisServerManager
     try
     {
         $site = $manager.Sites | Where-Object { $_.Name -eq $Name }

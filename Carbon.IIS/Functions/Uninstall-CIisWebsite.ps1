@@ -12,13 +12,13 @@ function Uninstall-CIisWebsite
 
     .LINK
     Get-CIisWebsite
-    
+
     .LINK
     Install-CIisWebsite
-    
+
     .EXAMPLE
     Uninstall-CIisWebsite -Name 'MyWebsite'
-    
+
     Removes MyWebsite.
 
     .EXAMPLE
@@ -28,19 +28,17 @@ function Uninstall-CIisWebsite
     #>
     [CmdletBinding()]
     param(
-        [Parameter(Position=0,Mandatory=$true)]
-        [string]
         # The name or ID of the website to remove.
-        $Name
+        [Parameter(Mandatory, Position=0)]
+        [String] $Name
     )
 
     Set-StrictMode -Version 'Latest'
-
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
-    
+
     if( Test-CIisWebsite -Name $Name )
     {
-        $manager = New-Object 'Microsoft.Web.Administration.ServerManager'
+        $manager = New-CIisServerManager
         try
         {
             $site = $manager.Sites | Where-Object { $_.Name -eq $Name }
