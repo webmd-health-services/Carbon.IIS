@@ -63,8 +63,8 @@ Describe 'Enable-CIisSecurityAuthentication' {
     }
 
     It 'should enable anonymous authentication on sub folders' {
-        Enable-CIisSecurityAuthentication -SiteName $script:siteName -Path SubFolder -Anonymous
-        (Test-CIisSecurityAuthentication -SiteName $script:siteName -Path SubFolder -Anonymous) | Should -BeTrue
+        Enable-CIisSecurityAuthentication -SiteName $script:siteName -VirtualPath SubFolder -Anonymous
+        (Test-CIisSecurityAuthentication -SiteName $script:siteName -VirtualPath SubFolder -Anonymous) | Should -BeTrue
     }
 
     It 'should support what if' {

@@ -40,17 +40,18 @@ BeforeAll {
 
     function Test-ShouldNotReturnAnything($Path = $script:testDir)
     {
-        $result = Install-CIISApplication -SiteName $script:siteName -Name $script:appName -Path $Path
+        $result = Install-CIisApplication -SiteName $script:siteName -VirtualPath $script:appName -PhysicalPath $Path
         $Global:Error.Count | Should -Be 0
         $result | Should -BeNullOrEmpty
-        $result = Install-CIISApplication -SiteName $script:siteName -Name $script:appName -Path $env:TEMP
+        $result =
+            Install-CIisApplication -SiteName $script:siteName -VirtualPath $script:appName -PhysicalPath $env:TEMP
         $Global:Error.Count | Should -Be 0
         $result | Should -BeNullOrEmpty
     }
 
     function ThenAppExists
     {
-        $app = Get-CIisApplication -SiteName $script:siteName -Name $script:appName
+        $app = Get-CIisApplication -SiteName $script:siteName -VirtualPath $script:appName
         $app | Should -Not -BeNullOrEmpty
         $app.ApplicationPoolName | Should -Be $script:appPoolName
     }
@@ -73,9 +74,9 @@ BeforeAll {
             [String] $ExpectedPath
         )
 
-        $ExpectedPath = JOin-Path -Path $script:testDir -ChildPath $ExpectedPath
+        $ExpectedPath = Join-Path -Path $script:testDir -ChildPath $ExpectedPath
         $ExpectedPath = [IO.Path]::GetFullPath($ExpectedPath)
-        $physicalPath = Get-CIisApplication -SiteName $script:siteName -Name $script:appName |
+        $physicalPath = Get-CIisApplication -SiteName $script:siteName -VirtualPath $script:appName |
                             Select-Object -ExpandProperty 'PhysicalPath'
         $physicalPath | Should -Be $ExpectedPath
     }
@@ -96,9 +97,9 @@ BeforeAll {
         }
 
         $Global:Error.Clear()
-        $result = Install-CIISApplication -SiteName $script:siteName `
-                                          -Name $script:appName `
-                                          -Path $Path `
+        $result = Install-CIisApplication -SiteName $script:siteName `
+                                          -VirtualPath $script:appName `
+                                          -PhysicalPath $Path `
                                           -AppPoolName $script:appPoolName `
                                           -PassThru
         $Global:Error.Count | Should -Be 0
@@ -113,7 +114,7 @@ Describe 'Install-CIisApplication' {
         Start-W3ServiceTestFixture
         Install-CIisAppPool -Name $script:appPoolName
         $script:websiteRoot = New-TestDirectory
-        Install-CIisWebsite -Name $script:siteName -Path $script:websiteRoot -Bindings "http://*:$($script:port)"
+        Install-CIisWebsite -Name $script:siteName -PhysicalPath $script:websiteRoot -Bindings "http://*:$($script:port)"
     }
 
     AfterAll {
@@ -172,15 +173,17 @@ Describe 'Install-CIisApplication' {
     }
 
     It 'should update application pool' {
-        $result =
-            Install-CIISApplication -SiteName $script:siteName -Name $script:appName -Path $script:testDir -PassThru
+        $result = Install-CIisApplication -SiteName $script:siteName `
+                                          -VirtualPath $script:appName `
+                                          -PhysicalPath $script:testDir `
+                                          -PassThru
         $Global:Error.Count | Should -Be 0
         $result | Should -Not -BeNullOrEmpty
         $result.ApplicationPoolName | Should -Be $script:appPoolName
         ThenAppRunning $script:appName
 
         $result = Install-CIisApplication -SiteName $script:siteName `
-                                          -Name $script:appName `
+                                          -VirtualPath $script:appName `
                                           -PhysicalPath $script:testDir `
                                           -AppPoolName 'DefaultAppPool' `
                                           -PassThru
@@ -189,7 +192,7 @@ Describe 'Install-CIisApplication' {
         $result.ApplicationPoolName | Should -Be 'DefaultAppPool'
 
         $result = Install-CIisApplication -SiteName $script:siteName `
-                                          -Name $script:appName `
+                                          -VirtualPath $script:appName `
                                           -PhysicalPath $script:testDir `
                                           -PassThru
         $Global:Error.Count | Should -Be 0

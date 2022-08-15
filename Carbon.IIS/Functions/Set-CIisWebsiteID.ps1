@@ -50,7 +50,7 @@ function Set-CIisWebsiteID
         return
     }
 
-    $website = Get-CIisWebsite -SiteName $SiteName
+    $website = Get-CIisWebsite -Name $SiteName
     $website | Format-Table -Auto | Out-String | Write-Debug
     $startWhenDone = $false
     if( $website.ID -ne $ID )
@@ -76,7 +76,7 @@ function Set-CIisWebsiteID
     do
     {
         Start-Sleep -Milliseconds 100
-        $website = Get-CIisWebsite -SiteName $SiteName
+        $website = Get-CIisWebsite -Name $SiteName
         if( $website -and $website.ID -eq $ID )
         {
             break
@@ -115,7 +115,7 @@ function Set-CIisWebsiteID
         }
 
         Start-Sleep -Milliseconds 100
-        $website = Get-CIisWebsite -SiteName $SiteName
+        $website = Get-CIisWebsite -Name $SiteName
         if( $website -and $website.State -eq 'Started' )
         {
             break

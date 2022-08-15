@@ -26,12 +26,12 @@ function Get-CIisWebsite
     Returns all installed websites.
 
     .EXAMPLE
-    Get-CIisWebsite -SiteName 'WebsiteName'
+    Get-CIisWebsite -Name 'WebsiteName'
 
     Returns the details for the site named `WebsiteName`.
 
     .EXAMPLE
-    Get-CIisWebsite -SiteName 'fubar' -ErrorAction Ignore
+    Get-CIisWebsite -Name 'fubar' -ErrorAction Ignore
 
     Demonstrates how to ignore that a website doesn't exist by setting the `ErrorAction` parameter to `Ignore`.
     #>
@@ -39,7 +39,6 @@ function Get-CIisWebsite
     [OutputType([Microsoft.Web.Administration.Site])]
     param(
         # The name of the site to get.
-        [Alias('SiteName')]
         [String] $Name
     )
 
@@ -52,7 +51,7 @@ function Get-CIisWebsite
         return
     }
 
-    $mgr = New-Object 'Microsoft.Web.Administration.ServerManager'
+    $mgr = New-CIisServerManager
     $mgr.Sites |
         Where-Object {
             if( $Name )

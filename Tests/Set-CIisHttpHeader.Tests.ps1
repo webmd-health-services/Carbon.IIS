@@ -71,14 +71,14 @@ Describe 'Set-CIisHttpHeader' {
         Set-CIisHttpHeader -SiteName $script:siteName -Name $name -Value $value
 
         $subValue = 'Child'
-        Set-CIisHttpHeader -SiteName $script:siteName -Path SubFolder -Name $name -Value $subValue
+        Set-CIisHttpHeader -SiteName $script:siteName -VirtualPath SubFolder -Name $name -Value $subValue
 
         $header = Get-CIisHttpHeader -SiteName $script:siteName -Name $name
         $header | Should -Not -BeNullOrEmpty
         $header.Name | Should -Be $name
         $header.Value | Should -Be $value
 
-        $header = Get-CIisHttpHeader -SiteName $script:siteName -Path SubFolder -Name $name
+        $header = Get-CIisHttpHeader -SiteName $script:siteName -VirtualPath SubFolder -Name $name
         $header | Should -Not -BeNullOrEmpty
         $header.Name | Should -Be $name
         $header.Value | Should -Be $subValue

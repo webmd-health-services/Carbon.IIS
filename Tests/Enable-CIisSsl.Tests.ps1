@@ -92,7 +92,7 @@ Describe 'Enable-CIisSsl' {
     }
 
     It 'should set flags on sub folder' {
-        Enable-CIisSsl -SiteName $script:siteName -Path SubFolder -RequireSsl
+        Enable-CIisSsl -SiteName $script:siteName -VirtualPath SubFolder -RequireSsl
         Assert-SslFlags -ExpectedValue 'Ssl' -VirtualPath "SubFolder"
         Assert-SslFlags -ExpectedValue 'None'
     }

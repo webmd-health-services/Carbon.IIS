@@ -45,8 +45,8 @@ Describe 'Disable-CIisSecurityAuthentication' {
     }
 
     It 'should disable anonymous authentication on vdir' {
-        Disable-CIisSecurityAuthentication -SiteName $script:siteName -Path 'SubFolder' -Anonymous
-        (Test-CIisSecurityAuthentication -SiteName $script:siteName -Path 'SubFolder' -Anonymous) | Should -BeFalse
+        Disable-CIisSecurityAuthentication -SiteName $script:siteName -VirtualPath 'SubFolder' -Anonymous
+        (Test-CIisSecurityAuthentication -SiteName $script:siteName -VirtualPath 'SubFolder' -Anonymous) | Should -BeFalse
     }
 
     It 'should disable anonymous authentication' {

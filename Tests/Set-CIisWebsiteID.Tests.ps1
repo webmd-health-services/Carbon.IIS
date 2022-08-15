@@ -46,13 +46,13 @@ Describe 'Set-CIisWebsiteID' {
     }
 
     It 'should change ID' {
-        $currentSite = Get-CIisWebsite -SiteName $script:siteName
+        $currentSite = Get-CIisWebsite -Name $script:siteName
         $currentSite | Should -Not -BeNullOrEmpty
 
         $newID = [int32](Get-Random -Maximum ([int32]::MaxValue) -Minimum 1)
         Set-CIisWebsiteID -SiteName $script:siteName -ID $newID -ErrorAction SilentlyContinue
 
-        $updatedSite = Get-CIisWebsite -SiteName $script:siteName
+        $updatedSite = Get-CIisWebsite -Name $script:siteName
         $updatedSite.ID | Should -Be $newID
     }
 
@@ -71,7 +71,7 @@ Describe 'Set-CIisWebsiteID' {
 
         try
         {
-            $currentSite = Get-CIisWebsite -SiteName $script:siteName
+            $currentSite = Get-CIisWebsite -Name $script:siteName
             $script:siteName | Should -Not -BeNullOrEmpty
 
             $alreadyTakenSite.ID | Should -Not -Be $currentSite.ID
@@ -97,19 +97,19 @@ Describe 'Set-CIisWebsiteID' {
     }
 
     It 'should support WhatIf' {
-        $currentSite = Get-CIisWebsite -SiteName $script:siteName
+        $currentSite = Get-CIisWebsite -Name $script:siteName
         $newID = [int32](Get-Random -Maximum ([int32]::MaxValue) -Minimum 1)
         Set-CIisWebsiteID -SiteName $script:siteName -ID $newID -WhatIf -ErrorAction SilentlyContinue
-        $updatedsite = Get-CIisWebsite -SiteName $script:siteName
+        $updatedsite = Get-CIisWebsite -Name $script:siteName
         $updatedsite.ID | Should -Be $currentSite.ID
     }
 
     It 'should set same ID on same website' {
         $Global:Error.Clear()
-        $currentSite = Get-CIisWebsite -SiteName $script:siteName
+        $currentSite = Get-CIisWebsite -Name $script:siteName
         Set-CIisWebsiteID -SiteName $script:siteName -ID $currentSite.ID -ErrorAction SilentlyContinue
         $Global:Error.Count | Should -Be 0
-        $updatedSite = Get-CIisWebsite -SiteName $script:siteName
+        $updatedSite = Get-CIisWebsite -Name $script:siteName
         $updatedSite.ID | Should -Be $currentSite.ID
     }
 

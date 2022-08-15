@@ -32,7 +32,6 @@ function Get-CIisSecurityAuthentication
         [String] $SiteName,
 
         # The optional path where anonymous authentication should be set.
-        [Alias('Path')]
         [String] $VirtualPath = '',
 
         # Gets a site's (and optional sub-directory's) anonymous authentication configuration section.

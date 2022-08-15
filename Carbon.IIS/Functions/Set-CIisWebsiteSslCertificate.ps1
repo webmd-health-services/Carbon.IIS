@@ -37,7 +37,7 @@ function Set-CIisWebsiteSslCertificate
 
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
-    $site = Get-CIisWebsite -SiteName $SiteName
+    $site = Get-CIisWebsite -Name $SiteName
     if( -not $site )
     {
         return

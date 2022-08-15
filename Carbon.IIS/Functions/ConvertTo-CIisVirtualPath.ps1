@@ -38,6 +38,8 @@ function ConvertTo-CIisVirtualPath
     param(
         # The path to convert/normalize.
         [Parameter(Mandatory, ValueFromPipeline)]
+        [AllowNull()]
+        [AllowEmptyString()]
         [String] $Path,
 
         # If true, omits the leading slash on the returned path. The default is to include a leading slash.
@@ -63,6 +65,11 @@ function ConvertTo-CIisVirtualPath
 
     process
     {
+        if( -not $Path )
+        {
+            return $leadingSlash
+        }
+
         $indent = ' ' * $Path.Length
         Write-Debug "$($Path)  -->"
 

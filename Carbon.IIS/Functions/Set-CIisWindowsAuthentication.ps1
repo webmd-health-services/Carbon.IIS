@@ -39,7 +39,6 @@ function Set-CIisWindowsAuthentication
         [String] $SiteName,
 
         # The optional virtual path where Windows authentication should be set.
-        [Alias('Path')]
         [String] $VirtualPath = '',
 
         # Turn on kernel mode.  Default is false.

@@ -81,7 +81,7 @@ BeforeAll {
         do
         {
             $tryNum += 1
-            $website = Get-CIisWebsite -SiteName $script:siteName
+            $website = Get-CIisWebsite -Name $script:siteName
             if( $website.State -eq 'Started' )
             {
                 break
@@ -148,7 +148,7 @@ Describe 'Install-CIisWebsite' {
         $newDir = Join-Path -Path $script:testDir -ChildPath ('..\{0}' -f $newDirName)
         New-Item -Path $newDir -ItemType 'Directory'
         Install-CIisWebsite -Name $script:siteName -Path ('{0}\..\{1}' -f $script:testDir,$newDirName)
-        $site = Get-CIisWebsite -SiteName $script:siteName
+        $site = Get-CIisWebsite -Name $script:siteName
         $site | Should -Not -BeNullOrEmpty
         $site.PhysicalPath | Should -Be ([IO.Path]::GetFullPath($newDir))
     }
@@ -187,7 +187,9 @@ Describe 'Install-CIisWebsite' {
         Invoke-NewWebsite -Bindings 'http/*:9876:'
         $Global:Error | Should -BeNullOrEmpty
         (Test-CIisWebsite -Name $script:siteName) | Should -BeTrue
-        Install-CIisVirtualDirectory -SiteName $script:siteName -VirtualPath '/ShouldStillHangAround' -PhysicalPath $PSScriptRoot
+        Install-CIisVirtualDirectory -SiteName $script:siteName `
+                                     -VirtualPath '/ShouldStillHangAround' `
+                                     -PhysicalPath $PSScriptRoot
 
         Invoke-NewWebsite
         $Global:Error | Should -BeNullOrEmpty
@@ -237,7 +239,7 @@ Describe 'Install-CIisWebsite' {
     It 'should allow https bindings' {
         Install-CIisWebsite -Name $script:siteName -Path $script:testDir -Bindings 'https/*:9876:','https://*:9443'
         (Test-CIisWebsite -Name $script:siteName) | Should -BeTrue
-        $bindings = Get-CIisWebsite -SiteName $script:siteName | Select-Object -ExpandProperty Bindings
+        $bindings = Get-CIisWebsite -Name $script:siteName | Select-Object -ExpandProperty Bindings
         $bindings[0].Protocol | Should -Be 'https'
         $bindings[1].Protocol | Should -Be 'https'
     }

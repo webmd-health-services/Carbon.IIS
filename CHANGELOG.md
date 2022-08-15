@@ -44,6 +44,41 @@ exists or not, add `-ErrorAction SilentlyContinue` or `-ErrorAction Ignore`.
 The `Join-CIisVirtualPath` function's `ChildPath` parameter is now mandatory. If you have usages without a `ChildPath`
 parameter, switch to using the new `ConvertTo-CIisVirtualPath`.
 
+The `Install-CIisVirtualDirectory` function's `VirtualPath` parameter was renamed to `Path`. Please update usages.
+
+Removed the `Install-CIisVirtualDirectory` function's `Path` parameter alias to the `PhysicalPath` parameter. Update
+usages.
+
+Removed `Path` parameter aliases. Update usages of the `Path` parameter on these functions to `VirtualPath`:
+* Disable-CIisSecurityAuthentication
+* Enable-CIisSecurityAuthentication
+* Enable-CIisSecurityAuthentication
+* Enable-CIisSsl
+* Get-CIisConfigurationSection
+* Get-CIisHttpHeader
+* Get-CIisHttpRedirect
+* Get-CIisMimeMap
+* Get-CIisSecurityAuthentication
+* Set-CIisHttpHeader
+* Set-CIisHttpRedirect
+* Set-CIisWindowsAuthentication
+* Test-CIisConfigurationSection
+* Test-CIisSecurityAuthentication
+
+Removed `SiteName` parameter aliases. Update usages of the `SiteName` parameter on these functions to `Name`:
+* Get-CIisWebsite
+* Install-CIisWebsite
+
+Removed the `Path` parameter alias on the `Install-CIisApplication` function. Update usages to `PhysicalPath`.
+
+Renamed the `VirtualPath` parameter to `Path` on the `Get-CIisApplication` and `Install-CIisApplication` functions.
+Update usages.
+
+Removed the `Name` paramater aliases. Update usages of the `Name` parameter on these functions to `Path`:
+* Get-CIisApplication
+* Install-CIisApplication
+
+
 ## Added
 
 * Carbon.IIS now supports
@@ -53,12 +88,15 @@ parameter, switch to using the new `ConvertTo-CIisVirtualPath`.
 * Function `Remove-CIisConfigurationAttribute` for removing attributes from configuration sections.
 * Function `ConvertTo-CIisVirtualPath` for normalizing a virtual path (i.e. removing duplicate slashes, ensuring
 directory separators are `/`, etc.).
+* Function `Install-CIisVirtualDirectory` can now install virtual directories under applications, not just website root.
+Pass the application name to the `ApplicationPath` parameter.
 
 ## Changes
 
 * `Get-CIisWebsite` now writes an error if a specific website doesn't exist.
 * The `Join-CIisVirtualPath` function's `ChildPath` parameter is now required. Usages that don't have a `ChildPath`
 argument should switch to `ConvertTo-CIisVirtualPath`.
+* Renamed `VirtualPath` parameter on `Get-CIisApplication` and `Install-CIisApplication` to `Path`.
 
 ## Fixed
 
@@ -74,3 +112,28 @@ and `Remove-CIisWebsite` (for `Uninstall-CIisWebsite`).
 * The objects returned from the `Get-CIisHttpRedirect` function changed to
 `Microsoft.Web.Administration.ConfigurationSection` objects. They no longer have `ChildOnly`, `Destination`, `Enabled`, `ExactDestination`, and `HttpResponseStatus`
 properties. Use `GetAttributeValue` or `SetAttributeValue` to get/set values instead.
+* `Path` parameter alias on functions
+    * Disable-CIisSecurityAuthentication
+    * Enable-CIisSecurityAuthentication
+    * Enable-CIisSecurityAuthentication
+    * Enable-CIisSsl
+    * Get-CIisApplication
+    * Get-CIisConfigurationSection
+    * Get-CIisHttpHeader
+    * Get-CIisHttpRedirect
+    * Get-CIisMimeMap
+    * Get-CIisSecurityAuthentication
+    * Install-CIisApplication
+    * Set-CIisHttpHeader
+    * Set-CIisHttpRedirect
+    * Set-CIisWindowsAuthentication
+    * Test-CIisConfigurationSection
+    * Test-CIisSecurityAuthentication
+* `SiteName` parameter alias on functions:
+    * Get-CIisWebsite
+    * Install-CIisWebsite
+* `Path` parameter alias to `PhysicalPath` on function `Install-CIisApplication`.
+* `Name` parameter alias on functions:
+    * Get-CIisApplication
+    * Install-CIisApplication
+

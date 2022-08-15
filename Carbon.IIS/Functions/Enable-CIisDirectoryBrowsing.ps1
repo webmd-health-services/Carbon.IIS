@@ -22,19 +22,15 @@ function Enable-CIisDirectoryBrowsing
     #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
-        [string]
         # The name of the site where the virtual directory is located.
-        $SiteName,
-        
-        [Alias('Path')]
-        [string]
-        # The directory where directory browsing should be enabled.
-        $VirtualPath
-    )
-    
-    Set-StrictMode -Version 'Latest'
+        [Parameter(Mandatory)]
+        [String] $SiteName,
 
+        # The directory where directory browsing should be enabled.
+        [String] $VirtualPath
+    )
+
+    Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
     $section = Get-CIisConfigurationSection -SiteName $SiteName -SectionPath 'system.webServer/directoryBrowse'

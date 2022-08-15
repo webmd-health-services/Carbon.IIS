@@ -8,45 +8,39 @@ function Get-CIisConfigurationSection
     .DESCRIPTION
     Uses the Microsoft.Web.Administration API to get a `Microsoft.Web.Administration.ConfigurationSection`.
 
-    Beginning with Carbon 2.0.1, this function is available only if IIS is installed.
-
     .OUTPUTS
     Microsoft.Web.Administration.ConfigurationSection.
 
     .EXAMPLE
     Get-CIisConfigurationSection -SiteName Peanuts -Path Doghouse -Path 'system.webServer/security/authentication/anonymousAuthentication'
 
-    Returns a configuration section which represents the Peanuts site's Doghouse path's anonymous authentication settings.
+    Returns a configuration section which represents the Peanuts site's Doghouse path's anonymous authentication
+    settings.
     #>
     [CmdletBinding(DefaultParameterSetName='Global')]
     [OutputType([Microsoft.Web.Administration.ConfigurationSection])]
     param(
-        [Parameter(Mandatory=$true,ParameterSetName='ForSite')]
-        [string]
         # The site whose configuration should be returned.
-        $SiteName,
+        [Parameter(Mandatory, ParameterSetName='ForSite')]
+        [String] $SiteName,
 
-        [Parameter(ParameterSetName='ForSite')]
-        [Alias('Path')]
-        [string]
         # The optional site path whose configuration should be returned.
-        $VirtualPath = '',
+        [Parameter(ParameterSetName='ForSite')]
+        [String] $VirtualPath = '',
 
-        [Parameter(Mandatory=$true,ParameterSetName='ForSite')]
-        [Parameter(Mandatory=$true,ParameterSetName='Global')]
-        [string]
         # The path to the configuration section to return.
-        $SectionPath,
+        [Parameter(Mandatory, ParameterSetName='ForSite')]
+        [Parameter(Mandatory, ParameterSetName='Global')]
+        [String] $SectionPath,
 
-        [Type]
         # The type of object to return.  Optional.
-        $Type = [Microsoft.Web.Administration.ConfigurationSection]
+        [Type] $Type = [Microsoft.Web.Administration.ConfigurationSection]
     )
 
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
-    $mgr = New-Object 'Microsoft.Web.Administration.ServerManager'
+    $mgr = New-CIisServerManager
     $config = $mgr.GetApplicationHostConfiguration()
 
     $section = $null
