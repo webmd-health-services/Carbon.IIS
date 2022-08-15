@@ -10,7 +10,7 @@ function Set-CIisHttpRedirect
     specific website.  To configure a directory under a website, set `VirtualPath` to the virtual path of that
     directory.
 
-    Beginning with Carbon 2.0.1, this function is available only if IIS is installed.
+    For each parameter that isn't provided, that parmaeter's value will be reset to the IIS default value.
 
     .LINK
     http://www.iis.net/configreference/system.webserver/httpredirect#005
@@ -63,14 +63,15 @@ function Set-CIisHttpRedirect
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
-    @{
-        'enabled' = $true;
-        'destination' = $destination;
-        'httpResponseStatus' = $HttpResponseStatus;
-        'exactDestination' = [bool]$ExactDestination;
-        'childOnly' = [bool]$ChildOnly;
-    }.GetEnumerator() | Set-CIisConfigurationAttribute -SiteName $SiteName `
-                                       -VirtualPath $VirtualPath `
-                                       -SectionPath 'system.webServer/httpRedirect'
+    Set-CIisConfigurationAttribute -SiteName $SiteName `
+                                   -VirtualPath $VirtualPath `
+                                   -SectionPath 'system.webServer/httpRedirect' `
+                                   -Attribute @{
+                                        'enabled' = $true;
+                                        'destination' = $destination;
+                                        'httpResponseStatus' = $HttpResponseStatus;
+                                        'exactDestination' = [bool]$ExactDestination;
+                                        'childOnly' = [bool]$ChildOnly;
+                                    }
 }
 

@@ -54,11 +54,10 @@ function Set-CIisAnonymousAuthentication
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
-    $paramNames = @('enabled', 'logonMethod', 'password', 'userName')
+    $attributes = $PSBoundParameters | Copy-Hashtable -Key @('enabled', 'logonMethod', 'password', 'userName')
 
-    $sectionPath = 'system.webServer/security/authentication/anonymousAuthentication'
-
-    $PSBoundParameters.GetEnumerator() |
-        Where-Object 'Key' -In $paramNames |
-        Set-CIisConfigurationAttribute -SiteName $SiteName -VirtualPath $VirtualPath -SectionPath $sectionPath
+    Set-CIisConfigurationAttribute -SiteName $SiteName `
+                                   -VirtualPath $VirtualPath `
+                                   -SectionPath 'system.webServer/security/authentication/anonymousAuthentication' `
+                                   -Attribute $attributes
 }

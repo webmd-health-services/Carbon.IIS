@@ -97,6 +97,7 @@ configuration (i.e. there's a `<location>` element for it in the applicationHost
 * Function `Remove-CIisConfigurationLocation` for removing a website's or website/virtual path's custom configuration
 (i.e. removes its `<location>` element from applicationHost.config).
 * Many functions now write messages to PowerShell's information stream when they make configuration changes.
+* Function `Set-CIisAppPoolCpu` for configuring an application pool's CPU settings.
 
 ## Changes
 

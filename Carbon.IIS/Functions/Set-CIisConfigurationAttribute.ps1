@@ -6,81 +6,97 @@ function Set-CIisConfigurationAttribute
     Sets attribute values on an IIS configuration section.
 
     .DESCRIPTION
-    The `Set-CIisConfigurationAttribute` function sets attribute values on an IIS configuration section. Pass the
-    website name whose configuration to change to the `SiteName` parameter. Pass the path to the configuration section
-    to the `SectionPath` parameter. Pass the name of the attribute to the `Name` parameter and the value to the `Value`
-    parameter. If the new value is different than the current value, the value is updated and saved in IIS's
-    applicationHost.config file.
+    The `Set-CIisConfigurationAttribute` function can set a single attribute value or *all* attribute values on an IIS
+    configuration section. To set a single attribute value, and leave all other attributes unchanged, pass the attribute
+    name to the `Name` parameter and its value to the `Value` parameter. If the new value is different than the current
+    value, the value is changed and saved in IIS's applicationHost.config file.
+
+    To set *all* attributes on a configuration section, pass the attribute names and values in a hashtable to the
+    `Attribute` parameter. Attributes in the hashtable will be updated to match the value in the hashtable. All other
+    attributes will be reset to their default values.
 
     To set an attribute on a configuration section under a specific directory, application, or virtual path in a
     website, pass the virtual path to the directory, application, or virtual path to the `VirtualPath` parameter.
 
-    You can pipe multiple attributes to `Set-CIisConfigurationAttribute` with a hashtable. Instead of piping the
-    hashtable itself, pipe the hashtable's enumerator:
-
-        $attributes.GetEnumerator() | Set-CIisConfigurationAttribute
-
-    If an attribute's value is sensitive, use the `Sensitive` switch. This will prevent the attribute's value from
-    being written to the console.
+    `Set-CIisConfigurationAttribute` writes messages to PowerShell's information stream for each attribute whose value
+    is changing, showing the current value and the new value. If an attribute's value is sensitive, use the `Sensitive`
+    switch, and the attribute's current and new value will be masked with eight `*` characters.
 
     .EXAMPLE
     Set-CIisConfigurationAttribute -SiteName 'SiteOne' -SectionPath 'system.webServer/httpRedirect' -Name 'destination' -Value 'http://example.com'
 
     Demonstrates how to call `Set-CIisConfigurationAttribute` to set a single attribute value. In this example, the
-    http redirect "destination" setting is set for site "SiteOne".
+    http redirect "destination" setting is set for site "SiteOne". All other attributes on
+    `system.webServer/httpRedirect` are left unchanged.
 
     .EXAMPLE
-    @{ 'destination' = 'http://example.com'; 'httpResponseStatus' = 302 }.GetEnumerator)() | Set-CIisConfigurationAttribute -SiteName 'SiteTwo' -SectionPath 'system.webServer/httpRedirect'
+    Set-CIisConfigurationAttribute -SiteName 'SiteTwo' -SectionPath 'system.webServer/httpRedirect' -Attribute @{ 'destination' = 'http://example.com'; 'httpResponseStatus' = 302 }
 
-    Demonstrates how to set multiple attribute values on a configuration section by piping the enumerator of a hasthable
-    to `Set-CIisConfigurationAttibute`.
-
-    .EXAMPLE
-    @([pscustomobject]@{ Name = 'destination'; Value = 'http://example.com'}) | Set-CIisConfigurationAttribute -SiteName 'SiteTwo' -SectionPath 'system.webServer/httpRedirect'
-
-    Demonstrates how to set multiple attribute values on a configuration section by piping objects with `Name` and
-    `Value` properties to `Set-CIisConfigurationAttibute`.
+    Demonstrates how to set *all* attributes on a configuration section by pipling a hashtable of attribute names and
+    values to `Set-CIisConfigurationAttribute`. In this example, the `destination` and `httpResponseStatus` attributes
+    are set to `http://example.com` and `302`, respectively. All other attributes on `system.webServer/httpRedirect`
+    are removed, whic resets them to their default value.
 
     .EXAMPLE
     Set-CIisConfigurationAttribute -SiteName 'SiteOne' -VirtualPath 'old_app' -SectionPath 'system.webServer/httpRedirect' -Name 'destination' -Value 'http://example.com'
 
     Demonstrates how to set attribute values on a sub-path in a website by passing the path to the `VirtualPath`
     parameter.
+
+    .EXAMPLE
+    Set-CIisConfigurationAttribute -ConfigurationElement (Get-CIisAppPool -Name 'DefaultAppPool').Cpu -Name 'limit' -Value 10000
+
+    Demonstrates how to set attribute values on a configuration element object. In this case the "limit" setting for the
+    "DefaultAppPool" application pool will be set. Use the `ConfigurationElement` parameter when you can't get a
+    configuration section for what you want to update.
     #>
     [CmdletBinding(SupportsShouldProcess)]
     param(
         # The name of the website whose attribute values to configure.
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory, ParameterSetName='AllByConfigPath')]
+        [Parameter(Mandatory, ParameterSetName='SingleByConfigPath')]
         [String] $SiteName,
 
         # The virtual path to a directory, application, or virtual directory whose attribute values to configure.
+        [Parameter(ParameterSetName='AllByConfigPath')]
+        [Parameter(ParameterSetName='SingleByConfigPath')]
         [String] $VirtualPath = '',
 
         # The configuration section path to configure, e.g.
         # `system.webServer/security/authentication/basicAuthentication`. The path should *not* start with a forward
-        # slash.
-        [Parameter(Mandatory)]
+        # slash. You can also pass
+        [Parameter(Mandatory, ParameterSetName='AllByConfigPath')]
+        [Parameter(Mandatory, ParameterSetName='SingleByConfigPath')]
         [String] $SectionPath,
 
-        # The name of the attribute whose value to set.
-        #
-        # You can pipe objects with `Name` and `Value` properties to `Get-CIisConfigurationAttribute` to set multiple
-        # attribute values at once.
-        #
-        # You can use a hashtable to also set multiple attributes at once by piping the hashtable's enumerator to
-        # `Get-CIisConfigurationSection`, e.g. `@{}.GetEnumerator() | Set-CIisConfigurationAttribute`.
-        [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
-        [Alias('Key')]
+        [Parameter(Mandatory, ParameterSetName='AllByConfigElement')]
+        [Parameter(Mandatory, ParameterSetName='SingleByConfigElement')]
+        [Microsoft.Web.Administration.ConfigurationElement] $ConfigurationElement,
+
+        # A hashtable whose keys are attribute names and the values are the attribute values. Any attribute *not* in
+        # the hashtable is removed from the configuration section (i.e. reset to its default value).
+        [Parameter(Mandatory, ParameterSetName='AllByConfigElement')]
+        [Parameter(Mandatory, ParameterSetName='AllByConfigPath')]
+        [hashtable] $Attribute,
+
+        # The target element the changes is being made on. Used in messages written to the console. The default is to
+        # use the type and tag name of the ConfigurationElement.
+        [Parameter(ParameterSetName='AllByConfigElement')]
+        [Parameter(ParameterSetName='AllByConfigPath')]
+        [String] $Target,
+
+        # The name of the attribute whose value to set. Setting a single attribute will not affect any other attributes
+        # in the configuration section. If you want other attribute values reset to default values, pass a hashtable
+        # of attribute names and values to the `Attribute` parameter.
+        [Parameter(Mandatory, ParameterSetName='SingleByConfigElement')]
+        [Parameter(Mandatory, ParameterSetName='SingleByConfigPath')]
         [String] $Name,
 
-        # The attribute's value.
-        #
-        # You can pipe objects with `Name` and `Value` properties to `Get-CIisConfigurationAttribute` to set multiple
-        # attribute values at once.
-        #
-        # You can use a hashtable to also set multiple attributes at once by piping the hashtable's enumerator to
-        # `Get-CIisConfigurationSection`, e.g. `@{}.GetEnumerator() | Set-CIisConfigurationAttribute`.
-        [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
+        # The attribute's value. Setting a single attribute will not affect any other attributes in the configuration
+        # section. If you want other attribute values reset to default values, pass a hashtable of attribute names and
+        # values to the `Attribute` parameter.
+        [Parameter(Mandatory, ParameterSetName='SingleByConfigElement')]
+        [Parameter(Mandatory, ParameterSetName='SingleByConfigPath')]
         [AllowNull()]
         [AllowEmptyString()]
         [Object] $Value,
@@ -90,104 +106,181 @@ function Set-CIisConfigurationAttribute
         [bool] $Sensitive
     )
 
-    begin
+    Set-StrictMode -Version 'Latest'
+    Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
+
+    function Set-AttributeValue
     {
-        Set-StrictMode -Version 'Latest'
-        Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
-        $section = Get-CIisConfigurationSection -SiteName $SiteName -VirtualPath $VirtualPath -SectionPath $SectionPath
-        if( -not $section )
+        [CmdletBinding()]
+        param(
+            [Parameter(Mandatory, ValueFromPipeline)]
+            [Microsoft.Web.Administration.ConfigurationAttribute] $InputObject,
+
+            [AllowNull()]
+            [AllowEmptyString()]
+            [Object] $Value
+        )
+
+        begin
         {
-            return
+            $mirroring = -not $PSBoundParameters.ContainsKey('Value')
         }
 
-        $attrNameFieldLength =
-            $section.Attributes |
-            Select-Object -ExpandProperty 'Name' |
-            Select-Object -ExpandProperty 'Length' |
-            Measure-Object -Maximum |
-            Select-Object -ExpandProperty 'Maximum'
-        $nameFormat = "{0,-$($attrNameFieldLength)}"
+        process
+        {
+            $currentAttr = $InputObject
 
-        $attrNames = [Collections.ArrayList]::New()
-        $commitChanges = $false
+            if( $mirroring )
+            {
+                # Should be the default value unless user has supplied a value.
+                $Value = $currentAttr.Schema.DefaultValue
+                if( $Attribute.ContainsKey($currentAttr.Name) )
+                {
+                    $Value = $Attribute[$currentAttr.Name]
+                }
+            }
 
-        $basePrefix = "[IIS:/Sites/$(Join-CIisVirtualPath -Path $SiteName -ChildPath $VirtualPath):$($SectionPath)"
+            $currentValue = $currentAttr.Value
+
+            $protectValue = $Sensitive -or $currentAttr.Name -eq 'password'
+            if( $Value -is [SecureString] )
+            {
+                $Value = [pscredential]::New('i', $Value).GetNetworkCredential().Password
+                $protectValue = $true
+            }
+            elseif( $Value -is [switch] )
+            {
+                $Value = $Value.IsPresent
+            }
+
+            $currentValueMsg = $currentValue
+            $valueMsg = $Value
+
+            if( $Value -is [Enum] )
+            {
+                $currentValueMsg = [Enum]::GetName($Value.GetType().FullName, $currentValue)
+            }
+
+            if( $protectValue )
+            {
+                $currentValueMsg = '*' * 8
+                $valueMsg = '*' * 8
+            }
+
+            $msgPrefix = "    @$($nameFormat -f $currentAttr.Name)  "
+            $noChangeMsg = "$($msgPrefix)$($currentValueMsg) == $($valueMsg)"
+            $changedMsg =  "$($msgPrefix)$($currentValueMsg) -> $($valueMsg)"
+
+            # We're mirroring, so if value not supplied,
+            if( $mirroring -and -not $Attribute.ContainsKey($currentAttr.Name) )
+            {
+                # and its value has never been supplied,
+                if( $currentAttr.IsInheritedFromDefaultValue )
+                {
+                    # do nothing
+                    Write-Debug $noChangeMsg
+                    return
+                }
+
+                # Attribute was previously supplied but now it isn't, or, attribute value changed manually. Delete
+                # attribute so its value reverts to IIS's default value.
+                $infoMessages.Add($changedMsg)
+                $action = "Remove Attribute"
+                $whatIf = "$($currentAttr.Name) for $($Target -replace '"', '''')"
+                if( $PSCmdlet.ShouldProcess($whatIf, $action) )
+                {
+                    $currentAttr.Delete()
+                    [void]$removedNames.Add($currentAttr.Name)
+                }
+                return
+            }
+
+            if( $currentValue -eq $Value )
+            {
+                Write-Debug $noChangeMsg
+                return
+            }
+
+            [void]$infoMessages.Add($changedMsg)
+            $ConfigurationElement.SetAttributeValue($currentAttr.Name, $Value)
+            [void]$updatedNames.Add($currentAttr.Name)
+        }
     }
 
-    process
+    if( -not $ConfigurationElement )
     {
-        if( -not $section )
+        $ConfigurationElement =
+            Get-CIisConfigurationSection -SiteName $SiteName -VirtualPath $VirtualPath -SectionPath $SectionPath
+        if( -not $ConfigurationElement )
         {
             return
-        }
-
-        $Name = "$($Name.Substring(0, 1).ToLowerInvariant())$($Name.Substring(1, $Name.Length -1))"
-
-        $msgPrefix = "$($basePrefix)@$($nameFormat -f $Name)]  "
-
-        $currentValue = $section.GetAttributeValue($Name)
-
-        $protectValue = $Sensitive
-        if( $Value -is [SecureString] )
-        {
-            $Value = [pscredential]::New('i', $Value).GetNetworkCredential().Password
-            $protectValue = $true
-        }
-        elseif( $Value -is [switch] )
-        {
-            $Value = $Value.IsPresent
-        }
-
-        $currentValueMsg = $currentValue
-        $valueMsg = $Value
-
-        if( $Value -is [Enum] )
-        {
-            $currentValueMsg = [enum]::GetName($Value.GetType().FullName, $currentValue)
-        }
-
-        if( $protectValue )
-        {
-            $currentValueMsg = '*' * 8
-            $valueMsg = '*' * 8
-        }
-
-        if( $currentValue -eq $Value )
-        {
-            Write-Debug "$($msgPrefix)$($currentValueMsg) == $($valueMsg)"
-            return
-        }
-
-        Write-Information "$($msgPrefix)$($currentValueMsg) -> $($valueMsg)"
-        $section.SetAttributeValue( $Name, $Value )
-        [void]$attrNames.Add($Name)
-        $commitChanges = $true
-    }
-
-    end
-    {
-        if( -not $section )
-        {
-            return
-        }
-
-        $pathMsg = ''
-        if( $VirtualPath )
-        {
-            $pathMsg = " path '$($VirtualPath)'"
-        }
-
-        $pluralSuffix = ''
-        if( $attrNames.Count -gt 1 )
-        {
-            $pluralSuffix = 's'
-        }
-        $target = "IIS website '$($SiteName)'$($pathMsg) configuration section '$($SectionPath)'"
-        $action = "set attribute$($pluralSuffix) '$($attrNames -join ''', ''')'"
-        if( $commitChanges -and $PSCmdlet.ShouldProcess($target, $action) )
-        {
-            $section.CommitChanges()
         }
     }
 
+    $attrNameFieldLength =
+        $ConfigurationElement.Attributes |
+        Select-Object -ExpandProperty 'Name' |
+        Select-Object -ExpandProperty 'Length' |
+        Measure-Object -Maximum |
+        Select-Object -ExpandProperty 'Maximum'
+
+    $nameFormat = "{0,-$($attrNameFieldLength)}"
+
+    $updatedNames = [Collections.ArrayList]::New()
+    $removedNames = [Collections.ArrayList]::New()
+
+    $infoMessages = [Collections.Generic.List[String]]::New()
+
+    if( -not $SectionPath -and ($ConfigurationElement | Get-Member -Name 'SectionPath') )
+    {
+        $SectionPath = $ConfigurationElement.SectionPath
+    }
+
+    if( -not $Target )
+    {
+        if( $SectionPath )
+        {
+            $Target = $sectionPath
+        }
+        else
+        {
+            $Target = $ConfigurationElement.GetType().Name
+        }
+    }
+
+    if( $Name )
+    {
+        $Name = "$($Name.Substring(0, 1).ToLowerInvariant())$($Name.Substring(1, $Name.Length - 1))"
+        $ConfigurationElement.GetAttribute($Name) | Set-AttributeValue -Value $Value
+    }
+    else
+    {
+        $ConfigurationElement.Attributes | Sort-Object -Property 'Name' | Set-AttributeValue
+    }
+
+    $pluralSuffix = ''
+    if( $updatedNames.Count -gt 1 )
+    {
+        $pluralSuffix = 's'
+    }
+
+    $whatIfTarget = "$($updatedNames -join ', ') for $($Target -replace '"', '''')"
+    $action = "Set Attribute$($pluralSuffix)"
+    $shouldCommit = $updatedNames -and $PSCmdlet.ShouldProcess($whatIfTarget, $action)
+
+    if( $shouldCommit -or $removedNames )
+    {
+        if( $infoMessages.Count -eq 1 )
+        {
+            $msg = "Setting attribute on $($Target): $($infoMessages.Trim() -replace ' {2,}', ' ')"
+            Write-Information $msg
+        }
+        elseif( $infoMessages.Count -gt 1)
+        {
+            Write-Information "Setting attributes on $($Target)."
+            $infoMessages | ForEach-Object { Write-Information $_ }
+        }
+
+        $ConfigurationElement.CommitChanges()
+    }
 }

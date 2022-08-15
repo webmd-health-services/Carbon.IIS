@@ -103,6 +103,7 @@
         'Remove-CIisConfigurationLocation',
         'Remove-CIisMimeMap',
         'Set-CIisAnonymousAuthentication',
+        'Set-CIisAppPoolCpu',
         'Set-CIisConfigurationAttribute',
         'Set-CIisHttpHeader',
         'Set-CIisHttpRedirect',
