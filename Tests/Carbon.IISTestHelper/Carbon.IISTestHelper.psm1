@@ -182,6 +182,9 @@ function ThenError
         [Parameter(Mandatory, ParameterSetName='Empty')]
         [switch] $Empty,
 
+        [Parameter(Mandatory, ParameterSetName='Is')]
+        [String] $Is,
+
         [Parameter(Mandatory, ParameterSetName='Matches')]
         [Alias('Matches')]
         [String] $Match
@@ -190,6 +193,11 @@ function ThenError
     if( $Empty )
     {
         $Global:Error | Should -Not:$Not -BeNullOrEmpty
+    }
+
+    if( $Is )
+    {
+        $Global:Error | Should -Not:$Not -Be $Is
     }
 
     if( $Match )

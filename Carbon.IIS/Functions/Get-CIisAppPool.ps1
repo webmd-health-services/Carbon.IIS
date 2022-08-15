@@ -6,15 +6,12 @@ function Get-CIisAppPool
     Gets a `Microsoft.Web.Administration.ApplicationPool` object for an application pool.
 
     .DESCRIPTION
-    The `Get-CIisAppPool` function returns an IIS application pools as a `Microsoft.Web.Administration.ApplicationPool`
-    object. Use the `Name` parameter to return the application pool. If that application pool isn't found, `$null` is
-    returned.
+    The `Get-CIisAppPool` function returns all IIS application pools that are installed on the current computer. To
+    get a specific application pool, pass its name to the `Name` parameter. If the application pool doesn't exist,
+    an error is written and nothing is returned.
 
-    Carbon adds a `CommitChanges` method on each object returned that you can use to save configuration changes.
-
-    Beginning in Carbon 2.0, `Get-CIisAppPool` will return all application pools installed on the current computer.
-
-    Beginning with Carbon 2.0.1, this function is available only if IIS is installed.
+    Carbon adds a `CommitChanges` method on each object returned that you can use to save configuration changes made
+    to the returned objects.
 
     .LINK
     http://msdn.microsoft.com/en-us/library/microsoft.web.administration.applicationpool(v=vs.90).aspx
@@ -31,33 +28,40 @@ function Get-CIisAppPool
     Get-CIisAppPool -Name 'Batcave'
 
     Gets the `Batcave` application pool.
-
-    .EXAMPLE
-    Get-CIisAppPool -Name 'Missing!'
-
-    Returns `null` since, for purposes of this example, there is no `Missing~` application pool.
     #>
     [CmdletBinding()]
     [OutputType([Microsoft.Web.Administration.ApplicationPool])]
     param(
-        [string]
         # The name of the application pool to return. If not supplied, all application pools are returned.
-        $Name
+        [String] $Name
     )
 
     Set-StrictMode -Version 'Latest'
-
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
     $mgr = New-CIisServerManager
+    $foundOne = $false
     $mgr.ApplicationPools |
         Where-Object {
             if( -not $PSBoundParameters.ContainsKey('Name') )
             {
+                $foundOne = $true
                 return $true
             }
-            return $_.Name -eq $Name
+
+            $isTheOne = $_.Name -eq $Name
+            if( $isTheOne )
+            {
+                $foundOne = $true
+            }
+            return $isTheOne
         } |
         Add-IisServerManagerMember -ServerManager $mgr -PassThru
+
+    if( -not $foundOne )
+    {
+        $msg = "IIS application pool ""$($Name)"" does not exist."
+        Write-Error $msg -ErrorAction $ErrorActionPreference
+    }
 }
 

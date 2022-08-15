@@ -27,6 +27,7 @@ Describe 'Get-CIisAppPool' {
 
     BeforeEach {
         Install-CIisAppPool -Name $script:appPoolName
+        $Global:Error.Clear()
     }
 
     AfterEach {
@@ -73,7 +74,18 @@ Describe 'Get-CIisAppPool' {
         {
             Uninstall-CIisAppPool -Name $newAppPoolName
         }
+    }
 
+    It 'should write an error if app pool does not exist' {
+        $appPool = Get-CIisAppPool -Name '79' -ErrorAction SilentlyContinue
+        $appPool | Should -BeNullOrEmpty
+        ThenError -Is "IIS application pool ""79"" does not exist."
+    }
+
+    It 'should ignore errors when an app pool does not exist' {
+        $appPool = Get-CIisAppPool -Name '79' -ErrorAction Ignore
+        $appPool | Should -BeNullOrEmpty
+        ThenError -Empty
     }
 
 }
