@@ -11,6 +11,8 @@
 # limitations under the License.
 
 BeforeAll {
+    Write-Debug 'BeforeAll'
+
     & (Join-Path -Path $PSScriptRoot 'Initialize-CarbonTest.ps1' -Resolve)
 
     $script:port = 9878
@@ -102,7 +104,7 @@ BeforeAll {
                                           -PhysicalPath $Path `
                                           -AppPoolName $script:appPoolName `
                                           -PassThru
-        $Global:Error.Count | Should -Be 0
+        $Global:Error | Should -BeNullOrEmpty
         $result | Should -Not -BeNullOrEmpty
         $result | Should -BeOfType ([Microsoft.Web.Administration.Application])
         $script:webConfigPath | Should -Not -Exist
@@ -111,6 +113,7 @@ BeforeAll {
 
 Describe 'Install-CIisApplication' {
     BeforeAll {
+        Write-Debug 'BeforeAll'
         Start-W3ServiceTestFixture
         Install-CIisAppPool -Name $script:appPoolName
         $script:websiteRoot = New-TestDirectory
@@ -118,12 +121,14 @@ Describe 'Install-CIisApplication' {
     }
 
     AfterAll {
+        Write-Debug 'AfterAll'
         Uninstall-CIisWebsite -Name $script:siteName
         Uninstall-CIisAppPool -Name $script:appPoolName
         Complete-W3ServiceTestFixture
     }
 
     BeforeEach {
+        Write-Debug 'BeforeEach'
         $script:testDir = New-TestDirectory
 
         $script:appIndexHtmlContent = [Guid]::NewGuid().ToString()
@@ -138,12 +143,21 @@ Describe 'Install-CIisApplication' {
                 Remove-Item $script:webConfigPath
             }
         }
+
+        $Global:Error.Clear()
+        Write-Debug 'It'
     }
 
     AfterEach {
+        Write-Debug 'AfterEach'
+        $deletedSomething = $false
         Get-CIisApplication -SiteName $script:siteName |
             Where-Object 'Path' -ne '/' |
-            ForEach-Object { $_.Delete() }
+            ForEach-Object { $_.Delete() ; $deletedSomething = $true }
+        if( $deletedSomething )
+        {
+            Save-CIisConfiguration
+        }
         Complete-W3ServiceTestFixture
     }
 
@@ -176,8 +190,9 @@ Describe 'Install-CIisApplication' {
         $result = Install-CIisApplication -SiteName $script:siteName `
                                           -VirtualPath $script:appName `
                                           -PhysicalPath $script:testDir `
+                                          -AppPoolName $script:appPoolName `
                                           -PassThru
-        $Global:Error.Count | Should -Be 0
+        $Global:Error | Should -BeNullOrEmpty
         $result | Should -Not -BeNullOrEmpty
         $result.ApplicationPoolName | Should -Be $script:appPoolName
         ThenAppRunning $script:appName
@@ -187,7 +202,7 @@ Describe 'Install-CIisApplication' {
                                           -PhysicalPath $script:testDir `
                                           -AppPoolName 'DefaultAppPool' `
                                           -PassThru
-        $Global:Error.Count | Should -Be 0
+        $Global:Error | Should -BeNullOrEmpty
         $result | Should -Not -BeNullOrEmpty
         $result.ApplicationPoolName | Should -Be 'DefaultAppPool'
 
@@ -195,7 +210,7 @@ Describe 'Install-CIisApplication' {
                                           -VirtualPath $script:appName `
                                           -PhysicalPath $script:testDir `
                                           -PassThru
-        $Global:Error.Count | Should -Be 0
+        $Global:Error | Should -BeNullOrEmpty
         $result | Should -Not -BeNullOrEmpty
         $result.ApplicationPoolName | Should -Be 'DefaultAppPool'
     }

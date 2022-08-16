@@ -168,7 +168,7 @@ Describe 'Install-CIisVirtualDirectory' {
         $defaultLogonMethod = $vdir.LogonMethod
         $defaultLogonMethod | Should -Not -Be 2
         $vdir.LogonMethod = 2
-        $app.CommitChanges()
+        Save-CIIsConfiguration
 
         WhenInstalling -WithArguments @{ 'VirtualPath' = 'VFive' ; 'PhysicalPath' = 'Five'; 'Force' = $true }
 

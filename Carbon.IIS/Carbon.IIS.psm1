@@ -103,22 +103,13 @@ if( -not (Test-MSWebAdministrationLoaded) )
     return
 }
 
-$sm = [Microsoft.Web.Administration.ServerManager]::New()
-try
+$script:serverMgr = [Microsoft.Web.Administration.ServerManager]::New()
+if( -not $script:serverMgr -or $null -eq $script:serverMgr.ApplicationPoolDefaults )
 {
-    if( -not $sm -or $null -eq $sm.Sites )
-    {
-        Write-Error -Message "Carbon.IIS is not supported on this version of PowerShell." -ErrorAction Stop
-        return
-    }
+    Write-Error -Message "Carbon.IIS is not supported on this version of PowerShell." -ErrorAction Stop
+    return
 }
-finally
-{
-    if( $sm )
-    {
-        $sm.Dispose()
-    }
-}
+
 # We successfully loaded Microsoft.Web.Administration assembly, so remove the errors we encountered trying to do so.
 for( $idx = $Global:Error.Count ; $idx -gt $numErrorsAtStart ; --$idx )
 {

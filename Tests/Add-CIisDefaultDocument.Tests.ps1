@@ -11,6 +11,7 @@
 # limitations under the License.
 
 BeforeAll {
+    Write-Debug 'BeforeAll'
     & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-CarbonTest.ps1' -Resolve)
 
     $script:siteName = 'DefaultDocument'
@@ -25,6 +26,7 @@ BeforeAll {
 
 Describe 'Add-CIisDefaultDocument' {
     BeforeAll {
+        Write-Debug 'BeforeAll'
         Start-W3ServiceTestFixture
         Install-CIisAppPool -Name $script:siteName
     }
@@ -32,9 +34,11 @@ Describe 'Add-CIisDefaultDocument' {
     AfterAll {
         Uninstall-CIisAppPool -Name $script:siteName
         Complete-W3ServiceTestFixture
+        Write-Debug 'AfterAll'
     }
 
     BeforeEach {
+        Write-Debug 'BeforeEach'
         $script:testDir = New-TestDirectory
         Uninstall-CIisWebsite $script:siteName
         Install-CIisWebsite -Name $script:siteName `
@@ -50,9 +54,11 @@ Describe 'Add-CIisDefaultDocument' {
         }
 
         $Global:Error.Clear()
+        Write-Debug 'It'
     }
 
     AfterEach {
+        Write-Debug 'BeforeEach'
         Uninstall-CIisWebsite $script:siteName
     }
 

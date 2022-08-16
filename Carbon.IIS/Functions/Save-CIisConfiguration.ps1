@@ -3,45 +3,101 @@ function Save-CIisConfiguration
 {
     <#
     .SYNOPSIS
-    #>
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory)]
-        [Object] $Configuration,
+    Saves configuration changes to IIS.
 
-        [scriptblock] $TestScript
+    .DESCRIPTION
+    The `Save-CIisConfiguration` function saves changes made by Carbon.IIS functions or changes made on any object
+    returned by any Carbon.IIS function. After making those changes, you must call `Save-CIisConfiguration` to save
+    those changes to IIS.
+
+    Carbon.IIS keeps an internal `Microsoft.Web.Administration.ServerManager` object that it uses to get all objects
+    it operates on or returns to the user. `Save-CIisConfiguration` calls the `CommitChanges()` method on that
+    Server Manager object.
+
+    .EXAMPLE
+    Save-CIIsConfiguration
+
+    Demonstrates how to use this function.
+    #>
+    [CmdletBinding(SupportsShouldProcess)]
+    param(
+        [String] $Target,
+
+        [String] $Action,
+
+        [String] $Message
     )
 
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
-    if( -not ($Configuration | Get-Member -Name 'CommitChanges') )
+    $serverMgr = Get-CIisServerManager
+
+    $msgPrefix = "ServerManager  #$('{0,-10}' -f $serverMgr.GetHashCode())  "
+
+    if( $WhatIfPreference )
     {
-        $msg = "Unable to save configuration on ""$($Configuration)"": the ""CommitChanges"" method does not exist."
-        Write-Error -Message $msg -ErrorAction $ErrorActionPreference
+        if( $Target )
+        {
+            $Target = $Target -replace '"', ''''
+        }
+
+        if( $Target -and $Action )
+        {
+            $PSCmdlet.ShouldProcess($Target, $Action) | Out-Null
+        }
+
+        if( $Target )
+        {
+            $PSCmdlet.ShouldProcess($Target) | Out-Null
+        }
+
+        Write-Debug "$($msgPrefix)Dispose()"
+        $serverMgr.Dispose()
         return
     }
 
     $applicationHostPath =
         Join-Path -Path ([Environment]::SystemDirectory) -ChildPath 'inetsrv\config\applicationHost.config'
     $lastWriteTimeUtc = Get-Item -Path $applicationHostPath | Select-Object -ExpandProperty 'LastWriteTimeUtc'
-    Write-Debug "Committing changes to IIS configuration ""$($Configuration)""."
-    $Configuration.CommitChanges()
-    $tryFor = [TimeSpan]::New(0, 0, 1)
-    $startedWaitingAt = [Diagnostics.Stopwatch]::StartNew()
-    do
+
+    $serverMgr = Get-CIisServerManager
+    try
     {
-        $appHostInfo = Get-Item -Path $applicationHostPath -ErrorAction Ignore
-        if( $appHostInfo -and $lastWriteTimeUtc -lt $appHostInfo.LastWriteTimeUtc )
+        if( $Message )
         {
-            Write-Debug "    $($startedWaitingAt.Elapsed.TotalSeconds.ToString('0.000'))s  Changes committed."
-            return
+            Write-Information $Message
         }
-        Write-Debug "  ! $($startedWaitingAt.Elapsed.TotalSeconds.ToString('0.000'))s  Waiting."
-        Start-Sleep -Milliseconds 100
+        Write-Debug "$($msgPrefix)CommitChanges()"
+        $serverMgr.CommitChanges()
+
+        $tryFor = [TimeSpan]::New(0, 0, 1)
+        $startedWaitingAt = [Diagnostics.Stopwatch]::StartNew()
+        do
+        {
+            $appHostInfo = Get-Item -Path $applicationHostPath -ErrorAction Ignore
+            if( $appHostInfo -and $lastWriteTimeUtc -lt $appHostInfo.LastWriteTimeUtc )
+            {
+                Write-Debug "    $($startedWaitingAt.Elapsed.TotalSeconds.ToString('0.000'))s  Changes committed."
+                return
+            }
+            Write-Debug "  ! $($startedWaitingAt.Elapsed.TotalSeconds.ToString('0.000'))s  Waiting."
+            Start-Sleep -Milliseconds 100
+        }
+        while( $startedWaitingAt.Elapsed -lt $tryFor )
+        $msg = "Your IIS changes haven't been saved after waiting for $([int]$tryFor.TotalSeconds) seconds. You may need " +
+               "to wait a little longer or restart IIS."
+        Write-Warning $msg
     }
-    while( $startedWaitingAt.Elapsed -lt $tryFor )
-    $msg = "Your IIS changes haven't been saved after waiting for $([int]$tryFor.TotalSeconds) seconds. You may need " +
-            "to wait a little longer or restart IIS."
-    Write-Warning $msg
+    catch
+    {
+        Write-Error $_ -ErrorAction $ErrorActionPreference
+        return
+    }
+    finally
+    {
+        Write-Debug "$($msgPrefix)Dispose()"
+        $serverMgr.Dispose()
+    }
+
 }

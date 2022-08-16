@@ -61,5 +61,3 @@ function Disable-CIisSecurityAuthentication
                                    -Name 'enabled' `
                                    -Value $false
 }
-
-

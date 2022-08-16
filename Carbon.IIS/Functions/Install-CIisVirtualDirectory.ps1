@@ -80,7 +80,7 @@ function Install-CIisVirtualDirectory
     {
         Write-IisVerbose $SiteName -VirtualPath $vPathMsg 'REMOVE' '' ''
         $destinationApp.VirtualDirectories.Remove($vdir)
-        $site.CommitChanges()
+        Save-CIisConfiguration
         $vdir = $null
 
         $site = Get-CIisWebsite -Name $SiteName
@@ -109,7 +109,7 @@ function Install-CIisVirtualDirectory
 
     if( $modified )
     {
-        Save-CIIsConfiguration -Configuration $site
+        Save-CIIsConfiguration
     }
 }
 

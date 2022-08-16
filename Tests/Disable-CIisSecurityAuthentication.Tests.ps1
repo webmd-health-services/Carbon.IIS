@@ -13,6 +13,7 @@
 Set-StrictMode -Version 'Latest'
 
 BeforeAll {
+    Write-Debug 'BeforeAll'
     $script:siteName = 'Anonymous Authentication'
     $script:sitePort = 4387
 
@@ -21,14 +22,17 @@ BeforeAll {
 
 Describe 'Disable-CIisSecurityAuthentication' {
     BeforeAll {
+        Write-Debug 'BeforeAll'
         Start-W3ServiceTestFixture
     }
 
     AfterAll {
+        Write-Debug 'AfterAll'
         Complete-W3ServiceTestFixture
     }
 
     BeforeEach {
+        Write-Debug 'BeforeEach'
         $script:webRoot = New-TestDirectory
         Uninstall-CIisWebsite $script:siteName
         Install-CIisWebsite -Name $script:siteName -Path $script:webRoot -Bindings "http://*:$script:sitePort"
@@ -38,9 +42,11 @@ Describe 'Disable-CIisSecurityAuthentication' {
         {
             Remove-Item -Path $webConfigPath
         }
+        Write-Debug 'It'
     }
 
     AfterEach {
+        Write-Debug 'AfterEach'
         Uninstall-CIisWebsite $script:siteName
     }
 

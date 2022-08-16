@@ -37,7 +37,7 @@ function Uninstall-CIisAppPool
     {
         Write-Information -Message "Removing IIS application pool ""$($Name)""."
         $appPool.Delete()
-        $appPool.CommitChanges()
     }
+    Save-CIisConfiguration
 }
 

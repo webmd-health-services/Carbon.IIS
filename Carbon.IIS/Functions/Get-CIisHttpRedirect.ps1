@@ -1,10 +1,4 @@
 
-enum CHttpResponseStatus
-{
-    Permanent = 301;
-    Found = 302;
-    Temporary = 307;
-}
 
 function Get-CIisHttpRedirect
 {
@@ -22,8 +16,8 @@ function Get-CIisHttpRedirect
      requests to `Destination`.
      * childOnly - `True` if redirects are only to content in the destination directory (not subdirectories).
 
-     Use the `GetAttributeValue` and `SetAttributeValue` to get and set values and the `CommitChanges` method to persist
-     the changes to IIS.
+     Use the `GetAttributeValue` and `SetAttributeValue` to get and set values and the `Save-CIisConfiguration` function
+     to save the changes to IIS.
 
     .LINK
     http://www.iis.net/configreference/system.webserver/httpredirect

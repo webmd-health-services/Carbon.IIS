@@ -280,7 +280,11 @@ function Set-CIisConfigurationAttribute
             Write-Information "Setting attributes on $($Target)."
             $infoMessages | ForEach-Object { Write-Information $_ }
         }
+    }
 
-        $ConfigurationElement.CommitChanges()
+    # Only save if we made any changes.
+    if( $updatedNames -or $removedNames )
+    {
+        Save-CIisConfiguration
     }
 }

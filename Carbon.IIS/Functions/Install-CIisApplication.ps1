@@ -36,18 +36,18 @@ function Install-CIisApplication
     param(
         # The site where the application should be created.
         [Parameter(Mandatory)]
-        [string] $SiteName,
+        [String] $SiteName,
 
         # The path of the application.
         [Parameter(Mandatory)]
-        [string] $VirtualPath,
+        [String] $VirtualPath,
 
         # The path to the application.
         [Parameter(Mandatory)]
-        [string] $PhysicalPath,
+        [String] $PhysicalPath,
 
         # The app pool for the application. Default is `DefaultAppPool`.
-        [string] $AppPoolName,
+        [String] $AppPoolName,
 
         # Returns IIS application object. This switch is new in Carbon 2.0.
         [Switch] $PassThru
@@ -73,28 +73,24 @@ function Install-CIisApplication
 
     $apps = $site.GetCollection()
 
+    $msgPrefix = "IIS website ""$($SiteName)"": "
     $VirtualPath = $VirtualPath | ConvertTo-CIisVirtualPath
     $app = Get-CIisApplication -SiteName $SiteName -VirtualPath $VirtualPath
     $modified = $false
     if( -not $app )
     {
-        Write-Verbose ('IIS://{0}: creating application' -f $iisAppPath)
-        $app =
-            $apps.CreateElement('application') |
-            Add-IisServerManagerMember -ServerManager $site.ServerManager -PassThru
+        Write-Information "$($msgPrefix)creating application ""$($VirtualPath)""."
+        $app = $apps.CreateElement('application')
         $app['path'] = $VirtualPath
         $apps.Add( $app ) | Out-Null
         $modified = $true
     }
 
-    if( $app['path'] -ne $VirtualPath )
-    {
-        $app['path'] = $VirtualPath
-        $modified = $true
-    }
+    $msgPrefix = "$($msgPrefix)application ""$($VirtualPath)"": "
 
-    if( $AppPoolName -and $app['applicationPool'] -ne $AppPoolName)
+    if( $AppPoolName -and $app['applicationPool'] -ne $AppPoolName )
     {
+        Write-Information "$($msgPrefix)Application Pool   $($app['applicationPool']) -> $($AppPoolName)"
         $app['applicationPool'] = $AppPoolName
         $modified = $true
     }
@@ -107,7 +103,7 @@ function Install-CIisApplication
 
     if( -not $vdir )
     {
-        Write-Verbose ('IIS://{0}: creating virtual directory' -f $iisAppPath)
+        Write-Information "$($msgPrefix)Virtual Directory  $('') -> /"
         $vdirs = $app.GetCollection()
         $vdir = $vdirs.CreateElement('virtualDirectory')
         $vdir['path'] = '/'
@@ -117,15 +113,14 @@ function Install-CIisApplication
 
     if( $vdir['physicalPath'] -ne $PhysicalPath )
     {
-        Write-Verbose ('IIS://{0}: setting physical path {1}' -f $iisAppPath,$PhysicalPath)
+        Write-Information "$($msgPrefix)Physical Path      $($vdir['physicalPath']) -> $($PhysicalPath)"
         $vdir['physicalPath'] = $PhysicalPath
         $modified = $true
     }
 
     if( $modified )
     {
-        Write-Verbose ('IIS://{0}: committing changes' -f $iisAppPath)
-        $app.CommitChanges()
+        Save-CIisConfiguration
     }
 
     if( $PassThru )

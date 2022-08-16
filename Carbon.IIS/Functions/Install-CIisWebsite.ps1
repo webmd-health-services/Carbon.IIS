@@ -163,9 +163,10 @@ function Install-CIisWebsite
     {
         Write-Verbose -Message ('Creating website ''{0}'' ({1}).' -f $Name,$PhysicalPath)
         $firstBinding = $Binding | Select-Object -First 1 | ConvertTo-Binding
-        $mgr = New-CIisServerManager
+        $mgr = Get-CIisServerManager
+        Write-Information "Creating IIS website ""$($Name)""."
         $site = $mgr.Sites.Add( $Name, $firstBinding.Protocol, $firstBinding.BindingInformation, $PhysicalPath )
-        $mgr.CommitChanges()
+        Save-CIisConfiguration
     }
 
     $site = Get-CIisWebsite -Name $Name
@@ -182,6 +183,7 @@ function Install-CIisWebsite
     foreach( $bindingToRemove in $bindingsToRemove )
     {
         Write-IisVerbose $Name 'Binding' ('{0}/{1}' -f $bindingToRemove.Protocol,$bindingToRemove.BindingInformation)
+        Write-Information "Removing binding ""$($bindingToRemove)"" from IIS website ""$($Name)""."
         $site.Bindings.Remove( $bindingToRemove )
         $modified = $true
     }
@@ -197,6 +199,7 @@ function Install-CIisWebsite
     foreach( $bindingToAdd in $bindingsToAdd )
     {
         Write-IisVerbose $Name 'Binding' '' ('{0}/{1}' -f $bindingToAdd.Protocol,$bindingToAdd.BindingInformation)
+        Write-Information "Adding binding ""$($bindingToRemove)"" to IIS website ""$($Name)""."
         $site.Bindings.Add( $bindingToAdd.BindingInformation, $bindingToAdd.Protocol ) | Out-Null
         $modified = $true
     }
@@ -204,6 +207,7 @@ function Install-CIisWebsite
     [Microsoft.Web.Administration.Application] $rootApp = $null
     if( $site.Applications.Count -eq 0 )
     {
+        Write-Information "Adding ""$($Name)"" IIS website's default application."
         $rootApp = $site.Applications.Add('/', $PhysicalPath)
         $modified = $true
     }
@@ -214,7 +218,7 @@ function Install-CIisWebsite
 
     if( $site.PhysicalPath -ne $PhysicalPath )
     {
-        Write-IisVerbose $Name 'PhysicalPath' $site.PhysicalPath $PhysicalPath
+        Write-Information "Setting ""$($Name)"" IIS website's physical path to ""$($PhysicalPath)""."
         [Microsoft.Web.Administration.VirtualDirectory] $vdir =
             $rootApp.VirtualDirectories | Where-Object 'Path' -EQ '/'
         $vdir.PhysicalPath = $PhysicalPath
@@ -225,7 +229,7 @@ function Install-CIisWebsite
     {
         if( $rootApp.ApplicationPoolName -ne $AppPoolName )
         {
-            Write-IisVerbose $Name 'AppPool' $rootApp.ApplicationPoolName $AppPoolName
+            Write-Information "Setting ""$($Name)"" IIS website's application pool to ""$($AppPoolName)""."
             $rootApp.ApplicationPoolName = $AppPoolName
             $modified = $true
         }
@@ -233,7 +237,7 @@ function Install-CIisWebsite
 
     if( $modified )
     {
-        $site.CommitChanges()
+        Save-CIisConfiguration
     }
 
     if( $SiteID )

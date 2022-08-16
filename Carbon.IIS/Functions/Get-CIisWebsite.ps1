@@ -11,8 +11,7 @@ function Get-CIisWebsite
     is returned as a `Microsoft.Web.Administration.Site` object, from the Microsoft.Web.Administration API. If the
     website doesn't exist, the function will write an error and return nothing.
 
-    Each object will have a `CommitChanges` script method added which will allow you to commit/persist any changes to
-    the website's configuration.
+    If you make any changes to any of the return objects, use `Save-CIisConfiguration` to save your changes.
 
     .OUTPUTS
     Microsoft.Web.Administration.Site.
@@ -51,17 +50,15 @@ function Get-CIisWebsite
         return
     }
 
-    $mgr = New-CIisServerManager
+    $mgr = Get-CIisServerManager
     $mgr.Sites |
         Where-Object {
             if( $Name )
             {
-                $_.Name -eq $Name
+                return $_.Name -eq $Name
             }
-            else
-            {
-                $true
-            }
-        } | Add-IisServerManagerMember -ServerManager $mgr -PassThru
+
+            return $true
+        }
 }
 

@@ -60,8 +60,8 @@ function Set-CIisWebsiteID
         {
             $startWhenDone = ($website.State -eq 'Started')
             $website.ID = $ID
-            $website.CommitChanges()
         }
+        Save-CIisConfiguration
     }
 
     if( $PSBoundParameters.ContainsKey('WhatIf') )

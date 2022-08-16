@@ -55,14 +55,16 @@ Describe 'Get-CIisAppPool' {
         }
     }
 
-    It 'should add server manager members' {
+    It 'should rename app pool' {
         $appPool = Get-CIisAppPool -Name $script:appPoolName
         $appPool | Should -Not -BeNullOrEmpty
-        $appPool.ServerManager | Should -Not -BeNullOrEmpty
+
         $newAppPoolName = 'New{0}' -f $script:appPoolName
         Uninstall-CIisAppPool -Name $newAppPoolName
+
+        $appPool = Get-CIisAppPool -Name $script:appPoolName
         $appPool.name = $newAppPoolName
-        $appPool.CommitChanges()
+        Save-CIisConfiguration
 
         try
         {

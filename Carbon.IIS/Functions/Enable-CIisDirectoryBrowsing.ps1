@@ -39,7 +39,7 @@ function Enable-CIisDirectoryBrowsing
     {
         Write-IisVerbose $SiteName 'Directory Browsing' 'disabled' 'enabled'
         $section['enabled'] = $true
-        $section.CommitChanges()
+        Save-CIisConfiguration
     }
 
 }

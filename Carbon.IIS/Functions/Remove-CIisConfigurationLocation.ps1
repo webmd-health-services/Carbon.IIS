@@ -50,20 +50,9 @@ function Remove-CIisConfigurationLocation
         return
     }
 
-    $mgr = New-CIisServerManager
-    try
-    {
-        $mgr.GetApplicationHostConfiguration().RemoveLocationPath($locationPath)
-        $target = "$($locationPath)"
-        $action = "Remove IIS Location"
-        if( $PSCmdlet.ShouldProcess($target, $action) )
-        {
-            Write-Information "Removing ""$($locationPath)"" IIS location configuration."
-            $mgr.CommitChanges()
-        }
-    }
-    finally
-    {
-        $mgr.Dispose()
-    }
+    (Get-CIisServerManager).GetApplicationHostConfiguration().RemoveLocationPath($locationPath)
+    $target = "$($locationPath)"
+    $action = "Remove IIS Location"
+    $infoMsg = "Removing ""$($locationPath)"" IIS location configuration."
+    Save-CIisConfiguration -Target $target -Action $action -Message $infoMsg
 }
