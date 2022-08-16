@@ -78,6 +78,8 @@ Removed the `Name` paramater aliases. Update usages of the `Name` parameter on t
 * Get-CIisApplication
 * Install-CIisApplication
 
+`Get-CIisAppPool` now writes an error when passed a name and an application pool with that name does not exist. Update
+usages with `-ErrorAction Ignore` to preserve previous behavior.
 
 ## Added
 
@@ -90,6 +92,12 @@ Removed the `Name` paramater aliases. Update usages of the `Name` parameter on t
 directory separators are `/`, etc.).
 * Function `Install-CIisVirtualDirectory` can now install virtual directories under applications, not just website root.
 Pass the application name to the `ApplicationPath` parameter.
+* Function `Get-CIisConfigurationLocationPath` for determining if a website or website/virtual path has custom
+configuration (i.e. there's a `<location>` element for it in the applicationHost.config).
+* Function `Remove-CIisConfigurationLocation` for removing a website's or website/virtual path's custom configuration
+(i.e. removes its `<location>` element from applicationHost.config).
+* Many functions now write messages to PowerShell's information stream when they make configuration changes.
+* Function `Set-CIisAppPoolCpu` for configuring an application pool's CPU settings.
 
 ## Changes
 
@@ -97,6 +105,7 @@ Pass the application name to the `ApplicationPath` parameter.
 * The `Join-CIisVirtualPath` function's `ChildPath` parameter is now required. Usages that don't have a `ChildPath`
 argument should switch to `ConvertTo-CIisVirtualPath`.
 * Renamed `VirtualPath` parameter on `Get-CIisApplication` and `Install-CIisApplication` to `Path`.
+* `Get-CIisAppPool` now writes an error when passed a name and an application pool with that name does not exist.
 
 ## Fixed
 

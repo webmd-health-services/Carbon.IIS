@@ -149,6 +149,63 @@ function Start-W3ServiceTestFixture
     Wait-W3Service | Format-Table | Out-String | Write-Debug
 }
 
+function ThenAppHostConfig
+{
+    [CmdletBinding()]
+    param(
+        [switch] $Not,
+
+        [Parameter(Mandatory, ParameterSetName='ModifiedSince')]
+        [DateTime] $ModifiedSince
+    )
+
+    $appHostConfigInfo =
+        Join-Path -Path ([Environment]::SystemDirectory) -ChildPath 'inetsrv\config\applicationHost.config' -Resolve |
+        Get-Item
+
+    if( $Not )
+    {
+        $appHostConfigInfo.LastWriteTime | Should -BeLessOrEqual $ModifiedSince
+    }
+    else
+    {
+        $appHostConfigInfo.LastWriteTime | Should -BeGreaterThan $ModifiedSince
+    }
+}
+
+function ThenError
+{
+    [CmdletBinding()]
+    param(
+        [switch] $Not,
+
+        [Parameter(Mandatory, ParameterSetName='Empty')]
+        [switch] $Empty,
+
+        [Parameter(Mandatory, ParameterSetName='Is')]
+        [String] $Is,
+
+        [Parameter(Mandatory, ParameterSetName='Matches')]
+        [Alias('Matches')]
+        [String] $Match
+    )
+
+    if( $Empty )
+    {
+        $Global:Error | Should -Not:$Not -BeNullOrEmpty
+    }
+
+    if( $Is )
+    {
+        $Global:Error | Should -Not:$Not -Be $Is
+    }
+
+    if( $Match )
+    {
+        $Global:Error | Should -Not:$Not -Match $Match
+    }
+}
+
 function Wait-W3Service
 {
     foreach( $svcName in @('WAS', 'W3SVC') )

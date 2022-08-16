@@ -114,20 +114,21 @@ function Remove-CIisConfigurationAttribute
                     $currentValue = '*' * 8
                 }
 
-                Write-Information "$($msgPrefix)$($currentValue) ->"
                 [void]$attrNames.Add($nameItem)
             }
 
             $pathMsg = ''
             if( $VirtualPath )
             {
-                $pathMsg = " path '$($VirtualPath)'"
+                $pathMsg = ", path '$($VirtualPath)'"
             }
 
-            $target = "IIS website '$($SiteName)'$($pathMsg) configuration section '$($SectionPath)'"
-            $action = "remove attribute '$($nameItem)'"
+            $target = "$($nameItem) from IIS website '$($SiteName)'$($pathMsg), configuration section '$($SectionPath)'"
+            $action = 'Remove Attribute'
             if( $PSCmdlet.ShouldProcess($target, $action) )
             {
+                $msg =  "Removing attribute $($target -replace '''', '"')"
+                Write-Information $msg
                 # Fortunately, only actually persists changes to applicationHost.config if there are any changes.
                 $attr.Delete()
             }
