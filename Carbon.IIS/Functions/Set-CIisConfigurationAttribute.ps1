@@ -202,7 +202,15 @@ function Set-CIisConfigurationAttribute
             }
 
             [void]$infoMessages.Add($changedMsg)
-            $ConfigurationElement.SetAttributeValue($currentAttr.Name, $Value)
+            try
+            {
+                $ConfigurationElement.SetAttributeValue($currentAttr.Name, $Value)
+            }
+            catch
+            {
+                $msg = "Failed to set attribute ""$($currentAttr.Name)"" on $($Target): $($_)"
+                Write-Error -Message $msg -ErrorAction Stop
+            }
             [void]$updatedNames.Add($currentAttr.Name)
         }
     }

@@ -89,6 +89,7 @@ method or a `ServerManager` member. Updates usages to call the new `Save-CIisCon
 * Carbon.IIS now supports
     * Windows PowerShell 5.1 (on .NET Framework 4.6.2 and later) and PowerShell 7
     * Windows 8 and 10, and Windows Server 2012R2, 2016, and 2019.
+* Function `Set-CIisConfigurationAttribute` for configuring attributes on IIS configuration elements
 * Function `Set-CIisAnonymousAuthentication` for configuring anonymous authentication.
 * Function `Remove-CIisConfigurationAttribute` for removing attributes from configuration sections.
 * Function `ConvertTo-CIisVirtualPath` for normalizing a virtual path (i.e. removing duplicate slashes, ensuring
@@ -103,6 +104,7 @@ configuration (i.e. there's a `<location>` element for it in the applicationHost
 * Function `Set-CIisAppPoolCpu` for configuring an application pool's CPU settings.
 * Function `Save-CIisConfiguration` for saving configuration changes to IIS. Only needed if you make changes to any of
 the objects returned by the Carbon.IIS module.
+* Function `Set-CIisWebsiteLogFile` for configuring a website's log file settings.
 
 ## Changes
 

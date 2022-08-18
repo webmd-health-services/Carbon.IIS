@@ -12,6 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License
 
+using namespace System.Management.Automation
+using namespace Microsoft.Web.Administration
+
 #Requires -Version 5.1
 Set-StrictMode -Version 'Latest'
 $InformationPreference = 'Continue'

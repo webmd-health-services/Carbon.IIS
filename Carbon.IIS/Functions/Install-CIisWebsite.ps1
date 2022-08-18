@@ -66,11 +66,11 @@ function Install-CIisWebsite
     [OutputType([Microsoft.Web.Administration.Site])]
     param(
         # The name of the website.
-        [Parameter(Position=0, Mandatory)]
+        [Parameter(Mandatory, Position=0)]
         [String] $Name,
 
         # The physical path (i.e. on the file system) to the website. If it doesn't exist, it will be created for you.
-        [Parameter(Position=1, Mandatory)]
+        [Parameter(Mandatory, Position=1)]
         [Alias('Path')]
         [String] $PhysicalPath,
 

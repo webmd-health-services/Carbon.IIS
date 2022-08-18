@@ -110,6 +110,7 @@
         'Set-CIisHttpRedirect',
         'Set-CIisMimeMap',
         'Set-CIisWebsiteID',
+        'Set-CIisWebsiteLogFile',
         'Set-CIisWebsiteSslCertificate',
         'Set-CIisWindowsAuthentication',
         'Test-CIisAppPool',
