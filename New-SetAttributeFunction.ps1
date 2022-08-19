@@ -25,6 +25,9 @@ the existing files, use the `Force` (switch).
 Demonstrates how `New-SetAttributeFunction.ps1` was called to create a `Set-CIisAnonymousAuthentication` function for
 configuring anonymous authentication.
 #>
+
+using namespace Microsoft.Web.Administration
+
 [CmdletBinding()]
 param(
     # The name of the function to create. "Carbon.IIS\Functions\$($Name).ps1" and "Tests\$($Name).Tests.ps1" files will
@@ -34,8 +37,17 @@ param(
 
     # The configuration section path the function will be used to configure. The script will inspect the schema for that
     # configuration section to determine what parameters the function should have.
-    [Parameter(Mandatory)]
+    [Parameter(Mandatory, ParameterSetName='BySectionPath')]
     [String] $SectionPath,
+
+    [Parameter(Mandatory, ParameterSetName='ByConfiguraionElement', ValueFromPipeline)]
+    [ConfigurationElement] $ConfigurationElement,
+
+    [Parameter(Mandatory)]
+    [ValidateSet('Site', 'ApplicationPool')]
+    [String] $ConfigurationElementType,
+
+    [String] $ConfigurationElementPropertyName,
 
     # If any of the configuration section's attributes map to enum values, this hashtable should be a key/value map of
     # the attribute name with the enumeration type name, e.g.
@@ -66,41 +78,79 @@ if( -not $Force -and (Test-Path -Path $testDestinationPath) )
 
 Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath 'Carbon.IIS' -Resolve) -Force
 
-$section = Get-CIisConfigurationSection -SectionPath $SectionPath
-if( -not $section )
+if( -not $ConfigurationElement )
 {
-    return
+    $ConfigurationElement = Get-CIisConfigurationSection -SectionPath $SectionPath
+    if( -not $ConfigurationElement )
+    {
+        return
+    }
 }
 
-$section
-
 $paramNames = @{}
+$typeShortNamesMap = @{
+    'uint' = 'UInt32';
+    'timeSpan' = 'TimeSpan';
+}
 
 $content = [Text.StringBuilder]::New()
 [void]$content.Append(@"
+
 function $($Name)
 {
+    <#
+    .DESCRIPTION
+    The `$($Name)` function
+
+    .LINK
+
+    #>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSShouldProcess', '')]
     [CmdletBinding(SupportsShouldProcess)]
     param(
+
+"@)
+
+if( $SectionPath )
+{
+    [void]$content.Append(@"
+        # The IIS website whose settings to configure.
         [Parameter(Mandatory)]
         [String] `$SiteName,
 
+        # The virtual path under the website whose settings to configure.
         [String] `$VirtualPath = ''
 "@)
-    foreach( $attr in $section.Schema.AttributeSchemas )
+}
+else
+{
+    $targetParamName = 'SiteName'
+    $getCmdName = 'Get-CIisWebsite'
+    $targetVarName = 'site'
+    $targetDesc = 'website'
+    if( $ConfigurationElementType -eq 'ApplicationPool' )
+    {
+        $targetParamName = 'AppPoolName'
+        $getCmdName = 'Get-CIisAppPool'
+        $targetVarName = 'appPool'
+        $targetDesc = 'application pool'
+    }
+    [void]$content.Append(@"
+        # The IIS $($targetDesc) whose configuration to set.
+        [Parameter(Mandatory)]
+        [String] `$$($targetParamName)
+"@)
+}
+    foreach( $attr in $ConfigurationElement.Schema.AttributeSchemas )
     {
         $paramName = [char]::ToUpperInvariant($attr.Name[0]) + $attr.Name.Substring(1, $attr.Name.Length - 1)
         $paramNames[$attr.Name] = $paramName
 
         $type = $attr.Type
-        $typeName = 'String'
-        if( $type -eq [bool] )
+        $typeName = "$($type)"
+        if( $typeShortNamesMap.ContainsKey($type) )
         {
-            $typeName = 'switch'
-        }
-        elseif( $type -eq [int] )
-        {
-            $typeName = 'int'
+            $typeName = $typeShortNamesMap[$type]
         }
         elseif( $type -eq 'enum' )
         {
@@ -119,6 +169,7 @@ function $($Name)
         [void]$content.Append(@"
 ,
 
+        # Sets the IIS $($targetDesc)'s ``$($paramName.Substring(0,10).ToLowerInvariant())$($paramName.Substring(1))`` setting.
         [$($typeName)] `$$($paramName)
 "@)
     }
@@ -130,6 +181,12 @@ function $($Name)
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet `$PSCmdlet -Session `$ExecutionContext.SessionState
 
+"@)
+
+    if( $SectionPath )
+    {
+        [void]$Content.Append(@"
+
     `$paramNames = @('$(($paramNames.Keys | Sort-Object) -join "', '")')
 
     `$sectionPath = '$($SectionPath)'
@@ -137,6 +194,27 @@ function $($Name)
     `$PSBoundParameters.GetEnumerator() |
         Where-Object 'Key' -In `$paramNames |
         Set-CIisConfigurationAttribute -SiteName `$SiteName -VirtualPath `$VirtualPath -SectionPath `$sectionPath
+"@)
+    }
+    else
+    {
+        $targetPropertyDescription = ($ConfigurationElementPropertyName -creplace '([A-Z])', '.$1').ToLowerInvariant()  `
+                                                                        -replace '\.+', ' '
+        [void]$Content.Append(@"
+
+    `$$($targetVarName) = $($getCmdName) -Name `$$($targetParamName)
+    if( -not `$$($targetVarName) )
+    {
+        return
+    }
+
+    Invoke-SetConfigurationAttribute -ConfigurationElement `$$($targetVarName).$($ConfigurationElementPropertyName) ``
+                                     -PSCmdlet `$PSCmdlet ``
+                                     -Target """`$(`$$($targetParamName))"" IIS $($targetDesc)'s$($targetPropertyDescription)"
+"@)
+    }
+[void]$content.Append(@"
+
 }
 "@)
 
@@ -147,6 +225,8 @@ $content.ToString() | Set-Content -Path $destinationPath
 $intTestValue = 1
 $enumTestValue = 0
 $boolTestValue = $false
+[UInt32] $uintTestValue = 1
+[TimeSpan] $timeSpanTestValue = [TimeSpan]'00:00:01'
 
 function Get-TestValue
 {
@@ -170,11 +250,6 @@ function Get-TestValue
         return ($script:intTestValue++)
     }
 
-    if( $type -eq [String] )
-    {
-        return "'$(([IO.Path]::GetRandomFileName() -replace '\.', ''))'"
-    }
-
     if( $type -eq [Enum] )
     {
         if( $AttributeEnumMap.ContainsKey($ParameterName) )
@@ -184,6 +259,22 @@ function Get-TestValue
         }
 
         return ($script:enumTestValue++)
+    }
+
+    if( $type -eq [UInt32] )
+    {
+        return ($script:uintTestValue++)
+    }
+
+    if( $type -eq [TimeSpan] )
+    {
+        $script:timeSpanTestValue = $script:timeSpanTestValue.Add($script:timeSpanTestValue)
+        return $script:timeSpanTestValue
+    }
+
+    if( $type -eq [String] )
+    {
+        return "'$(([IO.Path]::GetRandomFileName() -replace '\.', ''))'"
     }
 
     $msg = "Don't know how to generate test data for attribute ""$($ParameterName)"" of type ""$($Type)""."
@@ -198,10 +289,15 @@ function Get-TestArgumentContent
 
     $argContent = [Text.StringBuilder]::New()
 
-    foreach( $attrSchema in ($section.Schema.AttributeSchemas | Sort-Object -Property 'Name') )
+    foreach( $attrSchema in ($ConfigurationElement.Schema.AttributeSchemas | Sort-Object -Property 'Name') )
     {
         $paramName = $attrSchema.Name
-        $value = Get-TestValue -Type $attrSchema.Type -ParameterName $paramName
+        $typeName = $attrSchema.Type
+        if( $typeShortNamesMap.ContainsKey($typeName) )
+        {
+            $typeName = $typeShortNamesMap[$typeName]
+        }
+        $value = Get-TestValue -Type $typeName -ParameterName $paramName
         if( $paramName -eq 'Password' )
         {
             $value = "(ConvertTo-SecureString -String $($value) -AsPlainText -Force)"
@@ -212,13 +308,14 @@ function Get-TestArgumentContent
     return $argContent.ToString().Trim()
 }
 
-[void]$content.Append(@"
+if( $SectionPath )
+{
+    [void]$content.Append(@"
 
 #Requires -Version 5.1
 Set-StrictMode -Version 'Latest'
 
 BeforeAll {
-    `$script:port = 9877
     `$script:webConfigPath = ''
     `$script:siteName = `$PSCommandPath | Split-Path -Leaf
     `$script:testWebRoot = ''
@@ -291,7 +388,7 @@ BeforeAll {
     }
 }
 
-Describe 'Set-CIisAnonymousAuthentication' {
+Describe '$($Name)' {
     BeforeAll {
         Start-W3ServiceTestFixture
     }
@@ -363,4 +460,170 @@ Describe 'Set-CIisAnonymousAuthentication' {
     }
 }
 "@)
+}
+else
+{
+    [void]$content.Append(@"
+using module '..\Carbon.Iis'
+using namespace Microsoft.Web.Administration
+
+Set-StrictMode -Version 'Latest'
+
+BeforeAll {
+    & (Join-Path -Path `$PSScriptRoot 'Initialize-CarbonTest.ps1' -Resolve)
+
+    `$script:testNum = 0
+
+    # All non-default values.
+    `$script:nonDefaultArgs = @{
+        'FILL IN NON-DEFAULT VALUES' = 'THEN REMOVE THIS LINE';
+
+"@)
+    foreach( $attrSchema in ($ConfigurationElement.Schema.AttributeSchemas | Sort-Object -Property 'Name') )
+    {
+        [void]$content.AppendLine("        '$($attrSchema.Name)' = $($attrSchema.DefaultValue);")
+    }
+
+    [void]$content.Append(@"
+    }
+
+    # Sometimes the default values in the schema aren't quite the default values.
+    `$script:notQuiteDefaultValues = @{
+    }
+
+    function ThenHasDefaultValues
+    {
+        ThenHasValues @{}
+    }
+
+    function ThenHasValues
+    {
+        param(
+            [hashtable] `$Values = @{}
+        )
+
+        `$$($targetVarName) = $($getCmdName) -Name `$script:$($targetVarName)Name
+        `$$($targetVarName)  | Should -Not -BeNullOrEmpty
+
+        `$target = `$$($targetVarName).$($ConfigurationElementPropertyName)
+        `$target | Should -Not -BeNullOrEmpty
+
+        foreach( `$attr in `$target.Schema.AttributeSchemas )
+        {
+            `$currentValue = `$target.GetAttributeValue(`$attr.Name)
+            `$expectedValue = `$attr.DefaultValue
+            `$becauseMsg = 'default'
+            if( `$script:notQuiteDefaultValues.ContainsKey(`$attr.Name))
+            {
+                `$expectedValue = `$script:notQuiteDefaultValues[`$attr.Name]
+            }
+
+            if( `$Values.ContainsKey(`$attr.Name) )
+            {
+                `$expectedValue = `$Values[`$attr.Name]
+                `$becauseMsg = 'custom'
+            }
+
+            if( `$currentValue -is [TimeSpan] )
+            {
+                if( `$expectedValue -match '^\d+$' )
+                {
+                    `$expectedValue = [TimeSpan]::New([long]`$expectedValue)
+                }
+                else
+                {
+                    `$expectedValue = [TimeSpan]`$expectedValue
+                }
+            }
+
+            `$currentValue | Should -Be `$expectedValue -Because "should set `$(`$attr.Name) to `$(`$becauseMsg) value"
+        }
+    }
+}
+
+Describe '$($Name)' {
+
+"@)
+
+    if( $ConfigurationElementType -eq 'Site')
+    {
+        [void]$content.Append(@"
+    BeforeAll {
+        Start-W3ServiceTestFixture
+        Install-CIisAppPool -Name '$($Name)'
+    }
+
+    AfterAll {
+        Uninstall-CIisAppPool -Name '$($Name)'
+        Complete-W3ServiceTestFixture
+    }
+
+    BeforeEach {
+        `$script:$($targetVarName)Name = "$($Name)`$(`$script:testNum++)"
+        `$webroot = New-TestDirectory
+        Install-CIisWebsite -Name `$script:$($targetVarName)Name -PhysicalPath `$webroot -AppPoolName '$($Name)')
+    }
+
+    AfterEach {
+        Uninstall-CIisWebsite -Name `$script:$($targetVarName)Name
+    }
+"@)
+    }
+    else
+    {
+        [void]$content.Append(@"
+    BeforeAll {
+        Start-W3ServiceTestFixture
+    }
+
+    AfterAll {
+        Complete-W3ServiceTestFixture
+    }
+
+    BeforeEach {
+        `$script:$($targetVarName)Name = "$($Name)`$(`$script:testNum++)"
+        Install-CIisAppPool -Name `$script:$($targetVarName)Name
+    }
+
+    AfterEach {
+        Install-CIisAppPool -Name `$script:$($targetVarName)Name
+    }
+"@)
+    }
+
+    [void]$content.Append(@"
+
+    It 'should set and reset all log file values' {
+        $($Name) -$($targetParamName) `$script:$($targetVarName)Name @nonDefaultArgs
+        ThenHasValues `$nonDefaultArgs
+
+        $($Name) -$($targetParamName) `$script:$($targetVarName)Name
+        ThenHasDefaultValues
+    }
+
+    It 'should support WhatIf when updating all values' {
+        $($Name) -$($targetParamName) `$script:$($targetVarName)Name @nonDefaultArgs -WhatIf
+        ThenHasDefaultValues
+    }
+
+    It 'should support WhatIf when resetting all values back to defaults' {
+        $($Name) -$($targetParamName) `$script:$($targetVarName)Name @nonDefaultArgs
+        ThenHasValues `$nonDefaultArgs
+        $($Name) -$($targetParamName) `$script:$($targetVarName)Name -WhatIf
+        ThenHasValues `$nonDefaultArgs
+    }
+
+    It 'should change values and reset to defaults' {
+        $($Name) -$($targetParamName) `$script:$($targetVarName)Name @nonDefaultArgs -ErrorAction Ignore
+        ThenHasValues `$nonDefaultArgs
+
+        `$someArgs = @{
+            'FILL ME IN' = '';
+        }
+        $($Name) -$($targetParamName) `$script:$($targetVarName)Name @someArgs
+        ThenHasValues `$someArgs
+    }
+}
+"@)
+}
 $content.ToString() | Set-Content -Path $testDestinationPath

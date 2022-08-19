@@ -105,6 +105,7 @@
         'Save-CIisConfiguration',
         'Set-CIisAnonymousAuthentication',
         'Set-CIisAppPoolCpu',
+        'Set-CIisAppPoolRecyclingPeriodicRestart',
         'Set-CIisConfigurationAttribute',
         'Set-CIisHttpHeader',
         'Set-CIisHttpRedirect',

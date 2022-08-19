@@ -105,6 +105,7 @@ configuration (i.e. there's a `<location>` element for it in the applicationHost
 * Function `Save-CIisConfiguration` for saving configuration changes to IIS. Only needed if you make changes to any of
 the objects returned by the Carbon.IIS module.
 * Function `Set-CIisWebsiteLogFile` for configuring a website's log file settings.
+* Function `Set-CIisAppPoolRecyclingPeriodicRestart` for configuring an application pool's periodic restart settings.
 
 ## Changes
 
