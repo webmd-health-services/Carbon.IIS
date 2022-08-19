@@ -57,13 +57,13 @@ function Set-CIisHttpHeader
 
     if( $header )
     {
-        $action = 'setting'
+        $action = 'Set'
         $header['name'] = $Name
         $header['value'] = $Value
     }
     else
     {
-        $action = 'adding'
+        $action = 'Add'
         $addElement = $headers.CreateElement( 'add' )
         $addElement['name'] = $Name
         $addElement['value'] = $Value
@@ -71,9 +71,6 @@ function Set-CIisHttpHeader
     }
 
     $fullPath = Join-CIisVirtualPath $SiteName $VirtualPath
-    if( $pscmdlet.ShouldProcess( $fullPath, ('{0} HTTP header {1}' -f $action,$Name) ) )
-    {
-        $httpProtocol.CommitChanges()
-    }
+    Save-CIisConfiguration -Target "IIS Website '$($fullPath)'" -Action "$($action) $($Name) HTTP Header"
 }
 

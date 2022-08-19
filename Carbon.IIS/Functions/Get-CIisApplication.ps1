@@ -8,11 +8,10 @@ function Get-CIisApplication
     .DESCRIPTION
     Uses the `Microsoft.Web.Administration` API to get an IIS application object.  If the application doesn't exist, `$null` is returned.
 
-    The objects returned have two dynamic properties and one dynamic methods added.
+    If you make any changes to any of the objects returned by `Get-CIisApplication`, call `Save-CIisConfiguration` to
+    save those changes to IIS.
 
-     * `ServerManager { get; }` - The `ServerManager` object which created the `Application` object.
-     * `CommitChanges()` - Persists any configuration changes made to the object back into IIS's configuration files.
-     * `PhysicalPath { get; }` - The physical path to the application.
+    The objects returned each have a `PhysicalPath` property which is the physical path to the application.
 
     .OUTPUTS
     Microsoft.Web.Administration.Application.
@@ -62,7 +61,6 @@ function Get-CIisApplication
                 return ($_.Path -eq $VirtualPath)
             }
             return $true
-        } |
-        Add-IisServerManagerMember -ServerManager $site.ServerManager -PassThru
+        }
 }
 

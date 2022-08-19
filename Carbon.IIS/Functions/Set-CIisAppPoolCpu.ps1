@@ -68,8 +68,6 @@ function Set-CIisAppPoolCpu
         $PSBoundParameters |
         Copy-Hashtable -Key ($appPool.Cpu.Schema.AttributeSchemas | Select-Object -ExpandProperty 'Name')
 
-    $appPool.Cpu | Add-IisServerManagerMember -ServerManager $appPool.ServerManager
-
     $target = """$($AppPoolName)"" IIS Application Pool's CPU"
     Set-CIisConfigurationAttribute -Attribute $attrs -ConfigurationElement $appPool.Cpu -Target $target
 }

@@ -63,7 +63,7 @@ function Get-CIisConfigurationLocationPath
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
-    $mgr = New-CIisServerManager
+    $mgr = Get-CIisServerManager
 
     $locationPath = ''
 
@@ -76,16 +76,9 @@ function Get-CIisConfigurationLocationPath
         }
     }
 
-    try
-    {
-        $mgr.GetApplicationHostConfiguration().GetLocationPaths() |
-            Where-Object { $_ } |
-            Where-Object {
-                return (-not $locationPath -or $_ -eq $locationPath -or ($Recurse -and $_ -like "$($locationPath)/*"))
-            }
-    }
-    finally
-    {
-        $mgr.Dispose()
-    }
+    $mgr.GetApplicationHostConfiguration().GetLocationPaths() |
+        Where-Object { $_ } |
+        Where-Object {
+            return (-not $locationPath -or $_ -eq $locationPath -or ($Recurse -and $_ -like "$($locationPath)/*"))
+        }
 }

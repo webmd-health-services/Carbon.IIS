@@ -10,8 +10,8 @@ function Get-CIisAppPool
     get a specific application pool, pass its name to the `Name` parameter. If the application pool doesn't exist,
     an error is written and nothing is returned.
 
-    Carbon adds a `CommitChanges` method on each object returned that you can use to save configuration changes made
-    to the returned objects.
+    If you make any changes to any of the objects returned by `Get-CIisAppPool`, call the `Save-CIisConfiguration`
+    function to save those changes to IIS.
 
     .LINK
     http://msdn.microsoft.com/en-us/library/microsoft.web.administration.applicationpool(v=vs.90).aspx
@@ -39,7 +39,7 @@ function Get-CIisAppPool
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
-    $mgr = New-CIisServerManager
+    $mgr = Get-CIisServerManager
     $foundOne = $false
     $mgr.ApplicationPools |
         Where-Object {
@@ -55,8 +55,7 @@ function Get-CIisAppPool
                 $foundOne = $true
             }
             return $isTheOne
-        } |
-        Add-IisServerManagerMember -ServerManager $mgr -PassThru
+        }
 
     if( -not $foundOne )
     {

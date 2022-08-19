@@ -15,15 +15,6 @@ BeforeAll {
 
     $script:appPoolName = 'Carbon-Get-CIisWebsite'
     $script:siteName = 'Carbon-Get-CIisWebsite'
-
-    function Assert-ServerManagerMember
-    {
-        param(
-            $Website
-        )
-        ($Website.ServerManager) | Should -Not -BeNullOrEmpty
-        ($Website | Get-Member | Where-Object { $_.Name -eq 'CommitChanges' -and $_.MemberType -eq 'ScriptMethod' }) | Should -Not -BeNullOrEmpty
-    }
 }
 
 Describe 'Get-CIisWebsite' {
@@ -87,8 +78,6 @@ Describe 'Get-CIisWebsite' {
                             Where-Object { $_.Path -eq '/' } |
                             Select-Object -ExpandProperty PhysicalPath
         $website.PhysicalPath | Should -Be $physicalPath
-
-        Assert-ServerManagerMember -Website $website
     }
 
     It 'should get all websites' {
@@ -96,8 +85,6 @@ Describe 'Get-CIisWebsite' {
         $foundTestWebsite = $false
         Get-CIisWebsite | ForEach-Object {
             $foundAtLeastOne = $true
-
-            Assert-ServerManagerMember -Website $_
 
             if( $_.Name -eq $script:siteName )
             {

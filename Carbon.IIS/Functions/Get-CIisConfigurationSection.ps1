@@ -40,7 +40,7 @@ function Get-CIisConfigurationSection
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
-    $mgr = New-CIisServerManager
+    $mgr = Get-CIisServerManager
     $config = $mgr.GetApplicationHostConfiguration()
 
     $section = $null
@@ -63,7 +63,7 @@ function Get-CIisConfigurationSection
 
     if( $section )
     {
-        $section | Add-IisServerManagerMember -ServerManager $mgr -PassThru
+        return $section
     }
     else
     {

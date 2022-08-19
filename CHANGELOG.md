@@ -81,6 +81,9 @@ Removed the `Name` paramater aliases. Update usages of the `Name` parameter on t
 `Get-CIisAppPool` now writes an error when passed a name and an application pool with that name does not exist. Update
 usages with `-ErrorAction Ignore` to preserve previous behavior.
 
+Objects returned by `Get-CIisWebsite`, `Get-CIisApplication`, and `Get-CIisAppPool` no longer have a `CommitChanges`
+method or a `ServerManager` member. Updates usages to call the new `Save-CIisConfiguration` function.
+
 ## Added
 
 * Carbon.IIS now supports
@@ -98,6 +101,8 @@ configuration (i.e. there's a `<location>` element for it in the applicationHost
 (i.e. removes its `<location>` element from applicationHost.config).
 * Many functions now write messages to PowerShell's information stream when they make configuration changes.
 * Function `Set-CIisAppPoolCpu` for configuring an application pool's CPU settings.
+* Function `Save-CIisConfiguration` for saving configuration changes to IIS. Only needed if you make changes to any of
+the objects returned by the Carbon.IIS module.
 
 ## Changes
 
@@ -145,4 +150,6 @@ properties. Use `GetAttributeValue` or `SetAttributeValue` to get/set values ins
 * `Name` parameter alias on functions:
     * Get-CIisApplication
     * Install-CIisApplication
-
+* Objects returned by `Get-CIisWebsite`, `Get-CIisApplication`, and `Get-CIisAppPool` no longer have a `CommitChanges()`
+method or a `ServerManager` property. Use the new `Save-CIisConfiguration` function to save changes you make to objects
+returned by any Carbon.IIS function.

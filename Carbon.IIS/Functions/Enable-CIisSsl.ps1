@@ -150,15 +150,23 @@ function Enable-CIisSsl
 
     $currentFlags = $currentFlags -join ','
 
-
     if( $section['sslFlags'] -ne $intFlag )
     {
-        Write-IisVerbose $SiteName 'SslFlags' ('{0} ({1})' -f $currentIntFlag,$currentFlags) ('{0} ({1})' -f $intFlag,$flags) -VirtualPath $VirtualPath
-        $section['sslFlags'] = $flags
-        if( $pscmdlet.ShouldProcess( (Join-CIisVirtualPath $SiteName $VirtualPath), "enable SSL" ) )
+        $plural = ''
+        if( $flags -match ',' )
         {
-            $section.CommitChanges()
+            $plural = 's'
         }
+
+        $pathMsg = ''
+        if( $VirtualPath )
+        {
+            $pathMsg = ", virtual path ""$($VirtualPath | ConvertTo-CIisVirtualPath)"""
+        }
+        $target = "IIS website ""$($SiteName)""$($pathMsg)"
+        $infoMsg = "Enabling SSL with ""$($flags)"" flag$($plural) on $($target)."
+        $section['sslFlags'] = $flags
+        Save-CIisConfiguration -Target $target -Action 'Enable SSL' -Message $infoMsg
     }
 }
 

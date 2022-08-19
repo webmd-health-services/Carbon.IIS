@@ -107,9 +107,9 @@ function Install-CIisAppPool
     if( -not (Test-CIisAppPool -Name $Name) )
     {
         Write-Verbose ('Creating IIS Application Pool {0}' -f $Name)
-        $mgr = New-CIisServerManager
+        $mgr = Get-CIisServerManager
         $appPool = $mgr.ApplicationPools.Add($Name)
-        $mgr.CommitChanges()
+        Save-CIisConfiguration
     }
 
     $appPool = Get-CIisAppPool -Name $Name
@@ -182,7 +182,7 @@ function Install-CIisAppPool
 
     if( $updated )
     {
-        $appPool.CommitChanges()
+        Save-CIisConfiguration
     }
 
     # TODO: Pull this out into its own Start-IisAppPool function.  I think.

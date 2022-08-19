@@ -102,6 +102,7 @@
         'Remove-CIisConfigurationAttribute',
         'Remove-CIisConfigurationLocation',
         'Remove-CIisMimeMap',
+        'Save-CIisConfiguration',
         'Set-CIisAnonymousAuthentication',
         'Set-CIisAppPoolCpu',
         'Set-CIisConfigurationAttribute',

@@ -25,18 +25,11 @@ function Test-CIisWebsite
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
-    $manager = New-CIisServerManager
-    try
+    $manager = Get-CIisServerManager
+    $site = $manager.Sites | Where-Object { $_.Name -eq $Name }
+    if( $site )
     {
-        $site = $manager.Sites | Where-Object { $_.Name -eq $Name }
-        if( $site )
-        {
-            return $true
-        }
-        return $false
+        return $true
     }
-    finally
-    {
-        $manager.Dispose()
-    }
+    return $false
 }

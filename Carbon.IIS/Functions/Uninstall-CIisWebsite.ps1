@@ -36,43 +36,40 @@ function Uninstall-CIisWebsite
         Set-StrictMode -Version 'Latest'
         Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
-        $manager = New-CIisServerManager
-
-        $commitChanges = $false
+        $sitesToDelete = [Collections.Generic.List[String]]::New()
     }
 
     process
     {
-        foreach( $nameItem in $Name )
+        $sitesToDelete.AddRange($Name)
+    }
+
+    end
+    {
+        $madeChanges = $false
+
+        $manager = Get-CIisServerManager
+
+        foreach( $siteName in $sitesToDelete )
         {
-            $site = $manager.Sites | Where-Object 'Name' -EQ $nameItem
+            $site = $manager.Sites | Where-Object 'Name' -EQ $siteName
             if( -not $site )
             {
                 return
             }
 
             $action = 'Remove IIS Website'
-            if( $PSCmdlet.ShouldProcess($nameItem, $action) )
+            if( $PSCmdlet.ShouldProcess($siteName, $action) )
             {
-                Write-Information "Removing IIS website ""$($nameItem)""."
+                Write-Information "Removing IIS website ""$($siteName)""."
                 $manager.Sites.Remove( $site )
-                $commitChanges = $true
+                $madeChanges = $true
             }
         }
-    }
 
-    end
-    {
-        try
+        if( $madeChanges )
         {
-            if( $commitChanges )
-            {
-                $manager.CommitChanges()
-            }
-        }
-        finally
-        {
-            $manager.Dispose()
+            Save-CIisConfiguration
         }
     }
 }
