@@ -8,30 +8,19 @@ BeforeAll {
 
     $script:testNum = 0
 
+    #
     $script:defaultDefaults = @{}
-    (Get-CIisWebsite -Defaults).LogFile.Attributes |
+    (%CMD_NAME% -AsDefaults).%PROPERTY_NAME%.Attributes |
         Where-Object 'IsInheritedFromDefaultValue' -EQ $false |
         ForEach-Object { $script:defaultDefaults[$_.Name] = $_.Value }
 
     # All non-default values.
     $script:nonDefaultArgs = @{
-        CustomLogPluginClsid = '931a0831-2301-4a0b-9887-ee9a7d0c10df';
-        Directory = 'C:\my\log\files';
-        Enabled = $false;
-        FlushByEntryCountW3CLog = 1000;
-        LocalTimeRollover = $true;
-        LogExtFileFlags = ([LogExtFileFlags]::Date -bor [LogExtFileFlags]::Host);
-        LogFormat = [LogFormat]::Custom;
-        LogSiteID = $true;
-        LogTargetW3C = ([LogTargetW3C]::File -bor [LogTargetW3C]::ETW);
-        MaxLogLineLength = 2000;
-        Period = [LoggingRolloverPeriod]::Hourly;
-        TruncateSize = 1048576;
+        %NON_DEFAULT_ARGS%
     }
 
     # Sometimes the default values in the schema aren't quite the default values.
     $script:notQuiteDefaultValues = @{
-        Directory = '%SystemDrive%\inetpub\logs\LogFiles';
     }
 
     function ThenDefaultsSetTo
@@ -50,13 +39,14 @@ BeforeAll {
         param(
             [Parameter(Position=0)]
             [hashtable] $Values = @{},
+
             [switch] $OnDefaults
         )
 
-        $website = Get-CIisWebsite -Name $script:websiteName
-        $website | Should -Not -BeNullOrEmpty
+        $targetParent = %GET_CMD_NAME% -Name $script:%TARGET_VAR_NAME% -Defaults:$OnDefaults
+        $targetParent | Should -Not -BeNullOrEmpty
 
-        $target = $website.LogFile
+        $target = $targetParent.%PROPERTY_NAME%
         $target | Should -Not -BeNullOrEmpty
 
         $asDefaultsMsg = ''
@@ -66,7 +56,6 @@ BeforeAll {
         }
         foreach( $attr in $target.Schema.AttributeSchemas )
         {
-            $currentValue = $target.GetAttributeValue($attr.Name)
             $expectedValue = $attr.DefaultValue
             $becauseMsg = 'default'
             if( $script:notQuiteDefaultValues.ContainsKey($attr.Name))
@@ -80,7 +69,12 @@ BeforeAll {
                 $becauseMsg = 'custom'
             }
 
-            if( $currentValue -is [TimeSpan] )
+            $currentValue = $target.GetAttributeValue($attr.Name)
+            if( $currentValue -is [securestring] )
+            {
+                $currentValue = [pscredential]::New('ignored', $currentValue).GetNetworkCredential().Password
+            }
+            elseif( $currentValue -is [TimeSpan] )
             {
                 if( $expectedValue -match '^\d+$' )
                 {
@@ -98,69 +92,69 @@ BeforeAll {
     }
 }
 
-Describe 'Set-CIisWebsiteLogFile' {
+Describe '%CMD_NAME%' {
     BeforeAll {
         Start-W3ServiceTestFixture
-        Install-CIisAppPool -Name 'Set-CIisWebsiteLogFile'
+        %BEFORE_ALL%
     }
 
     AfterAll {
-        Uninstall-CIisAppPool -Name 'Set-CIisWebsiteLogFile'
+        %AFTER_ALL%
         Complete-W3ServiceTestFixture
     }
 
     BeforeEach {
-        $script:websiteName = "Set-CIisWebsiteLogFile$($script:testNum++)"
-        Set-CIisWebsiteLogFile -AsDefaults @script:defaultDefaults
-        Install-CIisWebsite -Name $script:websiteName -PhysicalPath (New-TestDirectory) -AppPoolName $script:websiteName
+        $script:%TARGET_VAR_NAME% = "%CMD_NAME%$($script:testNum++)"
+        %CMD_NAME% -AsDefaults @script:defaultDefaults
+        %BEFORE_EACH%
     }
 
     AfterEach {
-        Uninstall-CIisWebsite -Name $script:websiteName
-        Set-CIisWebsiteLogFile -AsDefaults @script:defaultDefaults
+        %AFTER_EACH%
+        %CMD_NAME% -AsDefaults @script:defaultDefaults
     }
 
     It 'should set and reset all values' {
         $infos = @()
-        Set-CIisWebsiteLogFile -SiteName $script:websiteName @nonDefaultArgs -InformationVariable 'infos'
+        %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME% @nonDefaultArgs -InformationVariable 'infos'
         $infos | Should -Not -BeNullOrEmpty
         ThenHasValues $nonDefaultArgs
 
         # Make sure no information messages get written because no changes are being made.
-        Set-CIisWebsiteLogFile -SiteName $script:websiteName @nonDefaultArgs -InformationVariable 'infos'
+        %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME% @nonDefaultArgs -InformationVariable 'infos'
         $infos | Should -BeNullOrEmpty
         ThenHasValues $nonDefaultArgs
 
-        Set-CIisWebsiteLogFile -SiteName $script:websiteName
+        %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME%
         ThenHasDefaultValues
     }
 
     It 'should support WhatIf when updating all values' {
-        Set-CIisWebsiteLogFile -SiteName $script:websiteName @nonDefaultArgs -WhatIf
+        %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME% @nonDefaultArgs -WhatIf
         ThenHasDefaultValues
     }
 
     It 'should support WhatIf when resetting all values back to defaults' {
-        Set-CIisWebsiteLogFile -SiteName $script:websiteName @nonDefaultArgs
+        %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME% @nonDefaultArgs
         ThenHasValues $nonDefaultArgs
-        Set-CIisWebsiteLogFile -SiteName $script:websiteName -WhatIf
+        %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME% -WhatIf
         ThenHasValues $nonDefaultArgs
     }
 
     It 'should change values and reset to defaults' {
-        Set-CIisWebsiteLogFile -SiteName $script:websiteName @nonDefaultArgs -ErrorAction Ignore
+        %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME% @nonDefaultArgs -ErrorAction Ignore
         ThenHasValues $nonDefaultArgs
 
         $someArgs = @{
-            Directory = "C:\logs";
-            Period = [LoggingRolloverPeriod]::Weekly;
+            PARAM_ONE = VALUE_ONE;
+            PARAM_TWO = VALUE_TWO;
         }
-        Set-CIisWebsiteLogFile -SiteName $script:websiteName @someArgs
+        %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME% @someArgs
         ThenHasValues $someArgs
     }
 
     It 'should change default settings' {
-        Set-CIisWebsiteLogFile -AsDefaults @nonDefaultArgs
+        %CMD_NAME% -AsDefaults @nonDefaultArgs
         ThenDefaultsSetTo @nonDefaultArgs
     }
 }

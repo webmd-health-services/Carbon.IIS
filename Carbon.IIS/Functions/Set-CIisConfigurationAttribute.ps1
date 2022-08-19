@@ -160,6 +160,10 @@ function Set-CIisConfigurationAttribute
             {
                 $currentValueMsg = [Enum]::GetName($Value.GetType().FullName, $currentValue)
             }
+            elseif( $currentAttr.Schema.Type -eq 'timeSpan' -and $Value -is [ulong] )
+            {
+                $valueMsg = [TimeSpan]::New($Value)
+            }
 
             if( $protectValue )
             {

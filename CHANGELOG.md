@@ -84,6 +84,9 @@ usages with `-ErrorAction Ignore` to preserve previous behavior.
 Objects returned by `Get-CIisWebsite`, `Get-CIisApplication`, and `Get-CIisAppPool` no longer have a `CommitChanges`
 method or a `ServerManager` member. Updates usages to call the new `Save-CIisConfiguration` function.
 
+Removed `IdleTimeout`, `ServiceUser`, and `Credential` parameters on `Install-CIisAppPool`. These are process model
+settings. Update usages to use the new `Set-CIisAppPoolProcessModel` function to set these values.
+
 ## Added
 
 * Carbon.IIS now supports
@@ -111,6 +114,8 @@ settings.
 the default application pool's periodic restart settings.
 * `Get-CIIsAppPool` and `Get-CIisWebsite` can now return the default application pool settings and the default website
 settings, respectively. Use the new `AsDefaults` switch.
+* Function `Set-CIisAppPoolProcessModel` for configuring an IIS application pool's process model or configuring the
+default application pool's process model.
 
 ## Changes
 
@@ -161,3 +166,5 @@ properties. Use `GetAttributeValue` or `SetAttributeValue` to get/set values ins
 * Objects returned by `Get-CIisWebsite`, `Get-CIisApplication`, and `Get-CIisAppPool` no longer have a `CommitChanges()`
 method or a `ServerManager` property. Use the new `Save-CIisConfiguration` function to save changes you make to objects
 returned by any Carbon.IIS function.
+* The `Install-CIisAppPool` function's `IdleTimeout`, `ServiceAccount`, and `Credential` parameters. Use the new
+`Set-CIisAppPoolProcessModel` function to configure an application pool's process model.
