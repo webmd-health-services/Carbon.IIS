@@ -8,7 +8,11 @@ BeforeAll {
 
     $script:testNum = 0
 
-    # All non-default values.
+    (Get-CIisAppPool -Defaults).Recycling.PeriodicRestart |
+        Where-Object 'IsInheritedFromDefaultValue' -EQ $false |
+        ForEach-Object { $script:defaultDefaults[$_.Name] = $_.Value }
+
+        # All non-default values.
     $script:nonDefaultArgs = @{
         'memory' = 1000000;
         'privateMemory' = 2000000;
@@ -20,6 +24,12 @@ BeforeAll {
     $script:notQuiteDefaultValues = @{
     }
 
+    function ThenDefaultsSetTo
+    {
+        ThenHasValues $script:nonDefaultArgs -OnDefaults
+        ThenHasValues $script:nonDefaultArgs
+    }
+
     function ThenHasDefaultValues
     {
         ThenHasValues @{}
@@ -28,12 +38,15 @@ BeforeAll {
     function ThenHasValues
     {
         param(
+            [Parameter(Position=0)]
             [hashtable] $Values = @{},
 
-            [TimeSpan[]] $AndSchedule = @()
+            [TimeSpan[]] $AndSchedule = @(),
+
+            [switch] $OnDefaults
         )
 
-        $appPool = Get-CIisAppPool -Name $script:appPoolName
+        $appPool = Get-CIisAppPool -Name $script:appPoolName -Defaults:$OnDefaults
         $appPool  | Should -Not -BeNullOrEmpty
 
         $target = $appPool.Recycling.PeriodicRestart
@@ -41,7 +54,16 @@ BeforeAll {
 
         $schedule = $target.Schedule
         $schedule | Should -HaveCount $AndSchedule.Count
-        ($schedule | Select-Object -ExpandProperty 'Time' | Sort-Object) -join ', ' | Should -Be (($AndSchedule | Sort-Object) -join ', ')
+        ($schedule |
+            Select-Object -ExpandProperty 'Time' |
+            Sort-Object) -join ', ' |
+            Should -Be (($AndSchedule | Sort-Object) -join ', ')
+
+        $asDefaultsMsg = ''
+        if( $OnDefaults )
+        {
+            $asDefaultsMsg = ' as default'
+        }
 
         foreach( $attr in $target.Schema.AttributeSchemas )
         {
@@ -71,7 +93,8 @@ BeforeAll {
                 }
             }
 
-            $currentValue | Should -Be $expectedValue -Because "should set $($attr.Name) to $($becauseMsg) value"
+            $currentValue |
+                Should -Be $expectedValue -Because "should set$($asDefaultsMsg) $($attr.Name) to $($becauseMsg) value"
         }
     }
 }
@@ -87,14 +110,16 @@ Describe 'Set-CIisAppPoolRecyclingPeriodicRestart' {
 
     BeforeEach {
         $script:appPoolName = "Set-CIisAppPoolRecyclingPeriodicRestart$($script:testNum++)"
+        Set-CIisAppPoolRecyclingPeriodicRestart -AsDefaults @script:defaultDefaults
         Install-CIisAppPool -Name $script:appPoolName
     }
 
     AfterEach {
         Uninstall-CIisAppPool -Name $script:appPoolName
+        Set-CIisAppPoolRecyclingPeriodicRestart -AsDefaults @script:defaultDefaults
     }
 
-    It 'should set and reset all log file values' {
+    It 'should set and reset all values' {
         $infos = @()
         Set-CIisAppPoolRecyclingPeriodicRestart -AppPoolName $script:appPoolName `
                                                 @nonDefaultArgs `
@@ -142,4 +167,8 @@ Describe 'Set-CIisAppPoolRecyclingPeriodicRestart' {
         ThenHasValues $someArgs
     }
 
+    It 'should change default settings' {
+        Set-CIisAppPoolRecyclingPeriodicRestart -AsDefaults @nonDefaultArgs
+        ThenDefaultsSetTo @nonDefaultArgs
+    }
 }
