@@ -110,7 +110,7 @@ settings.
 the objects returned by the Carbon.IIS module.
 * Function `Set-CIisWebsiteLogFile` for configuring a website's log file settings and the default website's log file
 settings.
-* Function `Set-CIisAppPoolRecyclingPeriodicRestart` for configuring an application pool's periodic restart settings and
+* Function `Set-CIisAppPoolPeriodicRestart` for configuring an application pool's periodic restart settings and
 the default application pool's periodic restart settings.
 * `Get-CIIsAppPool` and `Get-CIisWebsite` can now return the default application pool settings and the default website
 settings, respectively. Use the new `AsDefaults` switch.

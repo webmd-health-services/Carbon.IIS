@@ -99,7 +99,7 @@ BeforeAll {
     }
 }
 
-Describe 'Set-CIisAppPoolRecyclingPeriodicRestart' {
+Describe 'Set-CIisAppPoolPeriodicRestart' {
     BeforeAll {
         Start-W3ServiceTestFixture
     }
@@ -109,19 +109,19 @@ Describe 'Set-CIisAppPoolRecyclingPeriodicRestart' {
     }
 
     BeforeEach {
-        $script:appPoolName = "Set-CIisAppPoolRecyclingPeriodicRestart$($script:testNum++)"
-        Set-CIisAppPoolRecyclingPeriodicRestart -AsDefaults @script:defaultDefaults
+        $script:appPoolName = "Set-CIisAppPoolPeriodicRestart$($script:testNum++)"
+        Set-CIisAppPoolPeriodicRestart -AsDefaults @script:defaultDefaults
         Install-CIisAppPool -Name $script:appPoolName
     }
 
     AfterEach {
         Uninstall-CIisAppPool -Name $script:appPoolName
-        Set-CIisAppPoolRecyclingPeriodicRestart -AsDefaults @script:defaultDefaults
+        Set-CIisAppPoolPeriodicRestart -AsDefaults @script:defaultDefaults
     }
 
     It 'should set and reset all values' {
         $infos = @()
-        Set-CIisAppPoolRecyclingPeriodicRestart -AppPoolName $script:appPoolName `
+        Set-CIisAppPoolPeriodicRestart -AppPoolName $script:appPoolName `
                                                 @nonDefaultArgs `
                                                 -Schedule '01:00:00', '13:00:00' `
                                                 -InformationVariable 'infos'
@@ -129,19 +129,19 @@ Describe 'Set-CIisAppPoolRecyclingPeriodicRestart' {
         ThenHasValues $nonDefaultArgs -AndSchedule '01:00:00', '13:00:00'
 
         # Make sure no information messages get written because no changes are being made.
-        Set-CIisAppPoolRecyclingPeriodicRestart -AppPoolName $script:appPoolName `
+        Set-CIisAppPoolPeriodicRestart -AppPoolName $script:appPoolName `
                                                 @nonDefaultArgs `
                                                 -Schedule '01:00:00', '13:00:00' `
                                                 -InformationVariable 'infos'
         $infos | Should -BeNullOrEmpty
         ThenHasValues $nonDefaultArgs -AndSchedule '01:00:00', '13:00:00'
 
-        Set-CIisAppPoolRecyclingPeriodicRestart -AppPoolName $script:appPoolName
+        Set-CIisAppPoolPeriodicRestart -AppPoolName $script:appPoolName
         ThenHasDefaultValues
     }
 
     It 'should support WhatIf when updating all values' {
-        Set-CIisAppPoolRecyclingPeriodicRestart -AppPoolName $script:appPoolName `
+        Set-CIisAppPoolPeriodicRestart -AppPoolName $script:appPoolName `
                                                 @nonDefaultArgs `
                                                 -Schedule '12:34:00', '23:45:00' `
                                                 -WhatIf
@@ -149,26 +149,26 @@ Describe 'Set-CIisAppPoolRecyclingPeriodicRestart' {
     }
 
     It 'should support WhatIf when resetting all values back to defaults' {
-        Set-CIisAppPoolRecyclingPeriodicRestart -AppPoolName $script:appPoolName @nonDefaultArgs
+        Set-CIisAppPoolPeriodicRestart -AppPoolName $script:appPoolName @nonDefaultArgs
         ThenHasValues $nonDefaultArgs
-        Set-CIisAppPoolRecyclingPeriodicRestart -AppPoolName $script:appPoolName -WhatIf
+        Set-CIisAppPoolPeriodicRestart -AppPoolName $script:appPoolName -WhatIf
         ThenHasValues $nonDefaultArgs
     }
 
     It 'should change values and reset to defaults' {
-        Set-CIisAppPoolRecyclingPeriodicRestart -AppPoolName $script:appPoolName @nonDefaultArgs -ErrorAction Ignore
+        Set-CIisAppPoolPeriodicRestart -AppPoolName $script:appPoolName @nonDefaultArgs -ErrorAction Ignore
         ThenHasValues $nonDefaultArgs
 
         $someArgs = @{
             'memory' = 6000000;
             'privateMemory' = 7000000;
         }
-        Set-CIisAppPoolRecyclingPeriodicRestart -AppPoolName $script:appPoolName @someArgs
+        Set-CIisAppPoolPeriodicRestart -AppPoolName $script:appPoolName @someArgs
         ThenHasValues $someArgs
     }
 
     It 'should change default settings' {
-        Set-CIisAppPoolRecyclingPeriodicRestart -AsDefaults @nonDefaultArgs
+        Set-CIisAppPoolPeriodicRestart -AsDefaults @nonDefaultArgs
         ThenDefaultsSetTo @nonDefaultArgs
     }
 }

@@ -18,7 +18,7 @@ function Install-CIisAppPool
     To configure the application pool's process model (i.e. the application pool's account/identity, idle timeout, etc.,
     use the `Set-CIisAppPoolProcessModel`)
 
-    To configure the application pool's periodic restart settings, use the `Set-CIisAppPoolRecyclingPeriodicRestart`
+    To configure the application pool's periodic restart settings, use the `Set-CIisAppPoolPeriodicRestart`
     function.
 
     To configure the application pool's CPU settings, use the `Set-CIisAppPoolCpu` function.
