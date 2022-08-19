@@ -1,12 +1,12 @@
 
-function Set-CIisAppPoolRecyclingPeriodicRestart
+function Set-CIisAppPoolPeriodicRestart
 {
     <#
     .SYNOPSIS
     Configures an IIS application pool's periodic restart settings.
 
     .DESCRIPTION
-    The `Set-CIisAppPoolRecyclingPeriodicRestart` function configures all the settings on an IIS application pool's
+    The `Set-CIisAppPoolPeriodicRestart` function configures all the settings on an IIS application pool's
     periodic restart settings. Pass the name of the application pool to the `AppPoolName` parameter. Pass the
     configuration to the `Memory`, `PrivateMemory`, `Requests`, and `Time` parameters (see
     [Periodic Restart Settings for Application Pool Recycling <periodicRestart>](https://docs.microsoft.com/en-us/iis/configuration/system.applicationhost/applicationpools/add/recycling/periodicrestart/))
@@ -21,13 +21,13 @@ function Set-CIisAppPoolRecyclingPeriodicRestart
     https://docs.microsoft.com/en-us/iis/configuration/system.applicationhost/applicationpools/add/recycling/periodicrestart/
 
     .EXAMPLE
-    Set-CIisAppPoolRecyclingPeriodicRestart -AppPoolName 'Fubar'
+    Set-CIisAppPoolPeriodicRestart -AppPoolName 'Fubar'
 
     Demonstrates how to reset an IIS application pool's periodic restart settings to their default values by not
     passing any arguments.
 
     .EXAMPLE
-    Set-CIisAppPoolRecyclingPeriodicRestart -AppPoolName 'Snafu' -Memory 1000000 -PrivateMemory 2000000 -Requests 3000000 -Time '23:00:00'
+    Set-CIisAppPoolPeriodicRestart -AppPoolName 'Snafu' -Memory 1000000 -PrivateMemory 2000000 -Requests 3000000 -Time '23:00:00'
 
     Demonstrates how to configure all an IIS applicaton pool's periodic restart settings. In this example, `memory` will
     be set to `1000000`, `privateMemory` will be set to `2000000`, `requests` will be sent to `3000000`, and `time` will

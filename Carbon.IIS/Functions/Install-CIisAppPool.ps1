@@ -29,6 +29,9 @@ function Install-CIisAppPool
     If an existing app pool exists with name `Name`, it's settings are modified.  The app pool isn't deleted.  (You
     can't delete an app pool if there are any websites using it, that's why.)
 
+    To configure the application pool's periodic restart settings, use the `Set-CIisAppPoolPeriodicRestart`
+    can't delete an app pool if there are any websites using it, that's why.)
+
     By default, this function will create an application pool running the latest version of .NET, with an integrated
     pipeline, as the `ApplicationPoolIdentity` account.
 
