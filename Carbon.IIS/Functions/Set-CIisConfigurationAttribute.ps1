@@ -103,7 +103,13 @@ function Set-CIisConfigurationAttribute
 
         # If the attribute's value is sensitive. If set, the attribute's value will be masked when written to the
         # console.
-        [bool] $Sensitive
+        [bool] $Sensitive,
+
+        # Properties to skip and not change. These are usually private settings that we shouldn't be mucking with or
+        # settings that capture current state, etc.
+        [Parameter(Mandatory, ParameterSetName='AllByConfigElement')]
+        [Parameter(Mandatory, ParameterSetName='AllByConfigPath')]
+        [String[]] $Exclude = @()
     )
 
     Set-StrictMode -Version 'Latest'
@@ -129,6 +135,11 @@ function Set-CIisConfigurationAttribute
         process
         {
             $currentAttr = $InputObject
+
+            if( $Exclude -and $currentAttr.Name -in $Exclude )
+            {
+                return
+            }
 
             if( $mirroring )
             {
@@ -284,12 +295,12 @@ function Set-CIisConfigurationAttribute
     {
         if( $infoMessages.Count -eq 1 )
         {
-            $msg = "Setting attribute on $($Target): $($infoMessages.Trim() -replace ' {2,}', ' ')"
+            $msg = "Configuring $($Target): $($infoMessages.Trim() -replace ' {2,}', ' ')"
             Write-Information $msg
         }
         elseif( $infoMessages.Count -gt 1)
         {
-            Write-Information "Setting attributes on $($Target)."
+            Write-Information "Configuring $($Target)."
             $infoMessages | ForEach-Object { Write-Information $_ }
         }
     }

@@ -10,17 +10,27 @@ BeforeAll {
 
     #
     $script:defaultDefaults = @{}
-    (%GET_CMD_NAME% -Defaults).%PROPERTY_NAME%.Attributes |
+    (Get-CIisAppPool -Defaults).Attributes |
         Where-Object 'IsInheritedFromDefaultValue' -EQ $false |
         ForEach-Object { $script:defaultDefaults[$_.Name] = $_.Value }
 
     # All non-default values.
     $script:nonDefaultArgs = @{
-        %NON_DEFAULT_ARGS%
+        'autoStart' = $false;
+        'CLRConfigFile' = 'some config file';
+        'enable32BitAppOnWin64' = $true;
+        'enableConfigurationOverride' = $false;
+        'managedPipelineMode' = [Microsoft.Web.Administration.ManagedPipelineMode]::Classic;
+        'managedRuntimeLoader' = 'myloader.dll';
+        'managedRuntimeVersion' = 'v4.0';
+        'passAnonymousToken' = $false;
+        'queueLength' = [UInt32]2000;
+        'startMode' = [Microsoft.Web.Administration.StartMode]::AlwaysRunning;
     }
 
     # Sometimes the default values in the schema aren't quite the default values.
     $script:notQuiteDefaultValues = @{
+        'managedRuntimeVersion' = 'v4.0'
     }
 
     function ThenDefaultsSetTo
@@ -43,10 +53,10 @@ BeforeAll {
             [switch] $OnDefaults
         )
 
-        $targetParent = %GET_CMD_NAME% -Name $script:%TARGET_VAR_NAME% -Defaults:$OnDefaults
+        $targetParent = Get-CIisAppPool -Name $script:appPoolName -Defaults:$OnDefaults
         $targetParent | Should -Not -BeNullOrEmpty
 
-        $target = $targetParent.%PROPERTY_NAME%
+        $target = $targetParent
         $target | Should -Not -BeNullOrEmpty
 
         $asDefaultsMsg = ''
@@ -54,8 +64,14 @@ BeforeAll {
         {
             $asDefaultsMsg = ' as default'
         }
+
         foreach( $attr in $target.Schema.AttributeSchemas )
         {
+            if( $attr.Name -in @('applicationPoolSid', 'state', 'name') )
+            {
+                continue
+            }
+
             $expectedValue = $attr.DefaultValue
             $becauseMsg = 'default'
             if( $script:notQuiteDefaultValues.ContainsKey($attr.Name))
@@ -92,69 +108,69 @@ BeforeAll {
     }
 }
 
-Describe '%CMD_NAME%' {
+Describe 'Set-CIisAppPool' {
     BeforeAll {
         Start-W3ServiceTestFixture
-        %BEFORE_ALL%
+
     }
 
     AfterAll {
-        %AFTER_ALL%
+
         Complete-W3ServiceTestFixture
     }
 
     BeforeEach {
-        $script:%TARGET_VAR_NAME% = "%CMD_NAME%$($script:testNum++)"
-        %CMD_NAME% -AsDefaults @script:defaultDefaults
-        %BEFORE_EACH%
+        $script:appPoolName = "Set-CIisAppPool$($script:testNum++)"
+        Set-CIisAppPool -AsDefaults @script:defaultDefaults
+        Install-CIisAppPool -Name $script:appPoolName
     }
 
     AfterEach {
-        %AFTER_EACH%
-        %CMD_NAME% -AsDefaults @script:defaultDefaults
+        Uninstall-CIisAppPool -Name $script:appPoolName
+        Set-CIisAppPool -AsDefaults @script:defaultDefaults
     }
 
     It 'should set and reset all values' {
         $infos = @()
-        %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME% @nonDefaultArgs -InformationVariable 'infos'
+        Set-CIisAppPool -Name $script:appPoolName @nonDefaultArgs -InformationVariable 'infos'
         $infos | Should -Not -BeNullOrEmpty
         ThenHasValues $nonDefaultArgs
 
         # Make sure no information messages get written because no changes are being made.
-        %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME% @nonDefaultArgs -InformationVariable 'infos'
+        Set-CIisAppPool -Name $script:appPoolName @nonDefaultArgs -InformationVariable 'infos'
         $infos | Should -BeNullOrEmpty
         ThenHasValues $nonDefaultArgs
 
-        %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME%
+        Set-CIisAppPool -Name $script:appPoolName
         ThenHasDefaultValues
     }
 
     It 'should support WhatIf when updating all values' {
-        %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME% @nonDefaultArgs -WhatIf
+        Set-CIisAppPool -Name $script:appPoolName @nonDefaultArgs -WhatIf
         ThenHasDefaultValues
     }
 
     It 'should support WhatIf when resetting all values back to defaults' {
-        %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME% @nonDefaultArgs
+        Set-CIisAppPool -Name $script:appPoolName @nonDefaultArgs
         ThenHasValues $nonDefaultArgs
-        %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME% -WhatIf
+        Set-CIisAppPool -Name $script:appPoolName -WhatIf
         ThenHasValues $nonDefaultArgs
     }
 
     It 'should change values and reset to defaults' {
-        %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME% @nonDefaultArgs -ErrorAction Ignore
+        Set-CIisAppPool -Name $script:appPoolName @nonDefaultArgs -ErrorAction Ignore
         ThenHasValues $nonDefaultArgs
 
         $someArgs = @{
-            PARAM_ONE = VALUE_ONE;
-            PARAM_TWO = VALUE_TWO;
+            managedRuntimeVersion = 'v2.0';
+            queueLength = [UInt32]3000;
         }
-        %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME% @someArgs
+        Set-CIisAppPool -Name $script:appPoolName @someArgs
         ThenHasValues $someArgs
     }
 
     It 'should change default settings' {
-        %CMD_NAME% -AsDefaults @nonDefaultArgs
+        Set-CIisAppPool -AsDefaults @nonDefaultArgs
         ThenDefaultsSetTo @nonDefaultArgs
     }
 }

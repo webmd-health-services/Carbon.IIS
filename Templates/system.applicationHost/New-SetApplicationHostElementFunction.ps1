@@ -19,8 +19,7 @@ param(
     [Parameter(Mandatory)]
     [Uri] $DocumentationUrl,
 
-    [Parameter(Mandatory)]
-    [String[]] $PropertyName
+    [String[]] $PropertyName = @()
 )
 
 #Requires -Version 7.1
