@@ -52,7 +52,6 @@ Import-Module -Name '.\Carbon.IIS'
 * Set-CIisHttpHeader
 * Set-CIisHttpRedirect
 * Set-CIisMimeMap
-* Set-CIisWebsiteID
 * Set-CIisWebsiteSslCertificate
 * Set-CIisWindowsAuthentication
 * Test-CIisAppPool

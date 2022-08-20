@@ -8,22 +8,28 @@ BeforeAll {
 
     $script:testNum = 0
 
-    #
     $script:defaultDefaults = @{}
-    (%GET_CMD_NAME% -Defaults).%PROPERTY_NAME%.Attributes |
+    (Get-CIisWebsite -Defaults).Attributes |
         Where-Object 'IsInheritedFromDefaultValue' -EQ $false |
         ForEach-Object { $script:defaultDefaults[$_.Name] = $_.Value }
 
     # All non-default values.
     $script:nonDefaultArgs = @{
-        %NON_DEFAULT_ARGS%
+        'id' = 53;
+        'serverAutoStart' = $false;
     }
+
+    # Once you set a website's ID, you can't ever reset it, only change it to a new value.
+    $script:requiredDefaults = @{
+        'id' = 53;
+    }
+
+    $script:excludedAttributes = @('name', 'state')
 
     # Sometimes the default values in the schema aren't quite the default values.
     $script:notQuiteDefaultValues = @{
+        'id' = 53;
     }
-
-    $script:excludedAttributes = @()
 
     function ThenDefaultsSetTo
     {
@@ -45,10 +51,10 @@ BeforeAll {
             [switch] $OnDefaults
         )
 
-        $targetParent = %GET_CMD_NAME% -Name $script:%TARGET_VAR_NAME% -Defaults:$OnDefaults
+        $targetParent = Get-CIisWebsite -Name $script:siteName -Defaults:$OnDefaults
         $targetParent | Should -Not -BeNullOrEmpty
 
-        $target = $targetParent.%PROPERTY_NAME%
+        $target = $targetParent
         $target | Should -Not -BeNullOrEmpty
 
         $asDefaultsMsg = ''
@@ -99,69 +105,57 @@ BeforeAll {
     }
 }
 
-Describe '%CMD_NAME%' {
+Describe 'Set-CIisWebsite' {
     BeforeAll {
         Start-W3ServiceTestFixture
-        %BEFORE_ALL%
+        Install-CIisAppPool -Name 'Set-CIisWebsite'
     }
 
     AfterAll {
-        %AFTER_ALL%
+        Uninstall-CIisAppPool -Name 'Set-CIisWebsite'
         Complete-W3ServiceTestFixture
     }
 
     BeforeEach {
-        $script:%TARGET_VAR_NAME% = "%CMD_NAME%$($script:testNum++)"
-        %CMD_NAME% -AsDefaults @script:defaultDefaults
-        %BEFORE_EACH%
+        $script:siteName = "Set-CIisWebsite$($script:testNum++)"
+        Set-CIisWebsite -AsDefaults @script:defaultDefaults
+        Install-CIisWebsite -Name $script:siteName -PhysicalPath (New-TestDirectory) -AppPoolName 'Set-CIisWebsite'
     }
 
     AfterEach {
-        %AFTER_EACH%
-        %CMD_NAME% -AsDefaults @script:defaultDefaults
+        Uninstall-CIisWebsite -Name $script:siteName
+        Set-CIisWebsite -AsDefaults @script:defaultDefaults
     }
 
     It 'should set and reset all values' {
         $infos = @()
-        %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME% @nonDefaultArgs -InformationVariable 'infos'
+        Set-CIisWebsite -Name $script:siteName @nonDefaultArgs -InformationVariable 'infos'
         $infos | Should -Not -BeNullOrEmpty
         ThenHasValues $nonDefaultArgs
 
         # Make sure no information messages get written because no changes are being made.
-        %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME% @nonDefaultArgs -InformationVariable 'infos'
+        Set-CIisWebsite -Name $script:siteName @nonDefaultArgs -InformationVariable 'infos'
         $infos | Should -BeNullOrEmpty
         ThenHasValues $nonDefaultArgs
 
-        %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME%
+        Set-CIisWebsite -Name $script:siteName @script:requiredDefaults
         ThenHasDefaultValues
     }
 
     It 'should support WhatIf when updating all values' {
-        %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME% @nonDefaultArgs -WhatIf
+        Set-CIisWebsite -Name $script:siteName @nonDefaultArgs -WhatIf
         ThenHasDefaultValues
     }
 
     It 'should support WhatIf when resetting all values back to defaults' {
-        %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME% @nonDefaultArgs
+        Set-CIisWebsite -Name $script:siteName @nonDefaultArgs
         ThenHasValues $nonDefaultArgs
-        %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME% -WhatIf
+        Set-CIisWebsite -Name $script:siteName -WhatIf
         ThenHasValues $nonDefaultArgs
-    }
-
-    It 'should change values and reset to defaults' {
-        %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME% @nonDefaultArgs -ErrorAction Ignore
-        ThenHasValues $nonDefaultArgs
-
-        $someArgs = @{
-            PARAM_ONE = VALUE_ONE;
-            PARAM_TWO = VALUE_TWO;
-        }
-        %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME% @someArgs
-        ThenHasValues $someArgs
     }
 
     It 'should change default settings' {
-        %CMD_NAME% -AsDefaults @nonDefaultArgs
+        Set-CIisWebsite -AsDefaults @nonDefaultArgs
         ThenDefaultsSetTo @nonDefaultArgs
     }
 }

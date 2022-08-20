@@ -112,7 +112,7 @@
         'Set-CIisHttpHeader',
         'Set-CIisHttpRedirect',
         'Set-CIisMimeMap',
-        'Set-CIisWebsiteID',
+        'Set-CIisWebsite',
         'Set-CIisWebsiteLogFile',
         'Set-CIisWebsiteSslCertificate',
         'Set-CIisWindowsAuthentication',

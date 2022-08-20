@@ -107,8 +107,8 @@ function Set-CIisConfigurationAttribute
 
         # Properties to skip and not change. These are usually private settings that we shouldn't be mucking with or
         # settings that capture current state, etc.
-        [Parameter(Mandatory, ParameterSetName='AllByConfigElement')]
-        [Parameter(Mandatory, ParameterSetName='AllByConfigPath')]
+        [Parameter(ParameterSetName='AllByConfigElement')]
+        [Parameter(ParameterSetName='AllByConfigPath')]
         [String[]] $Exclude = @()
     )
 
@@ -204,7 +204,17 @@ function Set-CIisConfigurationAttribute
                 $whatIf = "$($currentAttr.Name) for $($Target -replace '"', '''')"
                 if( $PSCmdlet.ShouldProcess($whatIf, $action) )
                 {
-                    $currentAttr.Delete()
+                    try
+                    {
+                        $currentAttr.Delete()
+                    }
+                    catch
+                    {
+                        $msg = "Exception resetting ""$($currentAttr.Name)"" on $($Target) to its default value (by " +
+                               "deleting it): $($_)"
+                        Write-Error -Message $msg
+                        continue
+                    }
                     [void]$removedNames.Add($currentAttr.Name)
                 }
                 return
@@ -223,7 +233,7 @@ function Set-CIisConfigurationAttribute
             }
             catch
             {
-                $msg = "Failed to set attribute ""$($currentAttr.Name)"" on $($Target): $($_)"
+                $msg = "Exception setting ""$($currentAttr.Name)"" on $($Target): $($_)"
                 Write-Error -Message $msg -ErrorAction Stop
             }
             [void]$updatedNames.Add($currentAttr.Name)

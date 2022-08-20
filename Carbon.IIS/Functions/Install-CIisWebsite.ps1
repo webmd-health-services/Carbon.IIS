@@ -85,25 +85,19 @@ function Install-CIisWebsite
         [Alias('Bindings')]
         [String[]] $Binding = @('http/*:80:'),
 
-        # The name of the app pool under which the website runs.  The app pool must exist.  If not provided, IIS picks
+        # The name of the app pool under which the website runs. The app pool must exist. If not provided, IIS picks
         # one for you.  No whammy, no whammy! It is recommended that you create an app pool for each website. That's
         # what the IIS Manager does.
         [String] $AppPoolName,
 
-        # The site's IIS ID. IIS picks one for you automatically if you don't supply one. Must be greater than 0.
-        #
-        # The `SiteID` switch is new in Carbon 2.0.
-        [int] $SiteID,
+        # Sets the IIS website's `id` setting.
+        [UInt32] $ID,
+
+        # Sets the IIS website's `serverAutoStart` setting.
+        [switch] $ServerAutoStart,
 
         # Return a `Microsoft.Web.Administration.Site` object for the website.
-        #
-        # The `PassThru` switch is new in Carbon 2.0.
-        [switch] $PassThru,
-
-        # Deletes the website before installation, if it exists. Preserves default behavior in Carbon before 2.0.
-        #
-        # The `Force` switch is new in Carbon 2.0.
-        [switch] $Force
+        [switch] $PassThru
     )
 
     Set-StrictMode -Version 'Latest'
@@ -152,16 +146,10 @@ function Install-CIisWebsite
         return
     }
 
-    if( $Force )
-    {
-        Uninstall-CIisWebsite -Name $Name
-    }
-
     [Microsoft.Web.Administration.Site] $site = $null
     $modified = $false
     if( -not (Test-CIisWebsite -Name $Name) )
     {
-        Write-Verbose -Message ('Creating website ''{0}'' ({1}).' -f $Name,$PhysicalPath)
         $firstBinding = $Binding | Select-Object -First 1 | ConvertTo-Binding
         $mgr = Get-CIisServerManager
         Write-Information "Creating IIS website ""$($Name)""."
@@ -180,10 +168,11 @@ function Install-CIisWebsite
         $site.Bindings |
         Where-Object { -not $expectedBindings.Contains(  ('{0}/{1}' -f $_.Protocol,$_.BindingInformation ) ) }
 
+    $bindingMsgs = [Collections.Generic.List[String]]::New()
+
     foreach( $bindingToRemove in $bindingsToRemove )
     {
-        Write-IisVerbose $Name 'Binding' ('{0}/{1}' -f $bindingToRemove.Protocol,$bindingToRemove.BindingInformation)
-        Write-Information "Removing binding ""$($bindingToRemove)"" from IIS website ""$($Name)""."
+        $bindingMsgs.Add("- $($bindingToRemove.Protocol)/$($bindingToRemove.BindingInformation)")
         $site.Bindings.Remove( $bindingToRemove )
         $modified = $true
     }
@@ -198,10 +187,16 @@ function Install-CIisWebsite
 
     foreach( $bindingToAdd in $bindingsToAdd )
     {
-        Write-IisVerbose $Name 'Binding' '' ('{0}/{1}' -f $bindingToAdd.Protocol,$bindingToAdd.BindingInformation)
-        Write-Information "Adding binding ""$($bindingToRemove)"" to IIS website ""$($Name)""."
+        $bindingMsgs.Add("+ $($bindingToAdd.Protocol)/$($bindingToAdd.BindingInformation)")
         $site.Bindings.Add( $bindingToAdd.BindingInformation, $bindingToAdd.Protocol ) | Out-Null
         $modified = $true
+    }
+
+    $prefix = "Configuring ""$($Name)"" IIS website's bindings:  "
+    foreach( $bindingMsg in $bindingMsgs )
+    {
+        Write-Information "$($prefix)$($bindingMsg)"
+        $prefix = ' ' * $prefix.Length
     }
 
     [Microsoft.Web.Administration.Application] $rootApp = $null
@@ -240,10 +235,21 @@ function Install-CIisWebsite
         Save-CIisConfiguration
     }
 
-    if( $SiteID )
-    {
-        Set-CIisWebsiteID -SiteName $Name -ID $SiteID
+
+    $site = Get-CIisWebsite -Name $Name
+    # Can't ever remove a site ID, only change it, so set the ID to the website's current value.
+    $setArgs = @{
+        'ID' = $site.ID;
     }
+    foreach( $parameterName in (Get-Command -Name 'Set-CIisWebsite').Parameters.Keys )
+    {
+        if( -not $PSBoundParameters.ContainsKey($parameterName) )
+        {
+            continue
+        }
+        $setArgs[$parameterName] = $PSBoundParameters[$parameterName]
+    }
+    Set-CIisWebsite @setArgs
 
     # Now, wait until site is actually running
     $tries = 0
