@@ -41,17 +41,35 @@ function Install-CIisAppPool
         [Parameter(Mandatory)]
         [String] $Name,
 
-        # The managed .NET runtime version to use.  Default is 'v4.0'.  Valid values are `v1.0`, `v1.1`, `v2.0`, or
-        #$ `v4.0`. Use an empty string if you're using .NET Core or to set the .NET framework version to
-        # `No Managed Code`.
-        [ValidateSet('v1.0','v1.1','v2.0','v4.0','')]
-        [String] $ManagedRuntimeVersion = 'v4.0',
+        # Sets the IIS application pool's `autoStart` setting.
+        [switch] $AutoStart,
 
-        # Use the classic pipeline mode, i.e. don't use an integrated pipeline.
-        [switch] $ClassicPipelineMode,
+        # Sets the IIS application pool's `CLRConfigFile` setting.
+        [String] $CLRConfigFile,
 
-        # Enable 32-bit applications.
-        [switch] $Enable32BitApps,
+        # Sets the IIS application pool's `enable32BitAppOnWin64` setting.
+        [switch] $Enable32BitAppOnWin64,
+
+        # Sets the IIS application pool's `enableConfigurationOverride` setting.
+        [switch] $EnableConfigurationOverride,
+
+        # Sets the IIS application pool's `managedPipelineMode` setting.
+        [ManagedPipelineMode] $ManagedPipelineMode,
+
+        # Sets the IIS application pool's `managedRuntimeLoader` setting.
+        [String] $ManagedRuntimeLoader,
+
+        # Sets the IIS application pool's `managedRuntimeVersion` setting.
+        [String] $ManagedRuntimeVersion,
+
+        # Sets the IIS application pool's `passAnonymousToken` setting.
+        [switch] $PassAnonymousToken,
+
+        # Sets the IIS application pool's `queueLength` setting.
+        [UInt32] $QueueLength,
+
+        # Sets the IIS application pool's `startMode` setting.
+        [StartMode] $StartMode,
 
         # Return an object representing the app pool.
         [switch] $PassThru
@@ -60,83 +78,25 @@ function Install-CIisAppPool
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
-    function Add-InfoMessage
-    {
-        param(
-            [Parameter(Mandatory)]
-            [String] $PropertyName,
-
-            [Parameter(Mandatory)]
-            [AllowNull()]
-            [AllowEmptyString()]
-            [String] $CurrentValue,
-
-            [Parameter(Mandatory)]
-            [AllowNull()]
-            [AllowEmptyString()]
-            [String] $NewValue
-        )
-
-        $infos.Add("    $('{0,15}' -f $PropertyName)  $($CurrentValue) -> $($NewValue)")
-    }
-
-    $action = 'Updating'
     if( -not (Test-CIisAppPool -Name $Name) )
     {
-        $action = 'Creating' # IIS Application Pool ""$($Name)""."
+        Write-Information "Creating IIS Application Pool ""$($Name)""."
         $mgr = Get-CIisServerManager
         $appPool = $mgr.ApplicationPools.Add($Name)
         Save-CIisConfiguration
     }
 
-    $appPool = Get-CIisAppPool -Name $Name
-
-    $updated = $false
-
-    $infos = [Collections.Generic.List[String]]::New()
-    if( $appPool.ManagedRuntimeVersion -ne $ManagedRuntimeVersion )
+    $setArgs = @{}
+    foreach( $parameterName in (Get-Command -Name 'Set-CIisAppPool').Parameters.Keys )
     {
-        Add-InfoMessage -PropertyName 'managedRuntimeVersion' `
-                        -CurrentValue $appPool.ManagedRuntimeVersion `
-                        -NewValue $ManagedRuntimeVersion
-        $appPool.ManagedRuntimeVersion = $ManagedRuntimeVersion
-        $updated = $true
+        if( -not $PSBoundParameters.ContainsKey($parameterName) )
+        {
+            continue
+        }
+        $setArgs[$parameterName] = $PSBoundParameters[$parameterName]
     }
 
-    $pipelineMode = [Microsoft.Web.Administration.ManagedPipelineMode]::Integrated
-    if( $ClassicPipelineMode )
-    {
-        $pipelineMode = [Microsoft.Web.Administration.ManagedPipelineMode]::Classic
-    }
-
-    if( $appPool.ManagedPipelineMode -ne $pipelineMode )
-    {
-        Add-InfoMessage -PropertyName 'managedPipelineMode' `
-                        -CurrentValue $appPool.ManagedPipelineMode `
-                        -NewValue $pipelineMode
-        $appPool.ManagedPipelineMode = $pipelineMode
-        $updated = $true
-    }
-
-    if( $appPool.Enable32BitAppOnWin64 -ne ([bool]$Enable32BitApps) )
-    {
-        Add-InfoMessage -PropertyName 'enable32BitAppOnWin64' `
-                        -CurrentValue $appPool.Enable32BitAppOnWin64 `
-                        -NewValue $Enable32BitApps
-        $appPool.Enable32BitAppOnWin64 = $Enable32BitApps
-        $updated = $true
-    }
-
-    if( $updated -or $action -eq 'Creating')
-    {
-        Write-Information "$($action) IIS application pool ""$($Name)""."
-        $infos | ForEach-Object { Write-Information $_ }
-    }
-
-    if( $updated )
-    {
-        Save-CIisConfiguration
-    }
+    Set-CIisAppPool -AppPoolName $Name @setArgs
 
     # TODO: Pull this out into its own Start-IisAppPool function.  I think.
     $appPool = Get-CIisAppPool -Name $Name
@@ -154,7 +114,7 @@ function Install-CIisAppPool
 
     if( $PassThru )
     {
-        $appPool
+        Get-CIisAppPool -Name $Name
     }
 }
 

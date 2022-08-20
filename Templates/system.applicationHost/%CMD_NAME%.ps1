@@ -40,7 +40,7 @@ function %CMD_NAME%
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSShouldProcess', '')]
     [CmdletBinding(DefaultParameterSetName='SetInstance', SupportsShouldProcess)]
     param(
-        # The name of the %TARGET_OBJECT_TYPE% whose %TARGET_PROPERTY_DESCRIPTION% settings to set.
+        # The name of the %TARGET_OBJECT_TYPE% whose %TARGET_PROPERTY_DESCRIPTION% settings to configure.
         [Parameter(Mandatory, ParameterSetName='SetInstance', Position=0)]
         [String] $%CMD_NAME_PARAMETER_NAME%,
 
@@ -62,5 +62,5 @@ function %CMD_NAME%
 
     Invoke-SetConfigurationAttribute -ConfigurationElement $target.%PROPERTY_NAME% `
                                      -PSCmdlet $PSCmdlet `
-                                     -Target """$($%CMD_NAME_PARAMETER_NAME%)"" IIS website's %TARGET_PROPERTY_DESCRIPTION%"
+                                     -Target """$($%CMD_NAME_PARAMETER_NAME%)"" IIS %TARGET_OBJECT_TYPE%'s %TARGET_PROPERTY_DESCRIPTION%"
 }

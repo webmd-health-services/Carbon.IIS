@@ -11,37 +11,46 @@
 # limitations under the License.
 
 BeforeAll {
-    $script:appPoolName = 'CarbonInstallIisAppPool'
+    $script:appPoolName = 'Install-CIisAppPool'
 
     & (Join-Path -Path $PSScriptRoot 'Initialize-CarbonTest.ps1' -Resolve)
 
-    Start-W3ServiceTestFixture
-
-    function Assert-AppPoolExists
+    function ThenAppPoolExists
     {
         $exists = Test-CIisAppPool -Name $script:appPoolname
         $exists | Should -BeTrue
     }
 
-    function Assert-ManagedRuntimeVersion($Version)
+    function ThenRuntimeVersionIs
     {
+        param(
+            $Version
+        )
+
         $apppool = Get-CIisAppPool -Name $script:appPoolName
         $apppool.ManagedRuntimeVersion | Should -Be $Version
     }
 
-    function Assert-ManagedPipelineMode($expectedMode)
+    function ThenPipelineModeIs
     {
+        param(
+            $ExpectedMode
+        )
+
         $apppool = Get-CIisAppPool -Name $script:appPoolName
         $apppool.ManagedPipelineMode | Should -Be $expectedMode
     }
 
-    function Assert-AppPool32BitEnabled([bool]$expected32BitEnabled)
+    function Then32BitEnabledIs
     {
+        param(
+            [bool] $Expected32BitEnabled
+        )
         $appPool = Get-CIisAppPool -Name $script:appPoolName
-        $appPool.Enable32BitAppOnWin64 | Should -Be $expected32BitEnabled
+        $appPool.Enable32BitAppOnWin64 | Should -Be $Expected32BitEnabled
     }
 
-    function Assert-AppPool
+    function ThenAppPool
     {
         param(
             [Parameter(Position=0)]
@@ -51,10 +60,12 @@ BeforeAll {
 
             [switch] $ClassicPipelineMode,
 
+            $IdentityType = (Get-IISDefaultAppPoolIdentity),
+
             [switch] $Enable32Bit
         )
 
-        Assert-AppPoolExists
+        ThenAppPoolExists
 
         if( -not $AppPool )
         {
@@ -68,6 +79,7 @@ BeforeAll {
             $pipelineMode = 'Classic'
         }
         $AppPool.ManagedPipelineMode | Should -Be $pipelineMode
+        $AppPool.ProcessModel.IdentityType | Should -Be $IdentityType
         $AppPool.Enable32BitAppOnWin64 | Should -Be ([bool]$Enable32Bit)
 
         $MAX_TRIES = 20
@@ -82,6 +94,16 @@ BeforeAll {
             }
             Start-Sleep -Milliseconds 1000
         }
+    }
+
+    function Get-IISDefaultAppPoolIdentity
+    {
+        $iisVersion = Get-CIISVersion
+        if( $iisVersion -eq '7.0' )
+        {
+            return 'NetworkService'
+        }
+        return 'ApplicationPoolIdentity'
     }
 }
 
@@ -99,14 +121,14 @@ Describe 'Install-CIisAppPool' {
     }
 
     It 'should set managed runtime to nothing' {
-        Install-CIisAppPool -Name $script:appPoolName -ManagedRuntimeVersion ''
-        Assert-ManagedRuntimeVersion -Version ''
+        Install-CIisAppPool -Name $script:appPoolName
+        ThenRuntimeVersionIs -Version 'v4.0'  # The default from application pool defaults.
     }
 
     It 'should create new app pool' {
         $result = Install-CIisAppPool -Name $script:appPoolName -PassThru
         $result | Should -Not -BeNullOrEmpty
-        Assert-AppPool $result
+        ThenAppPool $result
     }
 
     It 'should create new app pool but not return object' {
@@ -114,29 +136,29 @@ Describe 'Install-CIisAppPool' {
         $result | Should -BeNullOrEmpty
         $appPool = Get-CIisAppPool -Name $script:appPoolName
         $appPool | Should -Not -BeNullOrEmpty
-        Assert-AppPool $appPool
+        ThenAppPool $appPool
 
     }
 
     It 'should set managed runtime version' {
         $result = Install-CIisAppPool -Name $script:appPoolName -ManagedRuntimeVersion 'v2.0'
         $result | Should -BeNullOrEmpty
-        Assert-AppPoolExists
-        Assert-ManagedRuntimeVersion 'v2.0'
+        ThenAppPoolExists
+        ThenRuntimeVersionIs 'v2.0'
     }
 
     It 'should set managed pipeline mode' {
-        $result = Install-CIisAppPool -Name $script:appPoolName -ClassicPipelineMode
+        $result = Install-CIisAppPool -Name $script:appPoolName -ManagedPipelineMode Classic
         $result | Should -BeNullOrEmpty
-        Assert-AppPoolExists
-        Assert-ManagedPipelineMode 'Classic'
+        ThenAppPoolExists
+        ThenPipelineModeIs 'Classic'
     }
 
     It 'should enable32bit apps' {
-        $result = Install-CIisAppPool -Name $script:appPoolName -Enable32BitApps
+        $result = Install-CIisAppPool -Name $script:appPoolName -Enable32BitAppOnWin64
         $result | Should -BeNullOrEmpty
-        Assert-AppPoolExists
-        Assert-AppPool32BitEnabled $true
+        ThenAppPoolExists
+        Then32BitEnabledIs $true
     }
 
     It 'should handle app pool that exists' {
@@ -149,26 +171,28 @@ Describe 'Install-CIisAppPool' {
     It 'should change settings on existing app pool' {
         $result = Install-CIisAppPool -Name $script:appPoolName
         $result | Should -BeNullOrEmpty
-        Assert-AppPoolExists
-        Assert-ManagedRuntimeVersion 'v4.0'
-        Assert-ManagedPipelineMode 'Integrated'
+        ThenAppPoolExists
+        ThenRuntimeVersionIs 'v4.0'
+        ThenPipelineModeIs 'Integrated'
+        Then32BitEnabledIs $false
 
-        Assert-AppPool32BitEnabled $false
-
-        $result = Install-CIisAppPool -Name $script:appPoolName -ManagedRuntimeVersion 'v2.0' -ClassicPipeline -Enable32BitApps
+        $result = Install-CIisAppPool -Name $script:appPoolName `
+                                      -ManagedRuntimeVersion 'v2.0' `
+                                      -ManagedPipelineMode Classic `
+                                      -Enable32BitAppOnWin64
         $result | Should -BeNullOrEmpty
-        Assert-AppPoolExists
-        Assert-ManagedRuntimeVersion 'v2.0'
-        Assert-ManagedPipelineMode 'Classic'
-        Assert-AppPool32BitEnabled $true
+        ThenAppPoolExists
+        ThenRuntimeVersionIs 'v2.0'
+        ThenPipelineModeIs 'Classic'
+        Then32BitEnabledIs $true
 
     }
 
     It 'should convert32 bit app poolto64 bit' {
-        Install-CIisAppPool -Name $script:appPoolName -Enable32BitApps
-        Assert-AppPool32BitEnabled $true
+        Install-CIisAppPool -Name $script:appPoolName -Enable32BitAppOnWin64
+        Then32BitEnabledIs $true
         Install-CIisAppPool -Name $script:appPoolName
-        Assert-AppPool32BitEnabled $false
+        Then32BitEnabledIs $false
     }
 
     It 'should start stopped app pool' {

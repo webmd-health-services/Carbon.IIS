@@ -10,15 +10,6 @@ doesn't work under PowerShell 6, so neither does Carbon.IIS.
 
 Windows 2008 is no longer supported. Minimum operating system is Windows 8.1 and Windows Server 2012 R2.
 
-Replace usages of the `Install-CIisAppPool` function's `-UserName` and `-Password` arguments with the `-Credential`
-parameter:
-
-    Install-CIisAppPool -Username $username -Password $password
-
-with
-
-    Install-CIisAppPool -Credential ([pscredential]::New($username, $password))
-
 All backwards-compatible function aliases removed. Rename usages of:
 * `Test-IisAppPoolExists` to `Test-CIisAppPool`
 * `Test-IisWebsiteExists` to `Test-CIisWebsite`
@@ -84,8 +75,16 @@ usages with `-ErrorAction Ignore` to preserve previous behavior.
 Objects returned by `Get-CIisWebsite`, `Get-CIisApplication`, and `Get-CIisAppPool` no longer have a `CommitChanges`
 method or a `ServerManager` member. Updates usages to call the new `Save-CIisConfiguration` function.
 
-Removed `IdleTimeout`, `ServiceUser`, and `Credential` parameters on `Install-CIisAppPool`. These are process model
-settings. Update usages to use the new `Set-CIisAppPoolProcessModel` function to set these values.
+### Install-CIisAppPool
+
+* Removed the `IdleTimeout`, `ServiceUser`, and `Credential`. These are process model settings. Update usages to use the
+new `Set-CIisAppPoolProcessModel` function to configure these settings.
+* Rename usages of `Enable32BitApps` to `Enable32BitAppOnWin64`.
+* Replace usages of `ClassicPipelineMode` with `-ManagedPipelineMode Classic`.
+* The managed pipeline mode is no longer set by default. Add `-ManagedPipelineMode Integrated` to all usages of
+`Install-CIisAppPool` where the default might be `Classic`.
+* The managed runtime version is no longer set by default. Add `-ManagedRuntimeVersion 'v4.0'` to all usages of
+`Install-CIisAppPool`.
 
 ## Added
 
@@ -116,6 +115,10 @@ the default application pool's periodic restart settings.
 settings, respectively. Use the new `AsDefaults` switch.
 * Function `Set-CIisAppPoolProcessModel` for configuring an IIS application pool's process model or configuring the
 default application pool's process model.
+* Configure all application pool settings (i.e. all settings stored on an application pool's `add` element in IIS'
+applicationHost.config file. Added parameters `QueueLength`, `AutoStart`, `Enable32BitAppOnWin64`,
+`ManagedRuntimeLoader`, `EnableConfigurationOverride`, `ManagedPipelineMode`, `CLRConfigFile`, `PassAnonymousToken`, and
+`StartMode` to `Install-CIisAppPool`.
 
 ## Changes
 
@@ -124,6 +127,8 @@ default application pool's process model.
 argument should switch to `ConvertTo-CIisVirtualPath`.
 * Renamed `VirtualPath` parameter on `Get-CIisApplication` and `Install-CIisApplication` to `Path`.
 * `Get-CIisAppPool` now writes an error when passed a name and an application pool with that name does not exist.
+* The managed pipeline mode is no longer set by default by `Install-CIisAppPool`.
+* The managed runtime version is no longer set by default by `Install-CIisAppPool`.
 
 ## Fixed
 
@@ -168,3 +173,6 @@ method or a `ServerManager` property. Use the new `Save-CIisConfiguration` funct
 returned by any Carbon.IIS function.
 * The `Install-CIisAppPool` function's `IdleTimeout`, `ServiceAccount`, and `Credential` parameters. Use the new
 `Set-CIisAppPoolProcessModel` function to configure an application pool's process model.
+* The `Install-CIisAppPool` function's `ClassicPipelineMode` switch. Replaced by parameter `ManagedPipelineMode`, which
+allows values `Classic` or `Integrated`.
+* The `Install-CIisAppPool` function's `Enable32BitApps` switch renamed to `Enable32BitAppOnWin64`.

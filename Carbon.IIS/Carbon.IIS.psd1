@@ -104,6 +104,7 @@
         'Remove-CIisMimeMap',
         'Save-CIisConfiguration',
         'Set-CIisAnonymousAuthentication',
+        'Set-CIisAppPool',
         'Set-CIisAppPoolCpu',
         'Set-CIisAppPoolProcessModel',
         'Set-CIisAppPoolPeriodicRestart',

@@ -12,7 +12,11 @@ function Invoke-SetConfigurationAttribute
         [PSCmdlet] $SourceCmdlet,
 
         [Parameter(Mandatory)]
-        [String] $Target
+        [String] $Target,
+
+        [hashtable] $Attribute = @{},
+
+        [String[]] $Exclude = @()
     )
 
     Set-StrictMode -Version 'Latest'
@@ -27,19 +31,20 @@ function Invoke-SetConfigurationAttribute
         $parameterSet = $cmd.ParameterSets | Where-Object 'IsDefault' -EQ $true
     }
 
-    $attrs = @{}
     $cmdParameters = $invokation.BoundParameters
-    foreach( $parameter in $parameterSet.Parameters )
+
+    foreach( $attrName in ($ConfigurationElement.Attributes | Select-Object -ExpandProperty 'Name') )
     {
-        $paramName = $parameter.Name
-        if( -not $cmdParameters.ContainsKey($paramName) )
+        if( -not $cmdParameters.ContainsKey($attrName) -or $attrName -in $Exclude )
         {
             continue
         }
 
-        $attrname = $paramName.Substring(0, 1).ToLowerInvariant() + $paramName.Substring(1)
-        $attrs[$attrName] = $cmdParameters[$paramName]
+        $Attribute[$attrName] = $cmdParameters[$attrName]
     }
 
-    Set-CIisConfigurationAttribute -ConfigurationElement $ConfigurationElement -Attribute $attrs -Target $Target
+    Set-CIisConfigurationAttribute -ConfigurationElement $ConfigurationElement `
+                                   -Attribute $Attribute `
+                                   -Target $Target `
+                                   -Exclude $Exclude
 }
