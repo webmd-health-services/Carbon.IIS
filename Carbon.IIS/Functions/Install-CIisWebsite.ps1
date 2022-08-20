@@ -94,7 +94,7 @@ function Install-CIisWebsite
         [UInt32] $ID,
 
         # Sets the IIS website's `serverAutoStart` setting.
-        [switch] $ServerAutoStart,
+        [bool] $ServerAutoStart,
 
         # Return a `Microsoft.Web.Administration.Site` object for the website.
         [switch] $PassThru
@@ -234,7 +234,6 @@ function Install-CIisWebsite
     {
         Save-CIisConfiguration
     }
-
 
     $site = Get-CIisWebsite -Name $Name
     # Can't ever remove a site ID, only change it, so set the ID to the website's current value.

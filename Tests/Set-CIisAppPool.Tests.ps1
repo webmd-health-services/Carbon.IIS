@@ -20,12 +20,12 @@ BeforeAll {
         'CLRConfigFile' = 'some config file';
         'enable32BitAppOnWin64' = $true;
         'enableConfigurationOverride' = $false;
-        'managedPipelineMode' = [ManagedPipelineMode]::Classic;
+        'managedPipelineMode' = [Microsoft.Web.Administration.ManagedPipelineMode]::Classic;
         'managedRuntimeLoader' = 'myloader.dll';
         'managedRuntimeVersion' = 'v4.0';
         'passAnonymousToken' = $false;
         'queueLength' = [UInt32]2000;
-        'startMode' = [StartMode]::AlwaysRunning;
+        'startMode' = [Microsoft.Web.Administration.StartMode]::AlwaysRunning;
     }
 
     # Sometimes the default values in the schema aren't quite the default values.

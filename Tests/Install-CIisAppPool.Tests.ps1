@@ -155,7 +155,7 @@ Describe 'Install-CIisAppPool' {
     }
 
     It 'should enable32bit apps' {
-        $result = Install-CIisAppPool -Name $script:appPoolName -Enable32BitAppOnWin64
+        $result = Install-CIisAppPool -Name $script:appPoolName -Enable32BitAppOnWin64 $true
         $result | Should -BeNullOrEmpty
         ThenAppPoolExists
         Then32BitEnabledIs $true
@@ -179,7 +179,7 @@ Describe 'Install-CIisAppPool' {
         $result = Install-CIisAppPool -Name $script:appPoolName `
                                       -ManagedRuntimeVersion 'v2.0' `
                                       -ManagedPipelineMode Classic `
-                                      -Enable32BitAppOnWin64
+                                      -Enable32BitAppOnWin64 $true
         $result | Should -BeNullOrEmpty
         ThenAppPoolExists
         ThenRuntimeVersionIs 'v2.0'
@@ -189,9 +189,9 @@ Describe 'Install-CIisAppPool' {
     }
 
     It 'should convert32 bit app poolto64 bit' {
-        Install-CIisAppPool -Name $script:appPoolName -Enable32BitAppOnWin64
+        Install-CIisAppPool -Name $script:appPoolName -Enable32BitAppOnWin64 $true
         Then32BitEnabledIs $true
-        Install-CIisAppPool -Name $script:appPoolName
+        Install-CIisAppPool -Name $script:appPoolName -Enable32BitAppOnWin64 $false
         Then32BitEnabledIs $false
     }
 

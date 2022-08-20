@@ -8,7 +8,9 @@ BeforeAll {
 
     $script:testNum = 0
 
+    $script:defaultDefaults = @{}
     (Get-CIisAppPool -Defaults).Recycling.PeriodicRestart |
+        Where-Object { $_ | Get-Member -Name 'IsInheritedFromDefaultValue' } |
         Where-Object 'IsInheritedFromDefaultValue' -EQ $false |
         ForEach-Object { $script:defaultDefaults[$_.Name] = $_.Value }
 
@@ -122,19 +124,19 @@ Describe 'Set-CIisAppPoolPeriodicRestart' {
     It 'should set and reset all values' {
         $infos = @()
         Set-CIisAppPoolPeriodicRestart -AppPoolName $script:appPoolName `
-                                                @nonDefaultArgs `
+                                                @script:nonDefaultArgs `
                                                 -Schedule '01:00:00', '13:00:00' `
                                                 -InformationVariable 'infos'
         $infos | Should -Not -BeNullOrEmpty
-        ThenHasValues $nonDefaultArgs -AndSchedule '01:00:00', '13:00:00'
+        ThenHasValues $script:nonDefaultArgs -AndSchedule '01:00:00', '13:00:00'
 
         # Make sure no information messages get written because no changes are being made.
         Set-CIisAppPoolPeriodicRestart -AppPoolName $script:appPoolName `
-                                                @nonDefaultArgs `
+                                                @script:nonDefaultArgs `
                                                 -Schedule '01:00:00', '13:00:00' `
                                                 -InformationVariable 'infos'
         $infos | Should -BeNullOrEmpty
-        ThenHasValues $nonDefaultArgs -AndSchedule '01:00:00', '13:00:00'
+        ThenHasValues $script:nonDefaultArgs -AndSchedule '01:00:00', '13:00:00'
 
         Set-CIisAppPoolPeriodicRestart -AppPoolName $script:appPoolName
         ThenHasDefaultValues
@@ -142,22 +144,22 @@ Describe 'Set-CIisAppPoolPeriodicRestart' {
 
     It 'should support WhatIf when updating all values' {
         Set-CIisAppPoolPeriodicRestart -AppPoolName $script:appPoolName `
-                                                @nonDefaultArgs `
+                                                @script:nonDefaultArgs `
                                                 -Schedule '12:34:00', '23:45:00' `
                                                 -WhatIf
         ThenHasDefaultValues
     }
 
     It 'should support WhatIf when resetting all values back to defaults' {
-        Set-CIisAppPoolPeriodicRestart -AppPoolName $script:appPoolName @nonDefaultArgs
-        ThenHasValues $nonDefaultArgs
+        Set-CIisAppPoolPeriodicRestart -AppPoolName $script:appPoolName @script:nonDefaultArgs
+        ThenHasValues $script:nonDefaultArgs
         Set-CIisAppPoolPeriodicRestart -AppPoolName $script:appPoolName -WhatIf
-        ThenHasValues $nonDefaultArgs
+        ThenHasValues $script:nonDefaultArgs
     }
 
     It 'should change values and reset to defaults' {
-        Set-CIisAppPoolPeriodicRestart -AppPoolName $script:appPoolName @nonDefaultArgs -ErrorAction Ignore
-        ThenHasValues $nonDefaultArgs
+        Set-CIisAppPoolPeriodicRestart -AppPoolName $script:appPoolName @script:nonDefaultArgs -ErrorAction Ignore
+        ThenHasValues $script:nonDefaultArgs
 
         $someArgs = @{
             'memory' = 6000000;
@@ -168,7 +170,7 @@ Describe 'Set-CIisAppPoolPeriodicRestart' {
     }
 
     It 'should change default settings' {
-        Set-CIisAppPoolPeriodicRestart -AsDefaults @nonDefaultArgs
-        ThenDefaultsSetTo @nonDefaultArgs
+        Set-CIisAppPoolPeriodicRestart -AsDefaults @script:nonDefaultArgs
+        ThenDefaultsSetTo @script:nonDefaultArgs
     }
 }

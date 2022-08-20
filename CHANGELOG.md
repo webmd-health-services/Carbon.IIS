@@ -88,7 +88,7 @@ calling `Install-CIisWebsite`.
 
 * Removed the `IdleTimeout`, `ServiceUser`, and `Credential`. These are process model settings. Update usages to use the
 new `Set-CIisAppPoolProcessModel` function to configure these settings.
-* Rename usages of `Enable32BitApps` to `Enable32BitAppOnWin64`.
+* Replace usages of `Enable32BitApps` with `-Enable32BitAppOnWin64 $false`.
 * Replace usages of `ClassicPipelineMode` with `-ManagedPipelineMode Classic`.
 * The managed pipeline mode is no longer set by default. Add `-ManagedPipelineMode Integrated` to all usages of
 `Install-CIisAppPool` where the default might be `Classic`.
@@ -186,5 +186,5 @@ returned by any Carbon.IIS function.
 `Set-CIisAppPoolProcessModel` function to configure an application pool's process model.
 * The `Install-CIisAppPool` function's `ClassicPipelineMode` switch. Replaced by parameter `ManagedPipelineMode`, which
 allows values `Classic` or `Integrated`.
-* The `Install-CIisAppPool` function's `Enable32BitApps` switch renamed to `Enable32BitAppOnWin64`.
+* The `Install-CIisAppPool` function's `Enable32BitApps` switch replaced by parameter `Enable32BitAppOnWin64`.
 * Function `Set-CIisWebsiteID`. Use `Set-CIisWebsite` instead.

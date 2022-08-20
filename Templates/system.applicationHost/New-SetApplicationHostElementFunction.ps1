@@ -91,7 +91,6 @@ $nonDefaultArgs = [StringBuilder]::New()
 $cmdParameters = [StringBuilder]::New()
 $paramList = [StringBuilder]::New()
 $typeMap = @{
-    'bool' = 'switch';
     'string' = 'String';
     'uint' = 'UInt32';
     'enum' = 'Enum';

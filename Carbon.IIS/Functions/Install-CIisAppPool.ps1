@@ -10,8 +10,8 @@ function Install-CIisAppPool
     to the `Name` parameter. If that application pool doesn't exist, it is created. If it does exist, its configuration
     is updated to match the values of the arguments passed.
 
-    If you pass just a name, the function creates a 64-bit application pool that runs an integrated pipeline using the
-    .NET 4.0 managed runtime. To use a 32-bit app pool, use the `Enable32BitApps` switch. To use a classic pipeline,
+    If you pass just a name, the function creates a 64-bit application pool that runs an integrated pipeline using
+    the .NET 4.0 managed runtime. To use a 32-bit app pool, use the `Enable32BitApps` . To use a classic pipeline,
     use the `ClassicPipelineMode` switch. To use a different version of .NET, use the `ManagedRuntimeVersion`
     parameter.
 
@@ -42,16 +42,16 @@ function Install-CIisAppPool
         [String] $Name,
 
         # Sets the IIS application pool's `autoStart` setting.
-        [switch] $AutoStart,
+        [bool] $AutoStart,
 
         # Sets the IIS application pool's `CLRConfigFile` setting.
         [String] $CLRConfigFile,
 
         # Sets the IIS application pool's `enable32BitAppOnWin64` setting.
-        [switch] $Enable32BitAppOnWin64,
+        [bool] $Enable32BitAppOnWin64,
 
         # Sets the IIS application pool's `enableConfigurationOverride` setting.
-        [switch] $EnableConfigurationOverride,
+        [bool] $EnableConfigurationOverride,
 
         # Sets the IIS application pool's `managedPipelineMode` setting.
         [ManagedPipelineMode] $ManagedPipelineMode,
@@ -63,7 +63,7 @@ function Install-CIisAppPool
         [String] $ManagedRuntimeVersion,
 
         # Sets the IIS application pool's `passAnonymousToken` setting.
-        [switch] $PassAnonymousToken,
+        [bool] $PassAnonymousToken,
 
         # Sets the IIS application pool's `queueLength` setting.
         [UInt32] $QueueLength,

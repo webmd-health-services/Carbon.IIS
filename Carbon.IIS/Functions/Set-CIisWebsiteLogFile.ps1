@@ -47,13 +47,13 @@ function Set-CIisWebsiteLogFile
         [String] $Directory,
 
         # Sets the IIS website's log files `enabled` setting.
-        [switch] $Enabled,
+        [bool] $Enabled,
 
         # Sets the IIS website's log files `flushByEntryCountW3CLog` setting.
         [UInt32] $FlushByEntryCountW3CLog,
 
         # Sets the IIS website's log files `localTimeRollover` setting.
-        [switch] $LocalTimeRollover,
+        [bool] $LocalTimeRollover,
 
         # Sets the IIS website's log files `logExtFileFlags` setting.
         [LogExtFileFlags] $LogExtFileFlags,
@@ -62,7 +62,7 @@ function Set-CIisWebsiteLogFile
         [LogFormat] $LogFormat,
 
         # Sets the IIS website's log files `logSiteID` setting.
-        [switch] $LogSiteID,
+        [bool] $LogSiteID,
 
         # Sets the IIS website's log files `logTargetW3C` setting.
         [LogTargetW3C] $LogTargetW3C,

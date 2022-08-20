@@ -15,8 +15,9 @@ Set-StrictMode -Version 'Latest'
 BeforeAll {
     & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-CarbonTest.ps1' -Resolve)
 
-    $script:siteName = 'TestNewWebsite'
+    $script:siteName = $null
     $script:testDir = $null
+    $script:testNum = 0
 
     function Assert-WebsiteBinding
     {
@@ -98,7 +99,7 @@ BeforeAll {
             }
             Start-Sleep -Milliseconds 100
         }
-	while( $tryNum -lt 100 )
+        while( $tryNum -lt 100 )
 
         $website.State | Should -Be 'Started'
     }
@@ -117,7 +118,7 @@ Describe 'Install-CIisWebsite' {
     BeforeEach {
         $Global:Error.Clear()
         $script:testDir = New-TestDirectory
-        Remove-TestSite
+        $script:siteName = "$($PSCommandPath | Split-Path -Leaf)-$($script:testNum++)"
     }
 
     AfterEach {

@@ -28,18 +28,23 @@ BeforeAll {
 
     # Sometimes the default values in the schema aren't quite the default values.
     $script:notQuiteDefaultValues = @{
-        'id' = 53;
     }
 
     function ThenDefaultsSetTo
     {
-        ThenHasValues $script:nonDefaultArgs -OnDefaults
-        ThenHasValues $script:nonDefaultArgs
+        ThenHasValues @{ 'id' = 0 ; 'serverAutoStart' = $script:nonDefaultArgs['serverAutoStart'] } -OnDefaults
+        ThenHasValues @{
+            'id' = (Get-CIisWebsite -Name $script:siteName).Id ;
+            'serverAutoStart' = $script:nonDefaultArgs['serverAutoStart']
+        }
     }
 
     function ThenHasDefaultValues
     {
-        ThenHasValues @{}
+        param(
+            [hashtable] $Values = @{}
+        )
+        ThenHasValues $Values
     }
 
     function ThenHasValues
@@ -139,12 +144,12 @@ Describe 'Set-CIisWebsite' {
         ThenHasValues $nonDefaultArgs
 
         Set-CIisWebsite -Name $script:siteName @script:requiredDefaults
-        ThenHasDefaultValues
+        ThenHasDefaultValues @{ 'id' = $script:nonDefaultArgs['id'] }
     }
 
     It 'should support WhatIf when updating all values' {
         Set-CIisWebsite -Name $script:siteName @nonDefaultArgs -WhatIf
-        ThenHasDefaultValues
+        ThenHasDefaultValues @{ 'id' = (Get-CIisWebsite -Name $script:siteName).Id }
     }
 
     It 'should support WhatIf when resetting all values back to defaults' {
@@ -155,7 +160,7 @@ Describe 'Set-CIisWebsite' {
     }
 
     It 'should change default settings' {
-        Set-CIisWebsite -AsDefaults @nonDefaultArgs
-        ThenDefaultsSetTo @nonDefaultArgs
+        Set-CIisWebsite -AsDefaults -ServerAutoStart $false
+        ThenDefaultsSetTo @{ ServerAutoStart = $false }
     }
 }

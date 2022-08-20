@@ -60,7 +60,7 @@ function Set-CIisAppPoolProcessModel
         [IdleTimeoutAction] $IdleTimeoutAction,
 
         # Sets the IIS application pool's process model `loadUserProfile` setting.
-        [switch] $LoadUserProfile,
+        [bool] $LoadUserProfile,
 
         # Sets the IIS application pool's process model `logEventOnProcessModel` setting.
         [ProcessModelLogEventOnProcessModel] $LogEventOnProcessModel,
@@ -69,7 +69,7 @@ function Set-CIisAppPoolProcessModel
         [CIisProcessModelLogonType] $LogonType,
 
         # Sets the IIS application pool's process model `manualGroupMembership` setting.
-        [switch] $ManualGroupMembership,
+        [bool] $ManualGroupMembership,
 
         # Sets the IIS application pool's process model `maxProcesses` setting.
         [UInt32] $MaxProcesses,
@@ -78,7 +78,7 @@ function Set-CIisAppPoolProcessModel
         [securestring] $Password,
 
         # Sets the IIS application pool's process model `pingingEnabled` setting.
-        [switch] $PingingEnabled,
+        [bool] $PingingEnabled,
 
         # Sets the IIS application pool's process model `pingInterval` setting.
         [TimeSpan] $PingInterval,
@@ -90,7 +90,7 @@ function Set-CIisAppPoolProcessModel
         [String] $RequestQueueDelegatorIdentity,
 
         # Sets the IIS application pool's process model `setProfileEnvironment` setting.
-        [switch] $SetProfileEnvironment,
+        [bool] $SetProfileEnvironment,
 
         # Sets the IIS application pool's process model `shutdownTimeLimit` setting.
         [TimeSpan] $ShutdownTimeLimit,

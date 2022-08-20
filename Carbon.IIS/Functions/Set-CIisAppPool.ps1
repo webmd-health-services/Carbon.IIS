@@ -49,16 +49,16 @@ function Set-CIisAppPool
         [switch] $AsDefaults,
 
         # Sets the IIS application pool's `autoStart` setting.
-        [switch] $AutoStart,
+        [bool] $AutoStart,
 
         # Sets the IIS application pool's `CLRConfigFile` setting.
         [String] $CLRConfigFile,
 
         # Sets the IIS application pool's `enable32BitAppOnWin64` setting.
-        [switch] $Enable32BitAppOnWin64,
+        [bool] $Enable32BitAppOnWin64,
 
         # Sets the IIS application pool's `enableConfigurationOverride` setting.
-        [switch] $EnableConfigurationOverride,
+        [bool] $EnableConfigurationOverride,
 
         # Sets the IIS application pool's `managedPipelineMode` setting.
         [ManagedPipelineMode] $ManagedPipelineMode,
@@ -70,7 +70,7 @@ function Set-CIisAppPool
         [String] $ManagedRuntimeVersion,
 
         # Sets the IIS application pool's `passAnonymousToken` setting.
-        [switch] $PassAnonymousToken,
+        [bool] $PassAnonymousToken,
 
         # Sets the IIS application pool's `queueLength` setting.
         [UInt32] $QueueLength,

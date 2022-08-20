@@ -11,6 +11,7 @@ BeforeAll {
 
     $script:defaultDefaults = @{}
     (Get-CIisAppPool -Defaults).Cpu |
+        Where-Object { $_ | Get-Member -Name 'IsInheritedFromDefaultValue' } |
         Where-Object 'IsInheritedFromDefaultValue' -EQ $false |
         ForEach-Object { $script:defaultDefaults[$_.Name] = $_.Value }
 

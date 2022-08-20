@@ -25,7 +25,7 @@ function Set-CIisWebsite
     Demonstrates how to reset an IIS website's settings to their default values by not passing any arguments.
 
     .EXAMPLE
-    Set-CIisWebsite -SiteName 'ExampleTwo' -ID 53 -ServerAutoStart:$false
+    Set-CIisWebsite -SiteName 'ExampleTwo' -ID 53 -ServerAutoStart $false
 
     Demonstrates how to configure an IIS website's settings.
 
@@ -50,7 +50,7 @@ function Set-CIisWebsite
         [UInt32] $ID,
 
         # Sets the IIS website's `serverAutoStart` setting.
-        [switch] $ServerAutoStart
+        [bool] $ServerAutoStart
     )
 
     Set-StrictMode -Version 'Latest'

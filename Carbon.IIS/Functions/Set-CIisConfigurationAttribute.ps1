@@ -171,7 +171,7 @@ function Set-CIisConfigurationAttribute
             {
                 $currentValueMsg = [Enum]::GetName($Value.GetType().FullName, $currentValue)
             }
-            elseif( $currentAttr.Schema.Type -eq 'timeSpan' -and $Value -is [ulong] )
+            elseif( $currentAttr.Schema.Type -eq 'timeSpan' -and $Value -is [UInt64] )
             {
                 $valueMsg = [TimeSpan]::New($Value)
             }

@@ -62,7 +62,7 @@ function Set-CIisAppPoolCpu
 
         [TimeSpan] $ResetInterval,
 
-        [switch] $SmpAffinitized,
+        [bool] $SmpAffinitized,
 
         [UInt32] $SmpProcessorAffinityMask,
 
