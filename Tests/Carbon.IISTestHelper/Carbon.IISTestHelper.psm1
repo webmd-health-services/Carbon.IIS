@@ -2,6 +2,7 @@
 Set-StrictMode -Version 'Latest'
 
 $script:testNum = 0
+$script:portNum = 9800
 
 function Complete-W3ServiceTestFixture
 {
@@ -45,7 +46,7 @@ function Assert-UrlContent
     )
 
     Write-Debug $Url
-    $tryFor = [TimeSpan]::New(0, 0, 1)
+    $tryFor = [TimeSpan]::New(0, 1, 0)
     $duration =
         [Diagnostics.Stopwatch]::StartNew() |
         Add-Member -Name 'ToSecondsString' -MemberType ScriptMethod -Value {
@@ -58,6 +59,7 @@ function Assert-UrlContent
     {
         try
         {
+            $Global:Error.Clear()
             $ProgressPreference = 'SilentlyContinue'
             $response = Invoke-WebRequest -Uri $Url
             $msg = "    $($duration.ToSecondsString())  $($response.StatusCode) $($response.StatusDescription)"
@@ -135,6 +137,18 @@ function Assert-UrlContent
 }
 
 Set-Alias -Name 'ThenUrlContent' -Value 'Assert-UrlContent'
+
+function Get-Port
+{
+    try
+    {
+        return $script:portNum
+    }
+    finally
+    {
+        $script:portNum++
+    }
+}
 
 function Start-W3ServiceTestFixture
 {
