@@ -33,11 +33,15 @@ function Set-CIisAppPoolRecyclingPeriodicRestart
     be set to `1000000`, `privateMemory` will be set to `2000000`, `requests` will be sent to `3000000`, and `time` will
     be sent to `23:00:00'.
     #>
-    [CmdletBinding(SupportsShouldProcess)]
+    [CmdletBinding(DefaultParameterSetName='SetIntance', SupportsShouldProcess)]
     param(
         # The name of the IIS application pool whose periodic restart settings to configure.
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory, ParameterSetName='SetInstance', Position=0)]
         [String] $AppPoolName,
+
+        # If true, the function configures IIS' application pool defaults instead of
+        [Parameter(Mandatory, ParameterSetName='SetDefaults')]
+        [switch] $AsDefaults,
 
         # Sets the IIS application pool's periodic restart `memory` setting.
         [UInt32] $Memory,
@@ -59,7 +63,7 @@ function Set-CIisAppPoolRecyclingPeriodicRestart
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
-    $appPool = Get-CIisAppPool -Name $AppPoolName
+    $appPool = Get-CIisAppPool -Name $AppPoolName -Defaults:$AsDefaults
     if( -not $appPool )
     {
         return

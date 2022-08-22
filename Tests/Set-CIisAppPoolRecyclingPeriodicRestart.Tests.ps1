@@ -8,7 +8,13 @@ BeforeAll {
 
     $script:testNum = 0
 
-    # All non-default values.
+    $script:defaultDefaults = @{}
+    (Get-CIisAppPool -Defaults).Recycling.PeriodicRestart |
+        Where-Object { $_ | Get-Member -Name 'IsInheritedFromDefaultValue' } |
+        Where-Object 'IsInheritedFromDefaultValue' -EQ $false |
+        ForEach-Object { $script:defaultDefaults[$_.Name] = $_.Value }
+
+        # All non-default values.
     $script:nonDefaultArgs = @{
         'memory' = 1000000;
         'privateMemory' = 2000000;
@@ -20,6 +26,12 @@ BeforeAll {
     $script:notQuiteDefaultValues = @{
     }
 
+    function ThenDefaultsSetTo
+    {
+        ThenHasValues $script:nonDefaultArgs -OnDefaults
+        ThenHasValues $script:nonDefaultArgs
+    }
+
     function ThenHasDefaultValues
     {
         ThenHasValues @{}
@@ -28,12 +40,15 @@ BeforeAll {
     function ThenHasValues
     {
         param(
+            [Parameter(Position=0)]
             [hashtable] $Values = @{},
 
-            [TimeSpan[]] $AndSchedule = @()
+            [TimeSpan[]] $AndSchedule = @(),
+
+            [switch] $OnDefaults
         )
 
-        $appPool = Get-CIisAppPool -Name $script:appPoolName
+        $appPool = Get-CIisAppPool -Name $script:appPoolName -Defaults:$OnDefaults
         $appPool  | Should -Not -BeNullOrEmpty
 
         $target = $appPool.Recycling.PeriodicRestart
@@ -41,7 +56,16 @@ BeforeAll {
 
         $schedule = $target.Schedule
         $schedule | Should -HaveCount $AndSchedule.Count
-        ($schedule | Select-Object -ExpandProperty 'Time' | Sort-Object) -join ', ' | Should -Be (($AndSchedule | Sort-Object) -join ', ')
+        ($schedule |
+            Select-Object -ExpandProperty 'Time' |
+            Sort-Object) -join ', ' |
+            Should -Be (($AndSchedule | Sort-Object) -join ', ')
+
+        $asDefaultsMsg = ''
+        if( $OnDefaults )
+        {
+            $asDefaultsMsg = ' as default'
+        }
 
         foreach( $attr in $target.Schema.AttributeSchemas )
         {
@@ -71,7 +95,8 @@ BeforeAll {
                 }
             }
 
-            $currentValue | Should -Be $expectedValue -Because "should set $($attr.Name) to $($becauseMsg) value"
+            $currentValue |
+                Should -Be $expectedValue -Because "should set$($asDefaultsMsg) $($attr.Name) to $($becauseMsg) value"
         }
     }
 }
@@ -87,29 +112,31 @@ Describe 'Set-CIisAppPoolRecyclingPeriodicRestart' {
 
     BeforeEach {
         $script:appPoolName = "Set-CIisAppPoolRecyclingPeriodicRestart$($script:testNum++)"
+        Set-CIisAppPoolRecyclingPeriodicRestart -AsDefaults @script:defaultDefaults
         Install-CIisAppPool -Name $script:appPoolName
     }
 
     AfterEach {
         Uninstall-CIisAppPool -Name $script:appPoolName
+        Set-CIisAppPoolRecyclingPeriodicRestart -AsDefaults @script:defaultDefaults
     }
 
-    It 'should set and reset all log file values' {
+    It 'should set and reset all values' {
         $infos = @()
         Set-CIisAppPoolRecyclingPeriodicRestart -AppPoolName $script:appPoolName `
-                                                @nonDefaultArgs `
+                                                @script:nonDefaultArgs `
                                                 -Schedule '01:00:00', '13:00:00' `
                                                 -InformationVariable 'infos'
         $infos | Should -Not -BeNullOrEmpty
-        ThenHasValues $nonDefaultArgs -AndSchedule '01:00:00', '13:00:00'
+        ThenHasValues $script:nonDefaultArgs -AndSchedule '01:00:00', '13:00:00'
 
         # Make sure no information messages get written because no changes are being made.
         Set-CIisAppPoolRecyclingPeriodicRestart -AppPoolName $script:appPoolName `
-                                                @nonDefaultArgs `
+                                                @script:nonDefaultArgs `
                                                 -Schedule '01:00:00', '13:00:00' `
                                                 -InformationVariable 'infos'
         $infos | Should -BeNullOrEmpty
-        ThenHasValues $nonDefaultArgs -AndSchedule '01:00:00', '13:00:00'
+        ThenHasValues $script:nonDefaultArgs -AndSchedule '01:00:00', '13:00:00'
 
         Set-CIisAppPoolRecyclingPeriodicRestart -AppPoolName $script:appPoolName
         ThenHasDefaultValues
@@ -117,22 +144,22 @@ Describe 'Set-CIisAppPoolRecyclingPeriodicRestart' {
 
     It 'should support WhatIf when updating all values' {
         Set-CIisAppPoolRecyclingPeriodicRestart -AppPoolName $script:appPoolName `
-                                                @nonDefaultArgs `
+                                                @script:nonDefaultArgs `
                                                 -Schedule '12:34:00', '23:45:00' `
                                                 -WhatIf
         ThenHasDefaultValues
     }
 
     It 'should support WhatIf when resetting all values back to defaults' {
-        Set-CIisAppPoolRecyclingPeriodicRestart -AppPoolName $script:appPoolName @nonDefaultArgs
-        ThenHasValues $nonDefaultArgs
+        Set-CIisAppPoolRecyclingPeriodicRestart -AppPoolName $script:appPoolName @script:nonDefaultArgs
+        ThenHasValues $script:nonDefaultArgs
         Set-CIisAppPoolRecyclingPeriodicRestart -AppPoolName $script:appPoolName -WhatIf
-        ThenHasValues $nonDefaultArgs
+        ThenHasValues $script:nonDefaultArgs
     }
 
     It 'should change values and reset to defaults' {
-        Set-CIisAppPoolRecyclingPeriodicRestart -AppPoolName $script:appPoolName @nonDefaultArgs -ErrorAction Ignore
-        ThenHasValues $nonDefaultArgs
+        Set-CIisAppPoolRecyclingPeriodicRestart -AppPoolName $script:appPoolName @script:nonDefaultArgs -ErrorAction Ignore
+        ThenHasValues $script:nonDefaultArgs
 
         $someArgs = @{
             'memory' = 6000000;
@@ -142,4 +169,8 @@ Describe 'Set-CIisAppPoolRecyclingPeriodicRestart' {
         ThenHasValues $someArgs
     }
 
+    It 'should change default settings' {
+        Set-CIisAppPoolRecyclingPeriodicRestart -AsDefaults @script:nonDefaultArgs
+        ThenDefaultsSetTo @script:nonDefaultArgs
+    }
 }

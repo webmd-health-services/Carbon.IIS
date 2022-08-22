@@ -30,11 +30,15 @@ function Set-CIisWebsiteLogFile
     `C:\logs` and `maxLogLineLength` will be set to `32768`. All other settings will be reset to their default values.
     #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSShouldProcess', '')]
-    [CmdletBinding(SupportsShouldProcess)]
+    [CmdletBinding(DefaultParameterSetName='SetInstance', SupportsShouldProcess)]
     param(
         # The name of the website whose log file settings to set.
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory, ParameterSetName='SetInstance', Position=0)]
         [String] $SiteName,
+
+        # If true, the function configures IIS's application pool defaults instead of a specific application pool.
+        [Parameter(Mandatory, ParameterSetName='SetDefaults')]
+        [switch] $AsDefaults,
 
         # Sets the IIS website's log files `customLogPluginClsid` setting.
         [String] $CustomLogPluginClsid,
@@ -43,13 +47,13 @@ function Set-CIisWebsiteLogFile
         [String] $Directory,
 
         # Sets the IIS website's log files `enabled` setting.
-        [switch] $Enabled,
+        [bool] $Enabled,
 
         # Sets the IIS website's log files `flushByEntryCountW3CLog` setting.
         [UInt32] $FlushByEntryCountW3CLog,
 
         # Sets the IIS website's log files `localTimeRollover` setting.
-        [switch] $LocalTimeRollover,
+        [bool] $LocalTimeRollover,
 
         # Sets the IIS website's log files `logExtFileFlags` setting.
         [LogExtFileFlags] $LogExtFileFlags,
@@ -58,7 +62,7 @@ function Set-CIisWebsiteLogFile
         [LogFormat] $LogFormat,
 
         # Sets the IIS website's log files `logSiteID` setting.
-        [switch] $LogSiteID,
+        [bool] $LogSiteID,
 
         # Sets the IIS website's log files `logTargetW3C` setting.
         [LogTargetW3C] $LogTargetW3C,
@@ -76,7 +80,7 @@ function Set-CIisWebsiteLogFile
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
-    $site = Get-CIisWebsite -Name $SiteName
+    $site = Get-CIisWebsite -Name $SiteName -Defaults:$AsDefaults
     if( -not $site )
     {
         return

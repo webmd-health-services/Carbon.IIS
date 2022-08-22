@@ -8,6 +8,11 @@ BeforeAll {
 
     $script:testNum = 0
 
+    $script:defaultDefaults = @{}
+    (Get-CIisWebsite -Defaults).LogFile.Attributes |
+        Where-Object 'IsInheritedFromDefaultValue' -EQ $false |
+        ForEach-Object { $script:defaultDefaults[$_.Name] = $_.Value }
+
     # All non-default values.
     $script:nonDefaultArgs = @{
         CustomLogPluginClsid = '931a0831-2301-4a0b-9887-ee9a7d0c10df';
@@ -29,6 +34,12 @@ BeforeAll {
         Directory = '%SystemDrive%\inetpub\logs\LogFiles';
     }
 
+    function ThenDefaultsSetTo
+    {
+        ThenHasValues $script:nonDefaultArgs -OnDefaults
+        ThenHasValues $script:nonDefaultArgs
+    }
+
     function ThenHasDefaultValues
     {
         ThenHasValues @{}
@@ -37,18 +48,25 @@ BeforeAll {
     function ThenHasValues
     {
         param(
-            [hashtable] $Values = @{}
+            [Parameter(Position=0)]
+            [hashtable] $Values = @{},
+            [switch] $OnDefaults
         )
 
         $website = Get-CIisWebsite -Name $script:websiteName
         $website | Should -Not -BeNullOrEmpty
 
-        $logFile = $website.LogFile
-        $logFile | Should -Not -BeNullOrEmpty
+        $target = $website.LogFile
+        $target | Should -Not -BeNullOrEmpty
 
-        foreach( $attr in $logFile.Schema.AttributeSchemas )
+        $asDefaultsMsg = ''
+        if( $OnDefaults )
         {
-            $currentValue = $logFile.GetAttributeValue($attr.Name)
+            $asDefaultsMsg = ' as default'
+        }
+        foreach( $attr in $target.Schema.AttributeSchemas )
+        {
+            $currentValue = $target.GetAttributeValue($attr.Name)
             $expectedValue = $attr.DefaultValue
             $becauseMsg = 'default'
             if( $script:notQuiteDefaultValues.ContainsKey($attr.Name))
@@ -64,10 +82,18 @@ BeforeAll {
 
             if( $currentValue -is [TimeSpan] )
             {
-                $expectedValue = [TimeSpan]::New($attr.DefaultValue)
+                if( $expectedValue -match '^\d+$' )
+                {
+                    $expectedValue = [TimeSpan]::New([long]$expectedValue)
+                }
+                else
+                {
+                    $expectedValue = [TimeSpan]$expectedValue
+                }
             }
 
-            $currentValue | Should -Be $expectedValue -Because "should set $($attr.Name) to $($becauseMsg) value"
+            $currentValue |
+                Should -Be $expectedValue -Because "should set$($asDefaultsMsg) $($attr.Name) to $($becauseMsg) value"
         }
     }
 }
@@ -85,16 +111,24 @@ Describe 'Set-CIisWebsiteLogFile' {
 
     BeforeEach {
         $script:websiteName = "Set-CIisWebsiteLogFile$($script:testNum++)"
-        $webroot = New-TestDirectory
-        Install-CIisWebsite -Name $script:websiteName -PhysicalPath $webroot -AppPoolName $script:websiteName
+        Set-CIisWebsiteLogFile -AsDefaults @script:defaultDefaults
+        Install-CIisWebsite -Name $script:websiteName -PhysicalPath (New-TestDirectory) -AppPoolName $script:websiteName
     }
 
     AfterEach {
         Uninstall-CIisWebsite -Name $script:websiteName
+        Set-CIisWebsiteLogFile -AsDefaults @script:defaultDefaults
     }
 
-    It 'should set and reset all log file values' {
-        Set-CIisWebsiteLogFile -SiteName $script:websiteName @nonDefaultArgs
+    It 'should set and reset all values' {
+        $infos = @()
+        Set-CIisWebsiteLogFile -SiteName $script:websiteName @nonDefaultArgs -InformationVariable 'infos'
+        $infos | Should -Not -BeNullOrEmpty
+        ThenHasValues $nonDefaultArgs
+
+        # Make sure no information messages get written because no changes are being made.
+        Set-CIisWebsiteLogFile -SiteName $script:websiteName @nonDefaultArgs -InformationVariable 'infos'
+        $infos | Should -BeNullOrEmpty
         ThenHasValues $nonDefaultArgs
 
         Set-CIisWebsiteLogFile -SiteName $script:websiteName
@@ -123,5 +157,10 @@ Describe 'Set-CIisWebsiteLogFile' {
         }
         Set-CIisWebsiteLogFile -SiteName $script:websiteName @someArgs
         ThenHasValues $someArgs
+    }
+
+    It 'should change default settings' {
+        Set-CIisWebsiteLogFile -AsDefaults @nonDefaultArgs
+        ThenDefaultsSetTo @nonDefaultArgs
     }
 }

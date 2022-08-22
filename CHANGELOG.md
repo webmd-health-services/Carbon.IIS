@@ -101,11 +101,16 @@ configuration (i.e. there's a `<location>` element for it in the applicationHost
 * Function `Remove-CIisConfigurationLocation` for removing a website's or website/virtual path's custom configuration
 (i.e. removes its `<location>` element from applicationHost.config).
 * Many functions now write messages to PowerShell's information stream when they make configuration changes.
-* Function `Set-CIisAppPoolCpu` for configuring an application pool's CPU settings.
+* Function `Set-CIisAppPoolCpu` for configuring an application pool's CPU settings and the application pool defaults
+CPU settings.
 * Function `Save-CIisConfiguration` for saving configuration changes to IIS. Only needed if you make changes to any of
 the objects returned by the Carbon.IIS module.
-* Function `Set-CIisWebsiteLogFile` for configuring a website's log file settings.
-* Function `Set-CIisAppPoolRecyclingPeriodicRestart` for configuring an application pool's periodic restart settings.
+* Function `Set-CIisWebsiteLogFile` for configuring a website's log file settings and the website defaults log file
+settings.
+* Function `Set-CIisAppPoolRecyclingPeriodicRestart` for configuring an application pool's periodic restart settings and
+the application pool defaults periodic restart settings.
+* `Get-CIIsAppPool` and `Get-CIisWebsite` can now return the application pool defaults and the website
+defaults settings, respectively. Use the new `AsDefaults` switch.
 
 ## Changes
 

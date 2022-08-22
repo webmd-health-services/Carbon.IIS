@@ -1,4 +1,7 @@
 using module '..\Carbon.Iis'
+using module '..\Carbon.Iis\Carbon.Iis.Enums.psm1'
+
+using namespace Microsoft.Web.Administration
 
 Set-StrictMode -Version 'Latest'
 
@@ -7,45 +10,91 @@ BeforeAll {
 
     $script:testNum = 0
 
+    $script:defaultDefaults = @{}
+    (Get-CIisAppPool -Defaults).Cpu |
+        Where-Object { $_ | Get-Member -Name 'IsInheritedFromDefaultValue' } |
+        Where-Object 'IsInheritedFromDefaultValue' -EQ $false |
+        ForEach-Object { $script:defaultDefaults[$_.Name] = $_.Value }
+
+    # All non-default values.
+    $script:nonDefaultArgs = @{
+            Action = [ProcessorAction]::Throttle;
+            Limit = (1000 * 50);
+            NumaNodeAffinityMode = [CIisNumaNodeAffinityMode]::Hard;
+            NumaNodeAssignment = [CIisNumaNodeAssignment]::WindowsScheduling;
+            ProcessorGroup = 1;
+            ResetInterval = '00:10:00';
+            SmpAffinitized = $true;
+            SmpProcessorAffinityMask = 0x1;
+            SmpProcessorAffinityMask2 = 0x2;
+    }
+
+    # Sometimes the default values in the schema aren't quite the default values.
+    $script:notQuiteDefaultValues = @{
+    }
+
+    function ThenDefaultsSetTo
+    {
+        ThenHasValues $script:nonDefaultArgs -OnDefaults
+        ThenHasValues $script:nonDefaultArgs
+    }
+
     function ThenHasDefaultValues
     {
-        $appPool = Get-CIisAppPool -Name $script:appPoolName
-        $appPool | Should -Not -BeNullOrEmpty
-        $cpu = $appPool.Cpu
-        $cpu | Should -Not -BeNullOrEmpty
-
-        foreach( $attr in $cpu.Schema.AttributeSchemas )
-        {
-            $currentValue = $cpu.GetAttributeValue($attr.Name)
-            $defaultValue = $attr.DefaultValue
-            if( $currentValue -is [TimeSpan] )
-            {
-                $defaultValue = [TimeSpan]::New($attr.DefaultValue)
-            }
-            $currentValue | Should -Be $defaultValue -Because "should reset $($attr.Name) to default value"
-        }
+        ThenHasValues @{}
     }
 
     function ThenHasValues
     {
         param(
-            [hashtable] $Values
+            [Parameter(Position=0)]
+            [hashtable] $Values = @{},
+
+            [switch] $OnDefaults
         )
 
-        $appPool = Get-CIisAppPool -Name $script:appPoolName
+        $appPool = Get-CIisAppPool -Name $script:appPoolName -Defaults:$OnDefaults
         $appPool | Should -Not -BeNullOrEmpty
-        $cpu = $appPool.Cpu
-        $cpu | Should -Not -BeNullOrEmpty
-        $cpu.Action | Should -Be $Values['Action']
-        $cpu.Limit | Should -Be $Values['Limit']
-        # Need hardware where these CPU settings exist.
-        # $cpu.NumaNodeAffinityMode | Should -Be $Values['NumaNodeAffinityMode']
-        # $cpu.NumaNodeAssigment | Should -Be $Values['NumaNodeAssigment']
-        # $cpu.ProcessorGroup | Should -Be $Values['ProcessorGroup']
-        $cpu.ResetInterval | Should -Be $Values['ResetInterval']
-        $cpu.SmpAffinitized | Should -Be $Values['SmpAffinitized']
-        $cpu.SmpProcessorAffinityMask | Should -Be $Values['SmpProcessorAffinityMask']
-        $cpu.SmpProcessorAffinityMask2 | Should -Be $Values['SmpProcessorAffinityMask2']
+
+        $target = $appPool.Cpu
+        $target | Should -Not -BeNullOrEmpty
+
+        $asDefaultsMsg = ''
+        if( $OnDefaults )
+        {
+            $asDefaultsMsg = ' as default'
+        }
+
+        foreach( $attr in $target.Schema.AttributeSchemas )
+        {
+            $currentValue = $target.GetAttributeValue($attr.Name)
+            $expectedValue = $attr.DefaultValue
+            $becauseMsg = 'default'
+            if( $script:notQuiteDefaultValues.ContainsKey($attr.Name))
+            {
+                $expectedValue = $script:notQuiteDefaultValues[$attr.Name]
+            }
+
+            if( $Values.ContainsKey($attr.Name) )
+            {
+                $expectedValue = $Values[$attr.Name]
+                $becauseMsg = 'custom'
+            }
+            if( $currentValue -is [TimeSpan] )
+            {
+                if( $expectedValue -match '^\d+$' )
+                {
+                    $expectedValue = [TimeSpan]::New([long]$expectedValue)
+                }
+                else
+                {
+                    $expectedValue = [TimeSpan]$expectedValue
+                }
+            }
+
+            $currentValue |
+                Should -Be $expectedValue -Because "should set$($asDefaultsMsg) $($attr.Name) to $($becauseMsg) value"
+        }
     }
 }
 
@@ -60,87 +109,56 @@ Describe 'Set-CIisAppPoolCpu' {
 
     BeforeEach {
         $script:appPoolName = "Set-CIisAppPoolCpu$($script:testNum++)"
+        Set-CIisAppPoolCpu -AsDefaults @script:defaultDefaults
         Install-CIisAppPool -Name $script:appPoolName
     }
 
     AfterEach {
         Uninstall-CIisAppPool -Name $script:appPoolName
+        Set-CIisAppPoolCpu -AsDefaults @script:defaultDefaults
     }
 
-    It 'should set and reset all CPU values' {
-        $setArgs = @{
-            Action = 'Throttle';
-            Limit = (1000 * 50);
-            NumaNodeAffinityMode = 'Hard';
-            NumaNodeAssignment = 'WindowsScheduling';
-            ProcessorGroup = 1;
-            ResetInterval = '00:10:00';
-            SmpAffinitized = $true;
-            SmpProcessorAffinityMask = 0x1;
-            SmpProcessorAffinityMask2 = 0x2;
-        }
-        Set-CIisAppPoolCpu -AppPoolName $script:appPoolName @setArgs
-        ThenHasValues $setArgs
+    It 'should set and reset all  values' {
+        $infos = @()
+        Set-CIisAppPoolCpu -AppPoolName $script:appPoolName @nonDefaultArgs -InformationVariable 'infos'
+        $infos | Should -Not -BeNullOrEmpty
+        ThenHasValues $nonDefaultArgs
+
+        # Make sure no information messages get written because no changes are being made.
+        Set-CIisAppPoolCpu -AppPoolName $script:appPoolName @nonDefaultArgs -InformationVariable 'infos'
+        $infos | Should -BeNullOrEmpty
+        ThenHasValues $nonDefaultArgs
 
         Set-CIisAppPoolCpu -AppPoolName $script:appPoolName
         ThenHasDefaultValues
     }
 
     It 'should support WhatIf when updating all values' {
-        $setArgs = @{
-            Action = 'Throttle';
-            Limit = (1000 * 50);
-            NumaNodeAffinityMode = 'Hard';
-            NumaNodeAssignment = 'WindowsScheduling';
-            ProcessorGroup = 1;
-            ResetInterval = '00:10:00';
-            SmpAffinitized = $true;
-            SmpProcessorAffinityMask = 0x1;
-            SmpProcessorAffinityMask2 = 0x2;
-        }
-        Set-CIisAppPoolCpu -AppPoolName $script:appPoolName @setArgs -WhatIf
+        Set-CIisAppPoolCpu -AppPoolName $script:appPoolName @nonDefaultArgs -WhatIf
         ThenHasDefaultValues
     }
 
     It 'should support WhatIf when resetting all values back to defaults' {
-        $setArgs = @{
-            Action = 'Throttle';
-            Limit = (1000 * 50);
-            NumaNodeAffinityMode = 'Hard';
-            NumaNodeAssignment = 'WindowsScheduling';
-            ProcessorGroup = 1;
-            ResetInterval = '00:10:00';
-            SmpAffinitized = $true;
-            SmpProcessorAffinityMask = 0x1;
-            SmpProcessorAffinityMask2 = 0x2;
-        }
-        Set-CIisAppPoolCpu -AppPoolName $script:appPoolName @setArgs
-        ThenHasValues $setArgs
+        Set-CIisAppPoolCpu -AppPoolName $script:appPoolName @nonDefaultArgs
+        ThenHasValues $nonDefaultArgs
         Set-CIisAppPoolCpu -AppPoolName $script:appPoolName -WhatIf
-        ThenHasValues $setArgs
+        ThenHasValues $nonDefaultArgs
     }
 
     It 'should change values and reset to defaults' {
-        $setArgs = @{
-            Action = 'Throttle';
-            Limit = (1000 * 50);
-            NumaNodeAffinityMode = 'Hard';
-            NumaNodeAssignment = 'WindowsScheduling';
-            ProcessorGroup = 1;
-            ResetInterval = '00:10:00';
-            SmpAffinitized = $true;
-            SmpProcessorAffinityMask = 0x1;
-            SmpProcessorAffinityMask2 = 0x2;
+        Set-CIisAppPoolCpu -AppPoolName $script:appPoolName @nonDefaultArgs -ErrorAction Ignore
+        ThenHasValues $nonDefaultArgs
+        $someArgs = @{
+            'action' = [ProcessorAction]::KillW3wp;
+            'limit' = 10000;
+            'resetInterval' = '01:00:00';
         }
-        Set-CIisAppPoolCpu -AppPoolName $script:appPoolName @setArgs
-        ThenHasValues $setArgs
-        $setArgs.Remove('ProcessorGroup')
-        $setArgs.Remove('NumaNodeAffinityMode')
-        $setArgs.Remove('NumaNodeAssignment')
-        $setArgs['Action'] = 'KillW3wp'
-        $setArgs['Limit'] = 10000
-        $setArgs['ResetInterval'] = '01:00:00'
-        Set-CIisAppPoolCpu -AppPoolName $script:appPoolName @setArgs
-        ThenHasValues $setArgs
+        Set-CIisAppPoolCpu -AppPoolName $script:appPoolName @someArgs
+        ThenHasValues $someArgs
+    }
+
+    It 'should change default settings' {
+        Set-CIisAppPoolCpu -AsDefaults @nonDefaultArgs
+        ThenDefaultsSetTo @nonDefaultArgs
     }
 }
