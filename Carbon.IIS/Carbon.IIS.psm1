@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License
 
+using module '.\Carbon.IIS.Enums.psm1'
 using namespace System.Management.Automation
 using namespace Microsoft.Web.Administration
 
@@ -26,18 +27,6 @@ $moduleRoot = $PSScriptRoot
 
 Import-Module -Name (Join-Path -Path $moduleRoot -ChildPath 'PSModules\Carbon.Core' -Resolve) `
               -Function @('Add-CTypeData')
-
-enum CIisNumaNodeAffinityMode
-{
-    Soft = [UInt32]0
-    Hard = [UInt32]1
-}
-
-enum CIisNumaNodeAssignment
-{
-    MostAvailableMemory = [UInt32]0
-    WindowsScheduling = [UInt32]1
-}
 
 function Test-MSWebAdministrationLoaded
 {
