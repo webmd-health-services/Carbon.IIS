@@ -46,7 +46,7 @@ BeforeAll {
         $optionalParams = @{ }
         if( $PSBoundParameters.ContainsKey( 'SiteID' ) )
         {
-            $optionalParams['SiteID'] = $SiteID
+            $optionalParams['ID'] = $SiteID
         }
 
         if( $PSBoundParameters.ContainsKey( 'Bindings' ) )
@@ -269,7 +269,11 @@ Describe 'Install-CIisWebsite' {
             $website.Name | Should -Be $script:siteName
             $website.PhysicalPath | Should -Be $PSScriptRoot
 
-            Install-CIisWebsite -Name $script:siteName -PhysicalPath $tempDir -Bindings 'http/*:9986:' -SiteID 9986 -AppPoolName $appPool.Name
+            Install-CIisWebsite -Name $script:siteName `
+                                -PhysicalPath $tempDir `
+                                -Bindings 'http/*:9986:' `
+                                -ID 9986 `
+                                -AppPoolName $appPool.Name
             $Global:Error.Count | Should -Be 0
             $website = Get-CIisWebsite -Name $script:siteName
             $website | Should -Not -BeNullOrEmpty
@@ -309,16 +313,5 @@ Describe 'Install-CIisWebsite' {
 
         $site = Install-CIisWebsite -Name $script:siteName -PhysicalPath $PSScriptRoot
         $site | Should -BeNullOrEmpty
-    }
-
-    It 'should force delete and recreate' {
-        $output = Install-CIisWebsite -Name $script:siteName -PhysicalPath $PSScriptRoot -Binding 'http/*:9891:'
-        $output | Should -BeNullOrEmpty
-
-        Set-CIisHttpHeader -SiteName $script:siteName -Name 'X-Carbon-Test' -Value 'Test-ShouldFoceDeleteAndRecreate'
-
-        $output = Install-CIisWebsite -Name $script:siteName -PhysicalPath $PSScriptRoot -Binding 'http/*:9891:' -Force
-        $output | Should -BeNullOrEmpty
-        (Get-CIisHttpHeader -SiteName $script:siteName -Name 'X-Carbon-Test') | Should -BeNullOrEmpty
     }
 }

@@ -25,13 +25,6 @@ usages to use the `GetAttributeValue` method instead, e.g. `GetAttributeValue('c
 `GetAttributeValue('destination')`, etc. The value of `httpResponseStatus` is now returned as an int, instead of an
 enumeration.
 
-The `Install-CIisWebsite` function no longer sets the default anonymous authentication username on a website to
-nothing. New websites will now have the default anonymous authentication username of `IUSR`. To preserve the previous
-behavior, use the `Set-CIisAnonymousAuthentication`.
-
-`Get-CIisWebsite` now writes an error if a specific website doesn't exist. If a usage doesn't care if the website
-exists or not, add `-ErrorAction SilentlyContinue` or `-ErrorAction Ignore`.
-
 The `Join-CIisVirtualPath` function's `ChildPath` parameter is now mandatory. If you have usages without a `ChildPath`
 parameter, switch to using the new `ConvertTo-CIisVirtualPath`.
 
@@ -56,10 +49,6 @@ Removed `Path` parameter aliases. Update usages of the `Path` parameter on these
 * Test-CIisConfigurationSection
 * Test-CIisSecurityAuthentication
 
-Removed `SiteName` parameter aliases. Update usages of the `SiteName` parameter on these functions to `Name`:
-* Get-CIisWebsite
-* Install-CIisWebsite
-
 Removed the `Path` parameter alias on the `Install-CIisApplication` function. Update usages to `PhysicalPath`.
 
 Renamed the `VirtualPath` parameter to `Path` on the `Get-CIisApplication` and `Install-CIisApplication` functions.
@@ -72,8 +61,27 @@ Removed the `Name` paramater aliases. Update usages of the `Name` parameter on t
 `Get-CIisAppPool` now writes an error when passed a name and an application pool with that name does not exist. Update
 usages with `-ErrorAction Ignore` to preserve previous behavior.
 
-Objects returned by `Get-CIisWebsite`, `Get-CIisApplication`, and `Get-CIisAppPool` no longer have a `CommitChanges`
+Objects returned by `Get-CIisApplication`, and `Get-CIisAppPool` no longer have a `CommitChanges`
 method or a `ServerManager` member. Updates usages to call the new `Save-CIisConfiguration` function.
+
+Removed function `Set-CIisWebsiteID`. Replace usages of `Set-CIisWebsiteID` with `Set-CIisWebsite`.
+
+### Get-CIisWebsite
+
+* Removed `SiteName` parameter alias. Rename usages of the `SiteName` parameter to `Name`.
+* Now writes an error if a specific website doesn't exist. If a usage doesn't care if the website exists or not, add
+`-ErrorAction SilentlyContinue` or `-ErrorAction Ignore`.
+* Returned site objects no longer have a `CommitChanges` method or a `ServerManager` method. Updates usages to call the
+new `Save-IisConfiguration` function.
+
+### Install-CIisWebsite
+
+* No longer sets the default anonymous authentication username on a website to nothing. New websites will now use the
+IIS default value. To preserve the previous behavior, use the `Set-CIisAnonymousAuthentication` function.
+* Removed `SiteName` parameter alias. Rename usages of the `SiteName` parameter to `Name`.
+* Rename usages of parameter `SiteID` to `ID`.
+* Remove usages of the `-Force` switch. To implement its functionality, add `Uninstall-CIisWebsite` to code before
+calling `Install-CIisWebsite`.
 
 ### Install-CIisAppPool
 
@@ -119,6 +127,8 @@ application pool defaults process model.
 pool's `add` element in IIS' applicationHost.config file). Added parameters `QueueLength`, `AutoStart`,
 `Enable32BitAppOnWin64`, `ManagedRuntimeLoader`, `EnableConfigurationOverride`, `ManagedPipelineMode`, `CLRConfigFile`,
 `PassAnonymousToken`, and `StartMode` to `Install-CIisAppPool`.
+* Function `Set-CIisWebsite`, for setting a website's `id` and `serverAutoStart` properties.
+* Parameter `ServerAutoStart` to `Install-CIisWebsite` which configures a website's `serverAutoStart` setting.
 
 ## Changes
 
@@ -176,3 +186,5 @@ returned by any Carbon.IIS function.
 * The `Install-CIisAppPool` function's `Enable32BitApps` switch replaced with parameter `Enable32BitAppOnWin64`.
 * The `Install-CIisAppPool` function's `ClassicPipelineMode` switch. Replaced by parameter `ManagedPipelineMode`, which
 allows values `Classic` or `Integrated`.
+* The `Install-CIisAppPool` function's `Enable32BitApps` switch replaced with the `Enable32BitAppOnWin64` parameter.
+* Function `Set-CIisWebsiteID`. Use `Set-CIisWebsite` instead.
