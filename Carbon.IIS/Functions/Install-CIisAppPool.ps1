@@ -74,26 +74,11 @@ function Install-CIisAppPool
         [ValidateSet('v1.0','v1.1','v2.0','v4.0','')]
         [String] $ManagedRuntimeVersion = 'v4.0',
 
-        # Idle Timeout value in minutes. Default is 0.
-        [ValidateScript({$_ -gt 0})]
-        [int] $IdleTimeout = 0,
-
         # Use the classic pipeline mode, i.e. don't use an integrated pipeline.
         [switch] $ClassicPipelineMode,
 
         # Enable 32-bit applications.
         [switch] $Enable32BitApps,
-
-        # Run the app pool under the given local service account.  Valid values are `NetworkService`, `LocalService`,
-        # and `LocalSystem`. If no `ServiceAccount` or `Credential` arguments are provided, the app pool will be set to
-        # run as an `ApplicationPoolIdentity`, a principal that IIS creates and manages.
-        [ValidateSet('NetworkService', 'LocalService', 'LocalSystem')]
-        [String] $ServiceAccount,
-
-        # The credential to use to run the app pool. If no `ServiceAccount` or `Credential` arguments are provided, the
-        # app pool will be set to run as an `ApplicationPoolIdentity`, a principal that IIS creates and manages.
-        [Parameter(Mandatory, ParameterSetName='AsSpecificUserWithCredential')]
-        [pscredential] $Credential,
 
         # Return an object representing the app pool.
         [switch] $PassThru
@@ -102,14 +87,9 @@ function Install-CIisAppPool
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
-    if( $PSCmdlet.ParameterSetName -eq 'AsSpecificUser' -and -not (Test-CIdentity -Name $Credential.UserName) )
-    {
-        Write-Error ('Identity {0} not found. {0} IIS websites and applications assigned to this app pool won''t run.' -f $Credential.UserName,$Name)
-    }
-
     if( -not (Test-CIisAppPool -Name $Name) )
     {
-        Write-Verbose ('Creating IIS Application Pool {0}' -f $Name)
+        Write-Information "Creating IIS Application Pool ""$($Name)""."
         $mgr = Get-CIisServerManager
         $appPool = $mgr.ApplicationPools.Add($Name)
         Save-CIisConfiguration
@@ -138,49 +118,11 @@ function Install-CIisAppPool
         $updated = $true
     }
 
-    $idleTimeoutTimeSpan = New-TimeSpan -Minutes $IdleTimeout
-    if( $appPool.ProcessModel.IdleTimeout -ne $idleTimeoutTimeSpan )
-    {
-        Write-Verbose ('IIS Application Pool {0}: Setting idle timeout = {0}' -f $Name,$idleTimeoutTimeSpan)
-        $appPool.ProcessModel.IdleTimeout = $idleTimeoutTimeSpan
-        $updated = $true
-    }
-
     if( $appPool.Enable32BitAppOnWin64 -ne ([bool]$Enable32BitApps) )
     {
         Write-Verbose ('IIS Application Pool {0}: Setting Enable32BitAppOnWin64 = {0}' -f $Name,$Enable32BitApps)
         $appPool.Enable32BitAppOnWin64 = $Enable32BitApps
         $updated = $true
-    }
-
-    if( $PSCmdlet.ParameterSetName -like 'AsSpecificUser*' )
-    {
-        if( $appPool.ProcessModel.UserName -ne $Credential.UserName )
-        {
-            Write-Verbose ('IIS Application Pool {0}: Setting username = {0}' -f $Name,$Credential.UserName)
-            $appPool.ProcessModel.IdentityType = [Microsoft.Web.Administration.ProcessModelIdentityType]::SpecificUser
-            $appPool.ProcessModel.UserName = $Credential.UserName
-            $appPool.ProcessModel.Password = $Credential.GetNetworkCredential().Password
-
-            # On Windows Server 2008 R2, custom app pool users need this privilege.
-            Grant-CPrivilege -Identity $Credential.UserName -Privilege SeBatchLogonRight -Verbose:$VerbosePreference
-            $updated = $true
-        }
-    }
-    else
-    {
-        $identityType = [Microsoft.Web.Administration.ProcessModelIdentityType]::ApplicationPoolIdentity
-        if( $ServiceAccount )
-        {
-            $identityType = $ServiceAccount
-        }
-
-        if( $appPool.ProcessModel.IdentityType -ne $identityType )
-        {
-            Write-Verbose ('IIS Application Pool {0}: Setting IdentityType = {0}' -f $Name,$identityType)
-            $appPool.ProcessModel.IdentityType = $identityType
-            $updated = $true
-        }
     }
 
     if( $updated )
@@ -207,4 +149,3 @@ function Install-CIisAppPool
         $appPool
     }
 }
-

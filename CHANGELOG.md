@@ -10,15 +10,6 @@ doesn't work under PowerShell 6, so neither does Carbon.IIS.
 
 Windows 2008 is no longer supported. Minimum operating system is Windows 8.1 and Windows Server 2012 R2.
 
-Replace usages of the `Install-CIisAppPool` function's `-UserName` and `-Password` arguments with the `-Credential`
-parameter:
-
-    Install-CIisAppPool -Username $username -Password $password
-
-with
-
-    Install-CIisAppPool -Credential ([pscredential]::New($username, $password))
-
 All backwards-compatible function aliases removed. Rename usages of:
 * `Test-IisAppPoolExists` to `Test-CIisAppPool`
 * `Test-IisWebsiteExists` to `Test-CIisWebsite`
@@ -84,6 +75,9 @@ usages with `-ErrorAction Ignore` to preserve previous behavior.
 Objects returned by `Get-CIisWebsite`, `Get-CIisApplication`, and `Get-CIisAppPool` no longer have a `CommitChanges`
 method or a `ServerManager` member. Updates usages to call the new `Save-CIisConfiguration` function.
 
+Removed `IdleTimeout`, `ServiceUser`, and `Credential` parameters on `Install-CIisAppPool`. These are process model
+settings. Update usages to use the new `Set-CIisAppPoolProcessModel` function to set these values.
+
 ## Added
 
 * Carbon.IIS now supports
@@ -111,6 +105,8 @@ settings.
 the application pool defaults periodic restart settings.
 * `Get-CIIsAppPool` and `Get-CIisWebsite` can now return the application pool defaults and the website
 defaults settings, respectively. Use the new `AsDefaults` switch.
+* Function `Set-CIisAppPoolProcessModel` for configuring an IIS application pool's process model or configuring the
+application pool defaults process model.
 
 ## Changes
 
@@ -161,3 +157,5 @@ properties. Use `GetAttributeValue` or `SetAttributeValue` to get/set values ins
 * Objects returned by `Get-CIisWebsite`, `Get-CIisApplication`, and `Get-CIisAppPool` no longer have a `CommitChanges()`
 method or a `ServerManager` property. Use the new `Save-CIisConfiguration` function to save changes you make to objects
 returned by any Carbon.IIS function.
+* The `Install-CIisAppPool` function's `IdleTimeout`, `ServiceAccount`, and `Credential` parameters. Use the new
+`Set-CIisAppPoolProcessModel` function to configure an application pool's process model.

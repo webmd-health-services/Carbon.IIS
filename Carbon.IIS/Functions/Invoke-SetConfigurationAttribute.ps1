@@ -1,7 +1,7 @@
 
 function Invoke-SetConfigurationAttribute
 {
-
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSShouldProcess', '')]
     [CmdletBinding(SupportsShouldProcess)]
     param(
         [Parameter(Mandatory)]
