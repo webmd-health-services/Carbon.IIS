@@ -103,7 +103,13 @@ function Set-CIisConfigurationAttribute
 
         # If the attribute's value is sensitive. If set, the attribute's value will be masked when written to the
         # console.
-        [bool] $Sensitive
+        [bool] $Sensitive,
+
+        # Properties to skip and not change. These are usually private settings that we shouldn't be mucking with or
+        # settings that capture current state, etc.
+        [Parameter(ParameterSetName='AllByConfigElement')]
+        [Parameter(ParameterSetName='AllByConfigPath')]
+        [String[]] $Exclude = @()
     )
 
     Set-StrictMode -Version 'Latest'
@@ -129,6 +135,11 @@ function Set-CIisConfigurationAttribute
         process
         {
             $currentAttr = $InputObject
+
+            if( $Exclude -and $currentAttr.Name -in $Exclude )
+            {
+                return
+            }
 
             if( $mirroring )
             {
@@ -160,6 +171,10 @@ function Set-CIisConfigurationAttribute
             {
                 $currentValueMsg = [Enum]::GetName($Value.GetType().FullName, $currentValue)
             }
+            elseif( $currentAttr.Schema.Type -eq 'timeSpan' -and $Value -is [UInt64] )
+            {
+                $valueMsg = [TimeSpan]::New($Value)
+            }
 
             if( $protectValue )
             {
@@ -189,7 +204,17 @@ function Set-CIisConfigurationAttribute
                 $whatIf = "$($currentAttr.Name) for $($Target -replace '"', '''')"
                 if( $PSCmdlet.ShouldProcess($whatIf, $action) )
                 {
-                    $currentAttr.Delete()
+                    try
+                    {
+                        $currentAttr.Delete()
+                    }
+                    catch
+                    {
+                        $msg = "Exception resetting ""$($currentAttr.Name)"" on $($Target) to its default value (by " +
+                               "deleting it): $($_)"
+                        Write-Error -Message $msg
+                        continue
+                    }
                     [void]$removedNames.Add($currentAttr.Name)
                 }
                 return
@@ -202,7 +227,15 @@ function Set-CIisConfigurationAttribute
             }
 
             [void]$infoMessages.Add($changedMsg)
-            $ConfigurationElement.SetAttributeValue($currentAttr.Name, $Value)
+            try
+            {
+                $ConfigurationElement.SetAttributeValue($currentAttr.Name, $Value)
+            }
+            catch
+            {
+                $msg = "Exception setting ""$($currentAttr.Name)"" on $($Target): $($_)"
+                Write-Error -Message $msg -ErrorAction Stop
+            }
             [void]$updatedNames.Add($currentAttr.Name)
         }
     }
@@ -272,12 +305,12 @@ function Set-CIisConfigurationAttribute
     {
         if( $infoMessages.Count -eq 1 )
         {
-            $msg = "Setting attribute on $($Target): $($infoMessages.Trim() -replace ' {2,}', ' ')"
+            $msg = "Configuring $($Target): $($infoMessages.Trim() -replace ' {2,}', ' ')"
             Write-Information $msg
         }
         elseif( $infoMessages.Count -gt 1)
         {
-            Write-Information "Setting attributes on $($Target)."
+            Write-Information "Configuring $($Target)."
             $infoMessages | ForEach-Object { Write-Information $_ }
         }
     }

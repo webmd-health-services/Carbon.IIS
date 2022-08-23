@@ -116,6 +116,7 @@ Describe 'Install-CIisApplication' {
         Write-Debug 'BeforeAll'
         Start-W3ServiceTestFixture
         Install-CIisAppPool -Name $script:appPoolName
+        Install-CIisAppPool -Name 'DefaultAppPool'
         $script:websiteRoot = New-TestDirectory
         Install-CIisWebsite -Name $script:siteName -PhysicalPath $script:websiteRoot -Bindings "http://*:$($script:port)"
     }
@@ -124,6 +125,7 @@ Describe 'Install-CIisApplication' {
         Write-Debug 'AfterAll'
         Uninstall-CIisWebsite -Name $script:siteName
         Uninstall-CIisAppPool -Name $script:appPoolName
+        Uninstall-CIisAppPool -Name 'DefaultAppPool'
         Complete-W3ServiceTestFixture
     }
 

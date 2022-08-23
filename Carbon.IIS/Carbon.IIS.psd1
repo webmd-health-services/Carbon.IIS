@@ -18,7 +18,7 @@
     RootModule = 'Carbon.IIS.psm1'
 
     # Version number of this module.
-    ModuleVersion = '0.0.0'
+    ModuleVersion = '1.0.0'
 
     # ID used to uniquely identify this module
     GUID = '157f0f80-4787-4dc0-bdee-4881c627750b'
@@ -104,12 +104,16 @@
         'Remove-CIisMimeMap',
         'Save-CIisConfiguration',
         'Set-CIisAnonymousAuthentication',
+        'Set-CIisAppPool',
         'Set-CIisAppPoolCpu',
+        'Set-CIisAppPoolPeriodicRestart',
+        'Set-CIisAppPoolProcessModel',
         'Set-CIisConfigurationAttribute',
         'Set-CIisHttpHeader',
         'Set-CIisHttpRedirect',
         'Set-CIisMimeMap',
-        'Set-CIisWebsiteID',
+        'Set-CIisWebsite',
+        'Set-CIisWebsiteLogFile',
         'Set-CIisWebsiteSslCertificate',
         'Set-CIisWindowsAuthentication',
         'Test-CIisAppPool',

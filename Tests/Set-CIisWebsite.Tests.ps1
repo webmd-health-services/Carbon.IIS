@@ -1,6 +1,4 @@
 using module '..\Carbon.Iis'
-using module '..\Carbon.Iis\Carbon.Iis.Enums.psm1'
-
 using namespace Microsoft.Web.Administration
 
 Set-StrictMode -Version 'Latest'
@@ -11,37 +9,43 @@ BeforeAll {
     $script:testNum = 0
 
     $script:defaultDefaults = @{}
-    (Get-CIisAppPool -Defaults).Cpu |
-        Where-Object { $_ | Get-Member -Name 'IsInheritedFromDefaultValue' } |
+    (Get-CIisWebsite -Defaults).Attributes |
         Where-Object 'IsInheritedFromDefaultValue' -EQ $false |
         ForEach-Object { $script:defaultDefaults[$_.Name] = $_.Value }
 
     # All non-default values.
     $script:nonDefaultArgs = @{
-            Action = [ProcessorAction]::Throttle;
-            Limit = (1000 * 50);
-            NumaNodeAffinityMode = [CIisNumaNodeAffinityMode]::Hard;
-            NumaNodeAssignment = [CIisNumaNodeAssignment]::WindowsScheduling;
-            ProcessorGroup = 1;
-            ResetInterval = '00:10:00';
-            SmpAffinitized = $true;
-            SmpProcessorAffinityMask = 0x1;
-            SmpProcessorAffinityMask2 = 0x2;
+        'id' = 53;
+        'serverAutoStart' = $false;
     }
+
+    # Once you set a website's ID, you can't ever reset it, only change it to a new value.
+    $script:requiredDefaults = @{
+        'id' = 53;
+    }
+
+    $script:excludedAttributes = @('name', 'state')
 
     # Sometimes the default values in the schema aren't quite the default values.
     $script:notQuiteDefaultValues = @{
+        'id' = 53;
     }
 
     function ThenDefaultsSetTo
     {
-        ThenHasValues $script:nonDefaultArgs -OnDefaults
-        ThenHasValues $script:nonDefaultArgs
+        ThenHasValues @{ 'id' = 0 ; 'serverAutoStart' = $script:nonDefaultArgs['serverAutoStart'] } -OnDefaults
+        ThenHasValues @{
+            'id' = (Get-CIisWebsite -Name $script:siteName).Id ;
+            'serverAutoStart' = $script:nonDefaultArgs['serverAutoStart']
+        }
     }
 
     function ThenHasDefaultValues
     {
-        ThenHasValues @{}
+        param(
+            [hashtable] $Values = @{}
+        )
+        ThenHasValues $Values
     }
 
     function ThenHasValues
@@ -53,10 +57,10 @@ BeforeAll {
             [switch] $OnDefaults
         )
 
-        $appPool = Get-CIisAppPool -Name $script:appPoolName -Defaults:$OnDefaults
-        $appPool | Should -Not -BeNullOrEmpty
+        $targetParent = Get-CIisWebsite -Name $script:siteName -Defaults:$OnDefaults
+        $targetParent | Should -Not -BeNullOrEmpty
 
-        $target = $appPool.Cpu
+        $target = $targetParent
         $target | Should -Not -BeNullOrEmpty
 
         $asDefaultsMsg = ''
@@ -64,10 +68,13 @@ BeforeAll {
         {
             $asDefaultsMsg = ' as default'
         }
-
         foreach( $attr in $target.Schema.AttributeSchemas )
         {
-            $currentValue = $target.GetAttributeValue($attr.Name)
+            if( $attr.Name -in $script:excludedAttributes )
+            {
+                continue
+            }
+
             $expectedValue = $attr.DefaultValue
             $becauseMsg = 'default'
             if( $script:notQuiteDefaultValues.ContainsKey($attr.Name))
@@ -80,7 +87,13 @@ BeforeAll {
                 $expectedValue = $Values[$attr.Name]
                 $becauseMsg = 'custom'
             }
-            if( $currentValue -is [TimeSpan] )
+
+            $currentValue = $target.GetAttributeValue($attr.Name)
+            if( $currentValue -is [securestring] )
+            {
+                $currentValue = [pscredential]::New('ignored', $currentValue).GetNetworkCredential().Password
+            }
+            elseif( $currentValue -is [TimeSpan] )
             {
                 if( $expectedValue -match '^\d+$' )
                 {
@@ -98,67 +111,57 @@ BeforeAll {
     }
 }
 
-Describe 'Set-CIisAppPoolCpu' {
+Describe 'Set-CIisWebsite' {
     BeforeAll {
         Start-W3ServiceTestFixture
+        Install-CIisAppPool -Name 'Set-CIisWebsite'
     }
 
     AfterAll {
+        Uninstall-CIisAppPool -Name 'Set-CIisWebsite'
         Complete-W3ServiceTestFixture
     }
 
     BeforeEach {
-        $script:appPoolName = "Set-CIisAppPoolCpu$($script:testNum++)"
-        Set-CIisAppPoolCpu -AsDefaults @script:defaultDefaults
-        Install-CIisAppPool -Name $script:appPoolName
+        $script:siteName = "Set-CIisWebsite$($script:testNum++)"
+        Set-CIisWebsite -AsDefaults @script:defaultDefaults
+        Install-CIisWebsite -Name $script:siteName -PhysicalPath (New-TestDirectory) -AppPoolName 'Set-CIisWebsite'
     }
 
     AfterEach {
-        Uninstall-CIisAppPool -Name $script:appPoolName
-        Set-CIisAppPoolCpu -AsDefaults @script:defaultDefaults
+        Uninstall-CIisWebsite -Name $script:siteName
+        Set-CIisWebsite -AsDefaults @script:defaultDefaults
     }
 
-    It 'should set and reset all  values' {
+    It 'should set and reset all values' {
         $infos = @()
-        Set-CIisAppPoolCpu -AppPoolName $script:appPoolName @nonDefaultArgs -InformationVariable 'infos'
+        Set-CIisWebsite -Name $script:siteName @nonDefaultArgs -InformationVariable 'infos'
         $infos | Should -Not -BeNullOrEmpty
         ThenHasValues $nonDefaultArgs
 
         # Make sure no information messages get written because no changes are being made.
-        Set-CIisAppPoolCpu -AppPoolName $script:appPoolName @nonDefaultArgs -InformationVariable 'infos'
+        Set-CIisWebsite -Name $script:siteName @nonDefaultArgs -InformationVariable 'infos'
         $infos | Should -BeNullOrEmpty
         ThenHasValues $nonDefaultArgs
 
-        Set-CIisAppPoolCpu -AppPoolName $script:appPoolName
-        ThenHasDefaultValues
+        Set-CIisWebsite -Name $script:siteName @script:requiredDefaults
+        ThenHasDefaultValues @{ 'id' = $script:nonDefaultArgs['id'] }
     }
 
     It 'should support WhatIf when updating all values' {
-        Set-CIisAppPoolCpu -AppPoolName $script:appPoolName @nonDefaultArgs -WhatIf
-        ThenHasDefaultValues
+        Set-CIisWebsite -Name $script:siteName @nonDefaultArgs -WhatIf
+        ThenHasDefaultValues @{ 'id' = (Get-CIisWebsite -Name $script:siteName).Id }
     }
 
     It 'should support WhatIf when resetting all values back to defaults' {
-        Set-CIisAppPoolCpu -AppPoolName $script:appPoolName @nonDefaultArgs
+        Set-CIisWebsite -Name $script:siteName @nonDefaultArgs
         ThenHasValues $nonDefaultArgs
-        Set-CIisAppPoolCpu -AppPoolName $script:appPoolName -WhatIf
+        Set-CIisWebsite -Name $script:siteName -WhatIf
         ThenHasValues $nonDefaultArgs
-    }
-
-    It 'should change values and reset to defaults' {
-        Set-CIisAppPoolCpu -AppPoolName $script:appPoolName @nonDefaultArgs -ErrorAction Ignore
-        ThenHasValues $nonDefaultArgs
-        $someArgs = @{
-            'action' = [ProcessorAction]::KillW3wp;
-            'limit' = 10000;
-            'resetInterval' = '01:00:00';
-        }
-        Set-CIisAppPoolCpu -AppPoolName $script:appPoolName @someArgs
-        ThenHasValues $someArgs
     }
 
     It 'should change default settings' {
-        Set-CIisAppPoolCpu -AsDefaults @nonDefaultArgs
-        ThenDefaultsSetTo @nonDefaultArgs
+        Set-CIisWebsite -AsDefaults -ServerAutoStart $false
+        ThenDefaultsSetTo @{ ServerAutoStart = $false }
     }
 }

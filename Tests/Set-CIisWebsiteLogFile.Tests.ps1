@@ -1,6 +1,4 @@
 using module '..\Carbon.Iis'
-using module '..\Carbon.Iis\Carbon.Iis.Enums.psm1'
-
 using namespace Microsoft.Web.Administration
 
 Set-StrictMode -Version 'Latest'
@@ -11,26 +9,29 @@ BeforeAll {
     $script:testNum = 0
 
     $script:defaultDefaults = @{}
-    (Get-CIisAppPool -Defaults).Cpu |
-        Where-Object { $_ | Get-Member -Name 'IsInheritedFromDefaultValue' } |
+    (Get-CIisWebsite -Defaults).LogFile.Attributes |
         Where-Object 'IsInheritedFromDefaultValue' -EQ $false |
         ForEach-Object { $script:defaultDefaults[$_.Name] = $_.Value }
 
     # All non-default values.
     $script:nonDefaultArgs = @{
-            Action = [ProcessorAction]::Throttle;
-            Limit = (1000 * 50);
-            NumaNodeAffinityMode = [CIisNumaNodeAffinityMode]::Hard;
-            NumaNodeAssignment = [CIisNumaNodeAssignment]::WindowsScheduling;
-            ProcessorGroup = 1;
-            ResetInterval = '00:10:00';
-            SmpAffinitized = $true;
-            SmpProcessorAffinityMask = 0x1;
-            SmpProcessorAffinityMask2 = 0x2;
+        CustomLogPluginClsid = '931a0831-2301-4a0b-9887-ee9a7d0c10df';
+        Directory = 'C:\my\log\files';
+        Enabled = $false;
+        FlushByEntryCountW3CLog = 1000;
+        LocalTimeRollover = $true;
+        LogExtFileFlags = ([LogExtFileFlags]::Date -bor [LogExtFileFlags]::Host);
+        LogFormat = [LogFormat]::Custom;
+        LogSiteID = $true;
+        LogTargetW3C = ([LogTargetW3C]::File -bor [LogTargetW3C]::ETW);
+        MaxLogLineLength = 2000;
+        Period = [LoggingRolloverPeriod]::Hourly;
+        TruncateSize = 1048576;
     }
 
     # Sometimes the default values in the schema aren't quite the default values.
     $script:notQuiteDefaultValues = @{
+        Directory = '%SystemDrive%\inetpub\logs\LogFiles';
     }
 
     function ThenDefaultsSetTo
@@ -49,14 +50,13 @@ BeforeAll {
         param(
             [Parameter(Position=0)]
             [hashtable] $Values = @{},
-
             [switch] $OnDefaults
         )
 
-        $appPool = Get-CIisAppPool -Name $script:appPoolName -Defaults:$OnDefaults
-        $appPool | Should -Not -BeNullOrEmpty
+        $website = Get-CIisWebsite -Name $script:websiteName
+        $website | Should -Not -BeNullOrEmpty
 
-        $target = $appPool.Cpu
+        $target = $website.LogFile
         $target | Should -Not -BeNullOrEmpty
 
         $asDefaultsMsg = ''
@@ -64,7 +64,6 @@ BeforeAll {
         {
             $asDefaultsMsg = ' as default'
         }
-
         foreach( $attr in $target.Schema.AttributeSchemas )
         {
             $currentValue = $target.GetAttributeValue($attr.Name)
@@ -80,6 +79,7 @@ BeforeAll {
                 $expectedValue = $Values[$attr.Name]
                 $becauseMsg = 'custom'
             }
+
             if( $currentValue -is [TimeSpan] )
             {
                 if( $expectedValue -match '^\d+$' )
@@ -98,67 +98,69 @@ BeforeAll {
     }
 }
 
-Describe 'Set-CIisAppPoolCpu' {
+Describe 'Set-CIisWebsiteLogFile' {
     BeforeAll {
         Start-W3ServiceTestFixture
+        Install-CIisAppPool -Name 'Set-CIisWebsiteLogFile'
     }
 
     AfterAll {
+        Uninstall-CIisAppPool -Name 'Set-CIisWebsiteLogFile'
         Complete-W3ServiceTestFixture
     }
 
     BeforeEach {
-        $script:appPoolName = "Set-CIisAppPoolCpu$($script:testNum++)"
-        Set-CIisAppPoolCpu -AsDefaults @script:defaultDefaults
-        Install-CIisAppPool -Name $script:appPoolName
+        $script:websiteName = "Set-CIisWebsiteLogFile$($script:testNum++)"
+        Set-CIisWebsiteLogFile -AsDefaults @script:defaultDefaults
+        Install-CIisWebsite -Name $script:websiteName -PhysicalPath (New-TestDirectory) -AppPoolName $script:websiteName
     }
 
     AfterEach {
-        Uninstall-CIisAppPool -Name $script:appPoolName
-        Set-CIisAppPoolCpu -AsDefaults @script:defaultDefaults
+        Uninstall-CIisWebsite -Name $script:websiteName
+        Set-CIisWebsiteLogFile -AsDefaults @script:defaultDefaults
     }
 
-    It 'should set and reset all  values' {
+    It 'should set and reset all values' {
         $infos = @()
-        Set-CIisAppPoolCpu -AppPoolName $script:appPoolName @nonDefaultArgs -InformationVariable 'infos'
+        Set-CIisWebsiteLogFile -SiteName $script:websiteName @nonDefaultArgs -InformationVariable 'infos'
         $infos | Should -Not -BeNullOrEmpty
         ThenHasValues $nonDefaultArgs
 
         # Make sure no information messages get written because no changes are being made.
-        Set-CIisAppPoolCpu -AppPoolName $script:appPoolName @nonDefaultArgs -InformationVariable 'infos'
+        Set-CIisWebsiteLogFile -SiteName $script:websiteName @nonDefaultArgs -InformationVariable 'infos'
         $infos | Should -BeNullOrEmpty
         ThenHasValues $nonDefaultArgs
 
-        Set-CIisAppPoolCpu -AppPoolName $script:appPoolName
+        Set-CIisWebsiteLogFile -SiteName $script:websiteName
         ThenHasDefaultValues
     }
 
     It 'should support WhatIf when updating all values' {
-        Set-CIisAppPoolCpu -AppPoolName $script:appPoolName @nonDefaultArgs -WhatIf
+        Set-CIisWebsiteLogFile -SiteName $script:websiteName @nonDefaultArgs -WhatIf
         ThenHasDefaultValues
     }
 
     It 'should support WhatIf when resetting all values back to defaults' {
-        Set-CIisAppPoolCpu -AppPoolName $script:appPoolName @nonDefaultArgs
+        Set-CIisWebsiteLogFile -SiteName $script:websiteName @nonDefaultArgs
         ThenHasValues $nonDefaultArgs
-        Set-CIisAppPoolCpu -AppPoolName $script:appPoolName -WhatIf
+        Set-CIisWebsiteLogFile -SiteName $script:websiteName -WhatIf
         ThenHasValues $nonDefaultArgs
     }
 
     It 'should change values and reset to defaults' {
-        Set-CIisAppPoolCpu -AppPoolName $script:appPoolName @nonDefaultArgs -ErrorAction Ignore
+        Set-CIisWebsiteLogFile -SiteName $script:websiteName @nonDefaultArgs -ErrorAction Ignore
         ThenHasValues $nonDefaultArgs
+
         $someArgs = @{
-            'action' = [ProcessorAction]::KillW3wp;
-            'limit' = 10000;
-            'resetInterval' = '01:00:00';
+            Directory = "C:\logs";
+            Period = [LoggingRolloverPeriod]::Weekly;
         }
-        Set-CIisAppPoolCpu -AppPoolName $script:appPoolName @someArgs
+        Set-CIisWebsiteLogFile -SiteName $script:websiteName @someArgs
         ThenHasValues $someArgs
     }
 
     It 'should change default settings' {
-        Set-CIisAppPoolCpu -AsDefaults @nonDefaultArgs
+        Set-CIisWebsiteLogFile -AsDefaults @nonDefaultArgs
         ThenDefaultsSetTo @nonDefaultArgs
     }
 }

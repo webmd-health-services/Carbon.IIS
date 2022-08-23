@@ -1,6 +1,4 @@
 using module '..\Carbon.Iis'
-using module '..\Carbon.Iis\Carbon.Iis.Enums.psm1'
-
 using namespace Microsoft.Web.Administration
 
 Set-StrictMode -Version 'Latest'
@@ -11,22 +9,17 @@ BeforeAll {
     $script:testNum = 0
 
     $script:defaultDefaults = @{}
-    (Get-CIisAppPool -Defaults).Cpu |
+    (Get-CIisAppPool -Defaults).Recycling.PeriodicRestart |
         Where-Object { $_ | Get-Member -Name 'IsInheritedFromDefaultValue' } |
         Where-Object 'IsInheritedFromDefaultValue' -EQ $false |
         ForEach-Object { $script:defaultDefaults[$_.Name] = $_.Value }
 
-    # All non-default values.
+        # All non-default values.
     $script:nonDefaultArgs = @{
-            Action = [ProcessorAction]::Throttle;
-            Limit = (1000 * 50);
-            NumaNodeAffinityMode = [CIisNumaNodeAffinityMode]::Hard;
-            NumaNodeAssignment = [CIisNumaNodeAssignment]::WindowsScheduling;
-            ProcessorGroup = 1;
-            ResetInterval = '00:10:00';
-            SmpAffinitized = $true;
-            SmpProcessorAffinityMask = 0x1;
-            SmpProcessorAffinityMask2 = 0x2;
+        'memory' = 1000000;
+        'privateMemory' = 2000000;
+        'requests' = 3000000;
+        'time' = [TimeSpan]'23:00:00';
     }
 
     # Sometimes the default values in the schema aren't quite the default values.
@@ -50,14 +43,23 @@ BeforeAll {
             [Parameter(Position=0)]
             [hashtable] $Values = @{},
 
+            [TimeSpan[]] $AndSchedule = @(),
+
             [switch] $OnDefaults
         )
 
         $appPool = Get-CIisAppPool -Name $script:appPoolName -Defaults:$OnDefaults
-        $appPool | Should -Not -BeNullOrEmpty
+        $appPool  | Should -Not -BeNullOrEmpty
 
-        $target = $appPool.Cpu
+        $target = $appPool.Recycling.PeriodicRestart
         $target | Should -Not -BeNullOrEmpty
+
+        $schedule = $target.Schedule
+        $schedule | Should -HaveCount $AndSchedule.Count
+        ($schedule |
+            Select-Object -ExpandProperty 'Time' |
+            Sort-Object) -join ', ' |
+            Should -Be (($AndSchedule | Sort-Object) -join ', ')
 
         $asDefaultsMsg = ''
         if( $OnDefaults )
@@ -80,6 +82,7 @@ BeforeAll {
                 $expectedValue = $Values[$attr.Name]
                 $becauseMsg = 'custom'
             }
+
             if( $currentValue -is [TimeSpan] )
             {
                 if( $expectedValue -match '^\d+$' )
@@ -98,7 +101,7 @@ BeforeAll {
     }
 }
 
-Describe 'Set-CIisAppPoolCpu' {
+Describe 'Set-CIisAppPoolPeriodicRestart' {
     BeforeAll {
         Start-W3ServiceTestFixture
     }
@@ -108,57 +111,66 @@ Describe 'Set-CIisAppPoolCpu' {
     }
 
     BeforeEach {
-        $script:appPoolName = "Set-CIisAppPoolCpu$($script:testNum++)"
-        Set-CIisAppPoolCpu -AsDefaults @script:defaultDefaults
+        $script:appPoolName = "Set-CIisAppPoolPeriodicRestart$($script:testNum++)"
+        Set-CIisAppPoolPeriodicRestart -AsDefaults @script:defaultDefaults
         Install-CIisAppPool -Name $script:appPoolName
     }
 
     AfterEach {
         Uninstall-CIisAppPool -Name $script:appPoolName
-        Set-CIisAppPoolCpu -AsDefaults @script:defaultDefaults
+        Set-CIisAppPoolPeriodicRestart -AsDefaults @script:defaultDefaults
     }
 
-    It 'should set and reset all  values' {
+    It 'should set and reset all values' {
         $infos = @()
-        Set-CIisAppPoolCpu -AppPoolName $script:appPoolName @nonDefaultArgs -InformationVariable 'infos'
+        Set-CIisAppPoolPeriodicRestart -AppPoolName $script:appPoolName `
+                                       @script:nonDefaultArgs `
+                                       -Schedule '01:00:00', '13:00:00' `
+                                       -InformationVariable 'infos'
         $infos | Should -Not -BeNullOrEmpty
-        ThenHasValues $nonDefaultArgs
+        ThenHasValues $script:nonDefaultArgs -AndSchedule '01:00:00', '13:00:00'
 
         # Make sure no information messages get written because no changes are being made.
-        Set-CIisAppPoolCpu -AppPoolName $script:appPoolName @nonDefaultArgs -InformationVariable 'infos'
+        Set-CIisAppPoolPeriodicRestart -AppPoolName $script:appPoolName `
+                                       @script:nonDefaultArgs `
+                                       -Schedule '01:00:00', '13:00:00' `
+                                       -InformationVariable 'infos'
         $infos | Should -BeNullOrEmpty
-        ThenHasValues $nonDefaultArgs
+        ThenHasValues $script:nonDefaultArgs -AndSchedule '01:00:00', '13:00:00'
 
-        Set-CIisAppPoolCpu -AppPoolName $script:appPoolName
+        Set-CIisAppPoolPeriodicRestart -AppPoolName $script:appPoolName
         ThenHasDefaultValues
     }
 
     It 'should support WhatIf when updating all values' {
-        Set-CIisAppPoolCpu -AppPoolName $script:appPoolName @nonDefaultArgs -WhatIf
+        Set-CIisAppPoolPeriodicRestart -AppPoolName $script:appPoolName `
+                                       @script:nonDefaultArgs `
+                                       -Schedule '12:34:00', '23:45:00' `
+                                       -WhatIf
         ThenHasDefaultValues
     }
 
     It 'should support WhatIf when resetting all values back to defaults' {
-        Set-CIisAppPoolCpu -AppPoolName $script:appPoolName @nonDefaultArgs
-        ThenHasValues $nonDefaultArgs
-        Set-CIisAppPoolCpu -AppPoolName $script:appPoolName -WhatIf
-        ThenHasValues $nonDefaultArgs
+        Set-CIisAppPoolPeriodicRestart -AppPoolName $script:appPoolName @script:nonDefaultArgs
+        ThenHasValues $script:nonDefaultArgs
+        Set-CIisAppPoolPeriodicRestart -AppPoolName $script:appPoolName -WhatIf
+        ThenHasValues $script:nonDefaultArgs
     }
 
     It 'should change values and reset to defaults' {
-        Set-CIisAppPoolCpu -AppPoolName $script:appPoolName @nonDefaultArgs -ErrorAction Ignore
-        ThenHasValues $nonDefaultArgs
+        Set-CIisAppPoolPeriodicRestart -AppPoolName $script:appPoolName @script:nonDefaultArgs -ErrorAction Ignore
+        ThenHasValues $script:nonDefaultArgs
+
         $someArgs = @{
-            'action' = [ProcessorAction]::KillW3wp;
-            'limit' = 10000;
-            'resetInterval' = '01:00:00';
+            'memory' = 6000000;
+            'privateMemory' = 7000000;
         }
-        Set-CIisAppPoolCpu -AppPoolName $script:appPoolName @someArgs
+        Set-CIisAppPoolPeriodicRestart -AppPoolName $script:appPoolName @someArgs
         ThenHasValues $someArgs
     }
 
     It 'should change default settings' {
-        Set-CIisAppPoolCpu -AsDefaults @nonDefaultArgs
-        ThenDefaultsSetTo @nonDefaultArgs
+        Set-CIisAppPoolPeriodicRestart -AsDefaults @script:nonDefaultArgs
+        ThenDefaultsSetTo @script:nonDefaultArgs
     }
 }

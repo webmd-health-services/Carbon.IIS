@@ -1,6 +1,4 @@
 using module '..\Carbon.Iis'
-using module '..\Carbon.Iis\Carbon.Iis.Enums.psm1'
-
 using namespace Microsoft.Web.Administration
 
 Set-StrictMode -Version 'Latest'
@@ -10,28 +8,22 @@ BeforeAll {
 
     $script:testNum = 0
 
+    #
     $script:defaultDefaults = @{}
-    (Get-CIisAppPool -Defaults).Cpu |
-        Where-Object { $_ | Get-Member -Name 'IsInheritedFromDefaultValue' } |
+    (%GET_CMD_NAME% -Defaults).%PROPERTY_NAME%.Attributes |
         Where-Object 'IsInheritedFromDefaultValue' -EQ $false |
         ForEach-Object { $script:defaultDefaults[$_.Name] = $_.Value }
 
     # All non-default values.
     $script:nonDefaultArgs = @{
-            Action = [ProcessorAction]::Throttle;
-            Limit = (1000 * 50);
-            NumaNodeAffinityMode = [CIisNumaNodeAffinityMode]::Hard;
-            NumaNodeAssignment = [CIisNumaNodeAssignment]::WindowsScheduling;
-            ProcessorGroup = 1;
-            ResetInterval = '00:10:00';
-            SmpAffinitized = $true;
-            SmpProcessorAffinityMask = 0x1;
-            SmpProcessorAffinityMask2 = 0x2;
+        %NON_DEFAULT_ARGS%
     }
 
     # Sometimes the default values in the schema aren't quite the default values.
     $script:notQuiteDefaultValues = @{
     }
+
+    $script:excludedAttributes = @()
 
     function ThenDefaultsSetTo
     {
@@ -53,10 +45,10 @@ BeforeAll {
             [switch] $OnDefaults
         )
 
-        $appPool = Get-CIisAppPool -Name $script:appPoolName -Defaults:$OnDefaults
-        $appPool | Should -Not -BeNullOrEmpty
+        $targetParent = %GET_CMD_NAME% -Name $script:%TARGET_VAR_NAME% -Defaults:$OnDefaults
+        $targetParent | Should -Not -BeNullOrEmpty
 
-        $target = $appPool.Cpu
+        $target = $targetParent.%PROPERTY_NAME%
         $target | Should -Not -BeNullOrEmpty
 
         $asDefaultsMsg = ''
@@ -64,10 +56,13 @@ BeforeAll {
         {
             $asDefaultsMsg = ' as default'
         }
-
         foreach( $attr in $target.Schema.AttributeSchemas )
         {
-            $currentValue = $target.GetAttributeValue($attr.Name)
+            if( $attr.Name -in $script:excludedAttributes )
+            {
+                continue
+            }
+
             $expectedValue = $attr.DefaultValue
             $becauseMsg = 'default'
             if( $script:notQuiteDefaultValues.ContainsKey($attr.Name))
@@ -80,7 +75,13 @@ BeforeAll {
                 $expectedValue = $Values[$attr.Name]
                 $becauseMsg = 'custom'
             }
-            if( $currentValue -is [TimeSpan] )
+
+            $currentValue = $target.GetAttributeValue($attr.Name)
+            if( $currentValue -is [securestring] )
+            {
+                $currentValue = [pscredential]::New('ignored', $currentValue).GetNetworkCredential().Password
+            }
+            elseif( $currentValue -is [TimeSpan] )
             {
                 if( $expectedValue -match '^\d+$' )
                 {
@@ -98,67 +99,69 @@ BeforeAll {
     }
 }
 
-Describe 'Set-CIisAppPoolCpu' {
+Describe '%CMD_NAME%' {
     BeforeAll {
         Start-W3ServiceTestFixture
+        %BEFORE_ALL%
     }
 
     AfterAll {
+        %AFTER_ALL%
         Complete-W3ServiceTestFixture
     }
 
     BeforeEach {
-        $script:appPoolName = "Set-CIisAppPoolCpu$($script:testNum++)"
-        Set-CIisAppPoolCpu -AsDefaults @script:defaultDefaults
-        Install-CIisAppPool -Name $script:appPoolName
+        $script:%TARGET_VAR_NAME% = "%CMD_NAME%$($script:testNum++)"
+        %CMD_NAME% -AsDefaults @script:defaultDefaults
+        %BEFORE_EACH%
     }
 
     AfterEach {
-        Uninstall-CIisAppPool -Name $script:appPoolName
-        Set-CIisAppPoolCpu -AsDefaults @script:defaultDefaults
+        %AFTER_EACH%
+        %CMD_NAME% -AsDefaults @script:defaultDefaults
     }
 
-    It 'should set and reset all  values' {
+    It 'should set and reset all values' {
         $infos = @()
-        Set-CIisAppPoolCpu -AppPoolName $script:appPoolName @nonDefaultArgs -InformationVariable 'infos'
+        %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME% @nonDefaultArgs -InformationVariable 'infos'
         $infos | Should -Not -BeNullOrEmpty
         ThenHasValues $nonDefaultArgs
 
         # Make sure no information messages get written because no changes are being made.
-        Set-CIisAppPoolCpu -AppPoolName $script:appPoolName @nonDefaultArgs -InformationVariable 'infos'
+        %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME% @nonDefaultArgs -InformationVariable 'infos'
         $infos | Should -BeNullOrEmpty
         ThenHasValues $nonDefaultArgs
 
-        Set-CIisAppPoolCpu -AppPoolName $script:appPoolName
+        %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME%
         ThenHasDefaultValues
     }
 
     It 'should support WhatIf when updating all values' {
-        Set-CIisAppPoolCpu -AppPoolName $script:appPoolName @nonDefaultArgs -WhatIf
+        %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME% @nonDefaultArgs -WhatIf
         ThenHasDefaultValues
     }
 
     It 'should support WhatIf when resetting all values back to defaults' {
-        Set-CIisAppPoolCpu -AppPoolName $script:appPoolName @nonDefaultArgs
+        %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME% @nonDefaultArgs
         ThenHasValues $nonDefaultArgs
-        Set-CIisAppPoolCpu -AppPoolName $script:appPoolName -WhatIf
+        %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME% -WhatIf
         ThenHasValues $nonDefaultArgs
     }
 
     It 'should change values and reset to defaults' {
-        Set-CIisAppPoolCpu -AppPoolName $script:appPoolName @nonDefaultArgs -ErrorAction Ignore
+        %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME% @nonDefaultArgs -ErrorAction Ignore
         ThenHasValues $nonDefaultArgs
+
         $someArgs = @{
-            'action' = [ProcessorAction]::KillW3wp;
-            'limit' = 10000;
-            'resetInterval' = '01:00:00';
+            PARAM_ONE = VALUE_ONE;
+            PARAM_TWO = VALUE_TWO;
         }
-        Set-CIisAppPoolCpu -AppPoolName $script:appPoolName @someArgs
+        %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME% @someArgs
         ThenHasValues $someArgs
     }
 
     It 'should change default settings' {
-        Set-CIisAppPoolCpu -AsDefaults @nonDefaultArgs
+        %CMD_NAME% -AsDefaults @nonDefaultArgs
         ThenDefaultsSetTo @nonDefaultArgs
     }
 }

@@ -3,8 +3,7 @@ Build:
 - Version:
     Path: Carbon.IIS\Carbon.IIS.psd1
     Prerelease:
-    - "*/*": alpha1
-    - develop: rc1
+    - "*": rc1
 
 # Update the AppVeyor build/version number.
 - Exec:
@@ -49,6 +48,20 @@ Build:
 - Delete:
     Path: Carbon.IIS\prism.*
 
+# This must go before creating the ZIP file so the Prerelease info gets set.
+- PublishPowerShellModule:
+    Path: Carbon.IIS
+
+- Exec:
+    OnlyBy: BuildServer
+    Path: appveyor
+    Argument: [
+        'PushArtifact',
+        '.output/Carbon.IIS.$(WHISKEY_SEMVER2_NO_BUILD_METADATA).nupkg',
+        '-DeploymentName',
+        'PowerShellGallery'
+    ]
+
 - Zip:
     ArchivePath: .output\Carbon.IIS-$(WHISKEY_SEMVER2).zip
     Path:
@@ -62,19 +75,6 @@ Build:
     Path: appveyor
     Argument: [ 'PushArtifact', '.output/Carbon.IIS-$(WHISKEY_SEMVER2).zip', '-DeploymentName', 'GitHub' ]
 
-
-- PublishPowerShellModule:
-    Path: Carbon.IIS
-
-- Exec:
-    OnlyBy: BuildServer
-    Path: appveyor
-    Argument: [
-        'PushArtifact',
-        '.output/Carbon.IIS.$(WHISKEY_SEMVER2_NO_BUILD_METADATA).nupkg',
-        '-DeploymentName',
-        'PowerShellGallery'
-    ]
 
 - Pester:
     InformationAction: SilentlyContinue

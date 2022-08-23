@@ -1,6 +1,5 @@
-using module '..\Carbon.Iis'
-using module '..\Carbon.Iis\Carbon.Iis.Enums.psm1'
 
+using module '..\Carbon.IIS\Carbon.IIS.Enums.psm1'
 using namespace Microsoft.Web.Administration
 
 Set-StrictMode -Version 'Latest'
@@ -10,23 +9,31 @@ BeforeAll {
 
     $script:testNum = 0
 
+    #
     $script:defaultDefaults = @{}
-    (Get-CIisAppPool -Defaults).Cpu |
-        Where-Object { $_ | Get-Member -Name 'IsInheritedFromDefaultValue' } |
+    (Set-CIisAppPoolProcessModel -AsDefaults) |
+        Select-Object -ExpandProperty 'ProcessModel' |  # ProcessModel doesn't exist on some AppVeyor servers
+        Select-Object -ExpandProperty 'Attributes' |
         Where-Object 'IsInheritedFromDefaultValue' -EQ $false |
         ForEach-Object { $script:defaultDefaults[$_.Name] = $_.Value }
 
     # All non-default values.
     $script:nonDefaultArgs = @{
-            Action = [ProcessorAction]::Throttle;
-            Limit = (1000 * 50);
-            NumaNodeAffinityMode = [CIisNumaNodeAffinityMode]::Hard;
-            NumaNodeAssignment = [CIisNumaNodeAssignment]::WindowsScheduling;
-            ProcessorGroup = 1;
-            ResetInterval = '00:10:00';
-            SmpAffinitized = $true;
-            SmpProcessorAffinityMask = 0x1;
-            SmpProcessorAffinityMask2 = 0x2;
+        'identityType' = [ProcessModelIdentityType]::ApplicationPoolIdentity;
+        'idleTimeout' = [TimeSpan]'00:00:00';
+        'idleTimeoutAction' = [IdleTimeoutAction]::Suspend;
+        'loadUserProfile' = $true;
+        'logEventOnProcessModel' = [ProcessModelLogEventOnProcessModel]::None;
+        'logonType' = [CIisProcessModelLogonType]::Service;
+        'manualGroupMembership' = $true;
+        'maxProcesses' = [UInt32]2;
+        'pingingEnabled' = $true;
+        'pingInterval' = [TimeSpan]'00:00:10';
+        'pingResponseTime' = [TimeSpan]'00:05:00';
+        'requestQueueDelegatorIdentity' = 'SYSTEM';
+        'setProfileEnvironment' = $false;
+        'shutdownTimeLimit' = [TimeSpan]'00:00:30';
+        'startupTimeLimit' = [TimeSpan]'00:05:00';
     }
 
     # Sometimes the default values in the schema aren't quite the default values.
@@ -53,10 +60,10 @@ BeforeAll {
             [switch] $OnDefaults
         )
 
-        $appPool = Get-CIisAppPool -Name $script:appPoolName -Defaults:$OnDefaults
-        $appPool | Should -Not -BeNullOrEmpty
+        $targetParent = Get-CIisAppPool -Name $script:appPoolName -Defaults:$OnDefaults
+        $targetParent | Should -Not -BeNullOrEmpty
 
-        $target = $appPool.Cpu
+        $target = $targetParent.ProcessModel
         $target | Should -Not -BeNullOrEmpty
 
         $asDefaultsMsg = ''
@@ -64,10 +71,8 @@ BeforeAll {
         {
             $asDefaultsMsg = ' as default'
         }
-
         foreach( $attr in $target.Schema.AttributeSchemas )
         {
-            $currentValue = $target.GetAttributeValue($attr.Name)
             $expectedValue = $attr.DefaultValue
             $becauseMsg = 'default'
             if( $script:notQuiteDefaultValues.ContainsKey($attr.Name))
@@ -80,7 +85,18 @@ BeforeAll {
                 $expectedValue = $Values[$attr.Name]
                 $becauseMsg = 'custom'
             }
-            if( $currentValue -is [TimeSpan] )
+
+            if( $expectedValue -is [securestring] )
+            {
+                $expectedValue = [pscredential]::New('ignoded', $expectedValue).GetNetworkCredential().Password
+            }
+
+            $currentValue = $target.GetAttributeValue($attr.Name)
+            if( $currentValue -is [securestring] )
+            {
+                $currentValue = [pscredential]::New('ignorded', $currentValue).GetNetworkCredential().Password
+            }
+            elseif( $currentValue -is [TimeSpan] )
             {
                 if( $expectedValue -match '^\d+$' )
                 {
@@ -98,7 +114,7 @@ BeforeAll {
     }
 }
 
-Describe 'Set-CIisAppPoolCpu' {
+Describe 'Set-CIisAppPoolProcessModel' {
     BeforeAll {
         Start-W3ServiceTestFixture
     }
@@ -108,57 +124,57 @@ Describe 'Set-CIisAppPoolCpu' {
     }
 
     BeforeEach {
-        $script:appPoolName = "Set-CIisAppPoolCpu$($script:testNum++)"
-        Set-CIisAppPoolCpu -AsDefaults @script:defaultDefaults
+        $script:appPoolName = "Set-CIisAppPoolProcessModel$($script:testNum++)"
+        Set-CIisAppPoolProcessModel -AsDefaults @script:defaultDefaults
         Install-CIisAppPool -Name $script:appPoolName
     }
 
     AfterEach {
         Uninstall-CIisAppPool -Name $script:appPoolName
-        Set-CIisAppPoolCpu -AsDefaults @script:defaultDefaults
+        Set-CIisAppPoolProcessModel -AsDefaults @script:defaultDefaults
     }
 
-    It 'should set and reset all  values' {
+    It 'should set and reset all values' {
         $infos = @()
-        Set-CIisAppPoolCpu -AppPoolName $script:appPoolName @nonDefaultArgs -InformationVariable 'infos'
+        Set-CIisAppPoolProcessModel -AppPoolName $script:appPoolName @nonDefaultArgs -InformationVariable 'infos'
         $infos | Should -Not -BeNullOrEmpty
         ThenHasValues $nonDefaultArgs
 
         # Make sure no information messages get written because no changes are being made.
-        Set-CIisAppPoolCpu -AppPoolName $script:appPoolName @nonDefaultArgs -InformationVariable 'infos'
+        Set-CIisAppPoolProcessModel -AppPoolName $script:appPoolName @nonDefaultArgs -InformationVariable 'infos'
         $infos | Should -BeNullOrEmpty
         ThenHasValues $nonDefaultArgs
 
-        Set-CIisAppPoolCpu -AppPoolName $script:appPoolName
+        Set-CIisAppPoolProcessModel -AppPoolName $script:appPoolName
         ThenHasDefaultValues
     }
 
     It 'should support WhatIf when updating all values' {
-        Set-CIisAppPoolCpu -AppPoolName $script:appPoolName @nonDefaultArgs -WhatIf
+        Set-CIisAppPoolProcessModel -AppPoolName $script:appPoolName @nonDefaultArgs -WhatIf
         ThenHasDefaultValues
     }
 
     It 'should support WhatIf when resetting all values back to defaults' {
-        Set-CIisAppPoolCpu -AppPoolName $script:appPoolName @nonDefaultArgs
+        Set-CIisAppPoolProcessModel -AppPoolName $script:appPoolName @nonDefaultArgs
         ThenHasValues $nonDefaultArgs
-        Set-CIisAppPoolCpu -AppPoolName $script:appPoolName -WhatIf
+        Set-CIisAppPoolProcessModel -AppPoolName $script:appPoolName -WhatIf
         ThenHasValues $nonDefaultArgs
     }
 
     It 'should change values and reset to defaults' {
-        Set-CIisAppPoolCpu -AppPoolName $script:appPoolName @nonDefaultArgs -ErrorAction Ignore
+        Set-CIisAppPoolProcessModel -AppPoolName $script:appPoolName @nonDefaultArgs -ErrorAction Ignore
         ThenHasValues $nonDefaultArgs
+
         $someArgs = @{
-            'action' = [ProcessorAction]::KillW3wp;
-            'limit' = 10000;
-            'resetInterval' = '01:00:00';
+            'UserName' = 'fubarsnafu';
+            'Password' = (ConvertTo-SecureString -String 'ufansrabuf' -AsPlainText -Force);
         }
-        Set-CIisAppPoolCpu -AppPoolName $script:appPoolName @someArgs
+        Set-CIisAppPoolProcessModel -AppPoolName $script:appPoolName @someArgs
         ThenHasValues $someArgs
     }
 
     It 'should change default settings' {
-        Set-CIisAppPoolCpu -AsDefaults @nonDefaultArgs
+        Set-CIisAppPoolProcessModel -AsDefaults @nonDefaultArgs
         ThenDefaultsSetTo @nonDefaultArgs
     }
 }
