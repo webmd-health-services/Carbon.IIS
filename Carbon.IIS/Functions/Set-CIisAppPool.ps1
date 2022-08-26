@@ -8,35 +8,38 @@ function Set-CIisAppPool
     .DESCRIPTION
     The `Set-CIisAppPool` function configures an IIS application pool's settings. Pass the name of
     the application pool to the `Name` parameter. Pass the configuration you want to one
-    or more of the AutoStart, CLRConfigFile, Enable32BitAppOnWin64, EnableConfigurationOverride, ManagedPipelineMode, ManagedRuntimeLoader, ManagedRuntimeVersion, Name, PassAnonymousToken, QueueLength, and/or StartMode parameters. See
+    or more of the AutoStart, CLRConfigFile, Enable32BitAppOnWin64, EnableConfigurationOverride, ManagedPipelineMode,
+    ManagedRuntimeLoader, ManagedRuntimeVersion, Name, PassAnonymousToken, QueueLength, and/or StartMode parameters. See
     [Adding Application Pools <add>](https://docs.microsoft.com/en-us/iis/configuration/system.applicationhost/applicationpools/add/)
     for documentation on each setting.
 
-    You can configure the IIS default application pool instead of a specific application pool by using the
-    `Defaults` switch.
+    You can configure the IIS application pool defaults instead of a specific application pool by using the
+    `AsDefaults` switch.
 
-    If any parameters are not passed, those settings will be reset to their default values.
+    If you want to ensure that any settings that may have gotten changed by hand are reset to their default values, use
+    the `-Reset` switch. When set, the `-Reset` switch will reset each setting not passed as an argument to its default
+    value.
 
     .LINK
     https://docs.microsoft.com/en-us/iis/configuration/system.applicationhost/applicationpools/add/
 
     .EXAMPLE
-    Set-CIisAppPool -AppPoolName 'ExampleOne'
-
-    Demonstrates how to reset an IIS application pool's settings to their default
-    values by not passing any arguments.
-
-    .EXAMPLE
     Set-CIisAppPool -AppPoolName 'ExampleTwo' -Enable32BitAppOnWin64 $true -ManagedPipelineMode Classic
 
-    Demonstrates how to configure an IIS application pool's settings. In this example, the app pool will be created to
-    run as a 32-bit applicaiton and will use a classic pipeline mode. All other app pool settings will be reset to their
-    default values.
+    Demonstrates how to configure an IIS application pool's settings. In this example, the app pool will be updated to
+    run as a 32-bit applicaiton and will use a classic pipeline mode. All other settings are left unchanged.
+
+    .EXAMPLE
+    Set-CIisAppPool -AppPoolName 'ExampleOne' -Enable32BitAppOnWin64 $true -ManagedPipelineMode Classic -Reset
+
+    Demonstrates how to reset an IIS application pool's settings to their default values by using the `-Reset` switch. In
+    this example, the `enable32BitAppOnWin64` and `managedPipelineMode` settings are set to `true` and `Classic`, and
+    all other application pool settings are deleted, which reset them to their default values.
 
     .EXAMPLE
     Set-CIisAppPool -AsDefaults -Enable32BitAppOnWin64 $true -ManagedPipelineMode Classic
 
-    Demonstrates how to configure the IIS default application pool's settings by using
+    Demonstrates how to configure the IIS application pool defaults settings by using
     the `AsDefaults` switch and not passing application pool name. In this case, all future application pools created
     will be 32-bit applications and use a classic pipeline mode, unless those settings are configured differently upon
     install.
@@ -48,7 +51,7 @@ function Set-CIisAppPool
         [Parameter(Mandatory, ParameterSetName='SetInstance', Position=0)]
         [String] $Name,
 
-        # If true, the function configures the IIS default application pool instead of a specific application pool.
+        # If true, the function configures the IIS application pool defaults instead of a specific application pool.
         [Parameter(Mandatory, ParameterSetName='SetDefaults')]
         [switch] $AsDefaults,
 
@@ -80,7 +83,12 @@ function Set-CIisAppPool
         [UInt32] $QueueLength,
 
         # Sets the IIS application pool's `startMode` setting.
-        [StartMode] $StartMode
+        [StartMode] $StartMode,
+
+        # If set, the application pool setting for each parameter *not* passed is deleted, which resets it to its
+        # default value. Otherwise, application pool settings whose parameters are not passed are left in place and not
+        # modified.
+        [switch] $Reset
     )
 
     Set-StrictMode -Version 'Latest'
@@ -92,9 +100,16 @@ function Set-CIisAppPool
         return
     }
 
+    $targetMsg = 'IIS application pool defaults'
+    if( $Name )
+    {
+        $targetMsg = "IIS application pool ""$($Name)"""
+    }
+
     Invoke-SetConfigurationAttribute -ConfigurationElement $target `
                                      -PSCmdlet $PSCmdlet `
-                                     -Target "IIS application pool ""$($Name)""" `
+                                     -Target $targetMsg `
                                      -Attribute @{ 'name' = $Name } `
-                                     -Exclude @('applicationPoolSid', 'state')
+                                     -Exclude @('applicationPoolSid', 'state') `
+                                     -Reset:$Reset
 }

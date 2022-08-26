@@ -8,7 +8,6 @@ BeforeAll {
 
     $script:testNum = 0
 
-    #
     $script:defaultDefaults = @{}
     (%GET_CMD_NAME% -Defaults).%PROPERTY_NAME%.Attributes |
         Where-Object 'IsInheritedFromDefaultValue' -EQ $false |
@@ -19,6 +18,10 @@ BeforeAll {
         %NON_DEFAULT_ARGS%
     }
 
+    # Values that once set, can only be changed, never removed.
+    $script:requiredDefaults = @{
+        'id' = 53;
+    }
     # Sometimes the default values in the schema aren't quite the default values.
     $script:notQuiteDefaultValues = @{
     }
@@ -27,8 +30,14 @@ BeforeAll {
 
     function ThenDefaultsSetTo
     {
-        ThenHasValues $script:nonDefaultArgs -OnDefaults
-        ThenHasValues $script:nonDefaultArgs
+        param(
+            [hashtable] $Values = @{},
+
+            [hashtable] $OrValues = @{}
+        )
+
+        ThenHasValues $Values -OrValues $OrValues -OnDefaults
+        ThenHasValues $Values -OrValues $OrValues
     }
 
     function ThenHasDefaultValues
@@ -41,6 +50,8 @@ BeforeAll {
         param(
             [Parameter(Position=0)]
             [hashtable] $Values = @{},
+
+            [hashtable] $OrValues = @{},
 
             [switch] $OnDefaults
         )
@@ -56,6 +67,7 @@ BeforeAll {
         {
             $asDefaultsMsg = ' as default'
         }
+
         foreach( $attr in $target.Schema.AttributeSchemas )
         {
             if( $attr.Name -in $script:excludedAttributes )
@@ -65,6 +77,7 @@ BeforeAll {
 
             $expectedValue = $attr.DefaultValue
             $becauseMsg = 'default'
+            $setMsg = 'set'
             if( $script:notQuiteDefaultValues.ContainsKey($attr.Name))
             {
                 $expectedValue = $script:notQuiteDefaultValues[$attr.Name]
@@ -74,6 +87,12 @@ BeforeAll {
             {
                 $expectedValue = $Values[$attr.Name]
                 $becauseMsg = 'custom'
+            }
+            elseif( $OrValues.ContainsKey($attr.Name) )
+            {
+                $expectedValue = $OrValues[$attr.Name]
+                $becauseMsg = 'custom'
+                $setMsg = 'not set'
             }
 
             $currentValue = $target.GetAttributeValue($attr.Name)
@@ -94,7 +113,7 @@ BeforeAll {
             }
 
             $currentValue |
-                Should -Be $expectedValue -Because "should set$($asDefaultsMsg) $($attr.Name) to $($becauseMsg) value"
+                Should -Be $expectedValue -Because "should $($setMsg)$($asDefaultsMsg) $($attr.Name) to $($becauseMsg) value"
         }
     }
 }
@@ -111,57 +130,65 @@ Describe '%CMD_NAME%' {
     }
 
     BeforeEach {
-        $script:%TARGET_VAR_NAME% = "%CMD_NAME%$($script:testNum++)"
-        %CMD_NAME% -AsDefaults @script:defaultDefaults
+        $script:%TARGET_VAR_NAME% = "%CMD_NAME%$($script:testNum)"
+        $script:testNum++
+        %CMD_NAME% -AsDefaults @script:defaultDefaults -Reset
         %BEFORE_EACH%
     }
 
     AfterEach {
         %AFTER_EACH%
-        %CMD_NAME% -AsDefaults @script:defaultDefaults
+        %CMD_NAME% -AsDefaults @script:defaultDefaults -Reset
     }
 
     It 'should set and reset all values' {
         $infos = @()
-        %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME% @nonDefaultArgs -InformationVariable 'infos'
+        %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME% @script:nonDefaultArgs -Reset -InformationVariable 'infos'
         $infos | Should -Not -BeNullOrEmpty
-        ThenHasValues $nonDefaultArgs
+        ThenHasValues $script:nonDefaultArgs
 
         # Make sure no information messages get written because no changes are being made.
-        %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME% @nonDefaultArgs -InformationVariable 'infos'
+        %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME% @script:nonDefaultArgs -Reset -InformationVariable 'infos'
         $infos | Should -BeNullOrEmpty
-        ThenHasValues $nonDefaultArgs
+        ThenHasValues $script:nonDefaultArgs
 
-        %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME%
+        %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME% -Reset
         ThenHasDefaultValues
     }
 
     It 'should support WhatIf when updating all values' {
-        %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME% @nonDefaultArgs -WhatIf
+        %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME% @script:nonDefaultArgs -Reset -WhatIf
         ThenHasDefaultValues
     }
 
     It 'should support WhatIf when resetting all values back to defaults' {
-        %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME% @nonDefaultArgs
-        ThenHasValues $nonDefaultArgs
-        %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME% -WhatIf
-        ThenHasValues $nonDefaultArgs
+        %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME% -Reset @script:nonDefaultArgs
+        ThenHasValues $script:nonDefaultArgs
+        %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME% -Reset -WhatIf
+        ThenHasValues $script:nonDefaultArgs
     }
 
-    It 'should change values and reset to defaults' {
-        %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME% @nonDefaultArgs -ErrorAction Ignore
-        ThenHasValues $nonDefaultArgs
+    It 'should change values and not reset to defaults' {
+        %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME% @script:nonDefaultArgs -ErrorAction Ignore
+        ThenHasValues $script:nonDefaultArgs
 
         $someArgs = @{
             PARAM_ONE = VALUE_ONE;
             PARAM_TWO = VALUE_TWO;
         }
         %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME% @someArgs
-        ThenHasValues $someArgs
+        ThenHasValues $someArgs -OrValues $script:nonDefaultArgs
     }
 
     It 'should change default settings' {
-        %CMD_NAME% -AsDefaults @nonDefaultArgs
-        ThenDefaultsSetTo @nonDefaultArgs
+        %CMD_NAME% -AsDefaults @script:nonDefaultArgs -Reset
+        ThenDefaultsSetTo $script:nonDefaultArgs
+
+        $someArgs = @{
+            PARAM_ONE = VALUE_ONE;
+            PARAM_TWO = VALUE_TWO;
+        }
+        $CMD_NAME% -AsDefaults @someArgs
+        ThenDefaultsSetTo $someArgs -OrValues $script:nonDefaultArgs
     }
 }

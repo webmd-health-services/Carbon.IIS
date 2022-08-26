@@ -248,7 +248,7 @@ function Install-CIisWebsite
         }
         $setArgs[$parameterName] = $PSBoundParameters[$parameterName]
     }
-    Set-CIisWebsite @setArgs
+    Set-CIisWebsite @setArgs -Reset
 
     # Now, wait until site is actually running
     $tries = 0
