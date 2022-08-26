@@ -11,18 +11,16 @@ function Set-CIisWebsite
     false: `-ServerAutoStart:$false` See [Site <site>](https://docs.microsoft.com/en-us/iis/configuration/system.applicationhost/sites/site/)
     for documentation on each setting.
 
-    You can configure the IIS default website instead of a specific website by using the `Defaults` switch. Only the
+    You can configure the IIS default website instead of a specific website by using the `AsDefaults` switch. Only the
     `serverAutoStart` setting can be set on IIS's default website settings.
 
-    If any `ServerAutoStart` is not passed, it is reset to its default value (by deleting it from the site).
+    If any `ServerAutoStart` is not passed, it is not changed.
+
+    If you use the `-Reset` switch and omit a `ServerAutoStart` argument, the `serverAutoStart` setting will be deleted,
+    which will reset it to its default value.
 
     .LINK
     https://docs.microsoft.com/en-us/iis/configuration/system.applicationhost/sites/site/
-
-    .EXAMPLE
-    Set-CIisWebsite -SiteName 'ExampleOne'
-
-    Demonstrates how to reset an IIS website's settings to their default values by not passing any arguments.
 
     .EXAMPLE
     Set-CIisWebsite -SiteName 'ExampleTwo' -ID 53 -ServerAutoStart $false
@@ -30,9 +28,17 @@ function Set-CIisWebsite
     Demonstrates how to configure an IIS website's settings.
 
     .EXAMPLE
+    Set-CIisWebsite -SiteName 'ExampleOne' -ID 53 -Reset
+
+    Demonstrates how to set *all* an IIS website's settings by using the `-Reset` switch. In this example, the `id`
+    setting is set to a custom value, and the `serverAutoStart` (the only other website setting) is deleted, which
+    resets it to its default value.
+
+    .EXAMPLE
     Set-CIisWebsite -AsDefaults -ServerAutoStart:$false
 
-    Demonstrates how to configure the IIS default website's settings by using the `AsDefaults` switch and not passing website name.
+    Demonstrates how to configure the IIS default website's settings by using the `AsDefaults` switch and not passing
+    the website name.
     #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSShouldProcess', '')]
     [CmdletBinding(DefaultParameterSetName='SetInstance', SupportsShouldProcess)]
@@ -50,7 +56,12 @@ function Set-CIisWebsite
         [UInt32] $ID,
 
         # Sets the IIS website's `serverAutoStart` setting.
-        [bool] $ServerAutoStart
+        [bool] $ServerAutoStart,
+
+        # Resets *all* the website's settings to their default values, *except* each setting whose cooresponding
+        # parameter is passed. The default behavior is to only modify each setting whose corresponding parameter is
+        # passed.
+        [switch] $Reset
     )
 
     Set-StrictMode -Version 'Latest'
@@ -70,9 +81,16 @@ function Set-CIisWebsite
         $attribute['ID'] = $target.Id
     }
 
+    $targetMsg = 'IIS website defaults'
+    if( $Name )
+    {
+        $targetMsg = "IIS website ""$($Name)"""
+    }
+
     Invoke-SetConfigurationAttribute -ConfigurationElement $target `
                                      -PSCmdlet $PSCmdlet `
-                                     -Target "IIS website ""$($Name)""" `
+                                     -Target $targetMsg `
                                      -Exclude @('state') `
-                                     -Attribute $attribute
+                                     -Attribute $attribute `
+                                     -Reset:$Reset
 }

@@ -74,16 +74,30 @@ function Set-CIisConfigurationAttribute
         [Microsoft.Web.Administration.ConfigurationElement] $ConfigurationElement,
 
         # A hashtable whose keys are attribute names and the values are the attribute values. Any attribute *not* in
-        # the hashtable is removed from the configuration section (i.e. reset to its default value).
+        # the hashtable is ignored, unless the `All` switch is present, in which case, any attribute *not* in the
+        # hashtable is removed from the configuration section (i.e. reset to its default value).
         [Parameter(Mandatory, ParameterSetName='AllByConfigElement')]
         [Parameter(Mandatory, ParameterSetName='AllByConfigPath')]
         [hashtable] $Attribute,
 
-        # The target element the changes is being made on. Used in messages written to the console. The default is to
+        # The target element the change is being made on. Used in messages written to the console. The default is to
         # use the type and tag name of the ConfigurationElement.
         [Parameter(ParameterSetName='AllByConfigElement')]
         [Parameter(ParameterSetName='AllByConfigPath')]
         [String] $Target,
+
+        # Properties to skip and not change. These are usually private settings that we shouldn't be mucking with or
+        # settings that capture current state, etc.
+        [Parameter(ParameterSetName='AllByConfigElement')]
+        [Parameter(ParameterSetName='AllByConfigPath')]
+        [String[]] $Exclude = @(),
+
+        # Resets *all* the target configuration element's settings to their default values, *except* each setting
+        # passed via the `Attribute` parameter hashtable. The default behavior is to only modify each setting passed in
+        # The `Attribute` parameter hashtable.
+        [Parameter(ParameterSetName='AllByConfigElement')]
+        [Parameter(ParameterSetName='AllByConfigPath')]
+        [switch] $Reset,
 
         # The name of the attribute whose value to set. Setting a single attribute will not affect any other attributes
         # in the configuration section. If you want other attribute values reset to default values, pass a hashtable
@@ -103,13 +117,7 @@ function Set-CIisConfigurationAttribute
 
         # If the attribute's value is sensitive. If set, the attribute's value will be masked when written to the
         # console.
-        [bool] $Sensitive,
-
-        # Properties to skip and not change. These are usually private settings that we shouldn't be mucking with or
-        # settings that capture current state, etc.
-        [Parameter(ParameterSetName='AllByConfigElement')]
-        [Parameter(ParameterSetName='AllByConfigPath')]
-        [String[]] $Exclude = @()
+        [bool] $Sensitive
     )
 
     Set-StrictMode -Version 'Latest'
@@ -288,7 +296,17 @@ function Set-CIisConfigurationAttribute
     }
     else
     {
-        $ConfigurationElement.Attributes | Sort-Object -Property 'Name' | Set-AttributeValue
+        $ConfigurationElement.Attributes |
+            Where-Object {
+                if( $Reset )
+                {
+                    return $true
+                }
+
+                return $Attribute.ContainsKey($_.Name)
+            } |
+            Sort-Object -Property 'Name' |
+            Set-AttributeValue
     }
 
     $pluralSuffix = ''

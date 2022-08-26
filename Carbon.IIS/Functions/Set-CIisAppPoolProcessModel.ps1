@@ -12,19 +12,15 @@ function Set-CIisAppPoolProcessModel
     [Process Model Settings for an Application Pool <processModel>](https://docs.microsoft.com/en-us/iis/configuration/system.applicationhost/applicationpools/add/processmodel)
     for documentation on each setting.
 
-    You can configure the IIS default application pool instead of a specific application pool by using the
-    `Defaults` switch.
+    You can configure the IIS application pool defaults instead of a specific application pool by using the
+    `AsDefaults` switch.
 
-    If any parameters are not passed, those settings will be reset to their default values.
+    If you want to ensure that any settings that may have gotten changed by hand are reset to their default values, use
+    the `-Reset` switch. When set, the `-Reset` switch will reset each setting not passed as an argument to its default
+    value.
 
     .LINK
     https://docs.microsoft.com/en-us/iis/configuration/system.applicationhost/applicationpools/add/processmodel
-
-    .EXAMPLE
-    Set-CIisAppPoolProcessModel -AppPoolName 'ExampleOne'
-
-    Demonstrates how to reset an IIS application pool's process model settings to their default
-    values by not passing any arguments.
 
     .EXAMPLE
     Set-CIisAppPoolProcessModel -AppPoolName 'ExampleTwo' -UserName 'user1' -Password $password
@@ -33,11 +29,18 @@ function Set-CIisAppPoolProcessModel
     is updated to run as the user `user1`. All other process model settings are reset to their defaults.
 
     .EXAMPLE
+    Set-CIisAppPoolProcessModel -AppPoolName 'ExampleOne' -UserName 'user1' -Password $password -Reset
+
+    Demonstrates how to set *all* an IIS application pool's settings by using the `-Reset` switch. Any setting not passed
+    as an argument is deleted, which resets it to its default value. In this example, the `ExampleOne` application
+    pool's `userName` and `password` settings are updated and all other settings are deleted.
+
+    .EXAMPLE
     Set-CIisAppPoolProcessModel -AsDefaults -IdleTimeout '00:00:00'
 
-    Demonstrates how to configure the IIS default application pool's process model settings by using
-    the `AsDefaults` switch and not passing application pool name. In this example, the default application pool's
-    idleTimeout setting is set to `00:00:00` and all other settings are reset to their default values.
+    Demonstrates how to configure the IIS application pool defaults process model settings by using the `AsDefaults`
+    switch and not passing application pool name. In this example, the application pool defaults `idleTimeout` setting
+    is set to `00:00:00`.
     #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSShouldProcess', '')]
     [CmdletBinding(DefaultParameterSetName='SetInstance', SupportsShouldProcess)]
@@ -46,7 +49,7 @@ function Set-CIisAppPoolProcessModel
         [Parameter(Mandatory, ParameterSetName='SetInstance', Position=0)]
         [String] $AppPoolName,
 
-        # If true, the function configures the IIS default application pool instead of a specific application pool.
+        # If true, the function configures the IIS application pool defaults instead of a specific application pool.
         [Parameter(Mandatory, ParameterSetName='SetDefaults')]
         [switch] $AsDefaults,
 
@@ -99,7 +102,12 @@ function Set-CIisAppPoolProcessModel
         [TimeSpan] $StartupTimeLimit,
 
         # Sets the IIS application pool's process model `userName` setting.
-        [String] $UserName
+        [String] $UserName,
+
+        # Resets *all* the application pool's process model settings to their default values, *except* each setting
+        # whose cooresponding parameter is passed. The default behavior is to only modify each setting whose
+        # corresponding parameter is passed.
+        [switch] $Reset
     )
 
     Set-StrictMode -Version 'Latest'
@@ -111,7 +119,14 @@ function Set-CIisAppPoolProcessModel
         return
     }
 
+    $targetMsg = 'IIS application pool defaults process model'
+    if( $AppPoolName )
+    {
+        $targetMsg = """$($AppPoolName)"" IIS application pool's process model"
+    }
+
     Invoke-SetConfigurationAttribute -ConfigurationElement $target.ProcessModel `
                                      -PSCmdlet $PSCmdlet `
-                                     -Target """$($AppPoolName)"" IIS website's process model"
+                                     -Target $targetMsg `
+                                     -Reset:$Reset
 }

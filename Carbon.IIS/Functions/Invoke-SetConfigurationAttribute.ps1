@@ -16,7 +16,9 @@ function Invoke-SetConfigurationAttribute
 
         [hashtable] $Attribute = @{},
 
-        [String[]] $Exclude = @()
+        [String[]] $Exclude = @(),
+
+        [switch] $Reset
     )
 
     Set-StrictMode -Version 'Latest'
@@ -46,5 +48,6 @@ function Invoke-SetConfigurationAttribute
     Set-CIisConfigurationAttribute -ConfigurationElement $ConfigurationElement `
                                    -Attribute $Attribute `
                                    -Target $Target `
-                                   -Exclude $Exclude
+                                   -Exclude $Exclude `
+                                   -Reset:$Reset
 }

@@ -13,21 +13,31 @@ function Set-CIisWebsiteLogFile
     [Log Files for a Web Site <logFile>](https://docs.microsoft.com/en-us/iis/configuration/system.applicationhost/sites/site/logfile/))
     for documentation on what these settings are for.
 
-    If any parameters are not passed, those settings will be reset to their default values.
+    If you want to ensure that any settings that may have gotten changed by hand are reset to their default values, use
+    the `-Reset` switch. When set, the `-Reset` switch will reset each setting not passed as an argument to its default
+    value.
 
     .LINK
     https://docs.microsoft.com/en-us/iis/configuration/system.applicationhost/sites/site/logfile/
 
     .EXAMPLE
-    Set-CIisWebsiteLogFile -AppPoolName 'Fubar'
-
-    Demonstrates how to reset an IIS website's log file settings to their default values by not passing any arguments.
-
-    .EXAMPLE
     Set-CIisWebsiteLogFile -AppPoolName 'Snafu' -Directory 'C:\logs' -MaxLogLineLength 32768
 
     Demonstrates how to configure an IIS website's log file settings. In this example, `directory` will be set to
-    `C:\logs` and `maxLogLineLength` will be set to `32768`. All other settings will be reset to their default values.
+    `C:\logs` and `maxLogLineLength` will be set to `32768`. All other settings are unchanged.
+
+    .EXAMPLE
+    Set-CIisWebsiteLogFile -AppPoolName 'Snafu' -Directory 'C:\logs' -MaxLogLineLength 32768 -Reset
+
+    Demonstrates how to set *all* an IIS website's log file settings by using the `-Reset` switch. In this example, the
+    `directory` and `maxLogLineLength` settings are set to custom values, and all other settings are deleted, which
+    resets them to their default values.
+
+    .EXAMPLE
+    Set-CIisWebsiteLogFile -AsDefaults -Directory 'C:\logs' -MaxLogLineLength 32768
+
+    Demonstrates how to configure the IIS website defaults log file settings by using the `AsDefaults` switch and not
+    passing the website name.
     #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSShouldProcess', '')]
     [CmdletBinding(DefaultParameterSetName='SetInstance', SupportsShouldProcess)]
@@ -74,7 +84,12 @@ function Set-CIisWebsiteLogFile
         [LoggingRolloverPeriod] $Period,
 
         # Sets the IIS website's log files `truncateSize` setting.
-        [Int64] $TruncateSize
+        [Int64] $TruncateSize,
+
+        # Resets *all* the website's log file settings to their default values, *except* each setting whose
+        # cooresponding parameter is passed. The default behavior is to only modify each setting whose corresponding
+        # parameter is passed.
+        [switch] $Reset
     )
 
     Set-StrictMode -Version 'Latest'
@@ -86,7 +101,14 @@ function Set-CIisWebsiteLogFile
         return
     }
 
+    $targetMsg = "IIS website defaults log file"
+    if( $SiteName )
+    {
+        $targetMsg = """$($SiteName)"" IIS website's log file"
+    }
+
     Invoke-SetConfigurationAttribute -ConfigurationElement $site.LogFile `
                                      -PSCmdlet $PSCmdlet `
-                                     -Target """$($SiteName)"" IIS website's log file"
+                                     -Target $targetMsg `
+                                     -Reset:$Reset
 }
