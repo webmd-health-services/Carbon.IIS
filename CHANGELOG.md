@@ -81,12 +81,13 @@ installing it.
   to the new `Set-CIisAppPoolProcessModel` function (which should come *after* `Install-CIisAppPool`).
   * Replace usages of the `-Enable32BitApps` switch with `-Enable32BitAppOnWin64 $true`.
   * Replace usages of the `-ClassicPipelineMode` switch with `-ManagedPipelineMode Classic`.
-  * Add `-ManagedPipelineMode Integrated` to all usages of `Install-CIisAppPool` that doesn't use the
+  * Add `-ManagedPipelineMode Integrated` to all usages of `Install-CIisAppPool` that don't use the
   `ManagedPipelineMode` (née `ClassicPipelineMode`) parameter. The `Install-CIisAppPool` function no longer sets the
   pipeline mode of an app pool if the `ManagedPipelineMode` parameter isn't provided.
   * Add `-ManagedRuntimeVersion 'v4.0'` to all usages of `Install-CIisAppPool` that doesn't use the
   `-MangedRuntimeVersion` parameter. The `Install-CIisAppPool` function no longer sets the managed runtime version if
   that parameter isn't provided.
+* The `Install-CIIsAppPool` and `Install-CIisWebsite` functions
 
 ### Added
 
@@ -113,7 +114,9 @@ removes its `<location>` element from applicationHost.config).
 * `Save-CIisConfiguration` for saving configuration changes to IIS. Only needed if you make changes to any of the
 objects returned by the Carbon.IIS module.
 * `Set-CIisAnonymousAuthentication` for configuring anonymous authentication.
-* `Set-CIisAppPoolCpu` for configuring an application pool's CPU settings and the application pool defaults CPU settings.
+* `Set-CIisAppPool` for configuring an application pool's base settings.
+* `Set-CIisAppPoolCpu` for configuring an application pool's CPU settings and the application pool defaults CPU
+settings.
 * `Set-CIisAppPoolPeriodicRestart` for configuring an application pool's periodic restart settings and the application
 pool defaults periodic restart settings.
 * `Set-CIisAppPoolProcessModel` for configuring an IIS application pool's process model or configuring the application
@@ -133,24 +136,27 @@ pool defaults process model.
 * Carbon.IIS now supports
   * Windows PowerShell 5.1 (on .NET Framework 4.6.2 and later) and PowerShell 7
   * Windows 8 and 10, and Windows Server 2012R2, 2016, and 2019.
-* `Get-CIisWebsite` now writes an error if a specific website doesn't exist.
-* The `Join-CIisVirtualPath` function's `ChildPath` parameter is now required. Usages that don't have a `ChildPath`
-argument should switch to `ConvertTo-CIisVirtualPath`.
 * Renamed `VirtualPath` parameter on `Get-CIisApplication` and `Install-CIisApplication` to `Path`.
 * `Get-CIisAppPool` now writes an error when an application pool does not exist. Add `-ErrorAction Ignore` or
 `-ErrorAction SilentlyContinue` to hide the error.
-* `Install-CIisAppPool`:
-  * The managed pipeline mode is no longer set by default to `Integrated`. Use the `-ManagedPipelineMode` parameter to
-  explicitly set the managed pipeline mode to a value that isn't the default pipeline mode.
-  * The managed runtime version is no longer set by default to `v4.0`. Use the `-ManagedRuntimeVersion` parameter to
-  set the managed runtime to a value that isn't the default runtime.
-* `Get-CIisHttpRedirect`: now return `Microsoft.Web.Administration.ConfigurationSection` objects (instead of a custom
+* `Get-CIisHttpRedirect` now returns `Microsoft.Web.Administration.ConfigurationSection` objects (instead of a custom
 object), which don't longer have `ChildOnly`, `Destination`, `Enabled`, `ExactDestination`, and `HttpResponseStatus`.
+* `Get-CIisWebsite` now writes an error if a specific website doesn't exist.
+* `Install-CIisAppPool` no longer sets the managed pipeline mode to `Integrated`. Use the `-ManagedPipelineMode`
+parameter to explicitly set the managed pipeline mode.
+* `Install-CIisAppPool` no longer sets the managed runtime version to `v4.0`. Use the `-ManagedRuntimeVersion` parameter
+to set the managed runtime.
+* `Install-CIisAppPool` now clears *all* application pool settings that aren't passed as parameters, which resets those
+settings to their default values.
+* `Install-CIisWebsite` now clears *all* website settings that aren't passed as parameters, which resets those settings
+to their default values.
+* The `Join-CIisVirtualPath` function's `ChildPath` parameter is now required. Usages that don't have a `ChildPath`
+argument should switch to `ConvertTo-CIisVirtualPath`.
 
 ### Fixed
 
 * `Install-CIisWebsite` wouldn't save changes when an existing website doesn't define its default application.
-* `Set-CIisWebsiteSslCertificate` now honors `Ignore` as an error action.
+* `Set-CIisWebsiteSslCertificate` would fail if passed `Ignore` as an error action.
 
 ### Removed
 
@@ -175,7 +181,7 @@ object), which don't longer have `ChildOnly`, `Destination`, `Enabled`, `ExactDe
 
 ##### Parameter Aliases
 
-* `Path` on functions:
+* `Path` on these functions (use the `VirtualPath` parameter instead):
   * `Disable-CIisSecurityAuthentication`
   * `Enable-CIisSecurityAuthentication`
   * `Enable-CIisSecurityAuthentication`
@@ -186,16 +192,16 @@ object), which don't longer have `ChildOnly`, `Destination`, `Enabled`, `ExactDe
   * `Get-CIisHttpRedirect`
   * `Get-CIisMimeMap`
   * `Get-CIisSecurityAuthentication`
-  * `Install-CIisApplication`
   * `Set-CIisHttpHeader`
   * `Set-CIisHttpRedirect`
   * `Set-CIisWindowsAuthentication`
   * `Test-CIisConfigurationSection`
   * `Test-CIisSecurityAuthentication`
-* `SiteName` on functions:
+* `Path` on function `Install-CIisApplication` (use the `PhysicalPath` parameter instead).
+* `SiteName` on these functions (use the `Name` parameter instead):
   * `Get-CIisWebsite`
   * `Install-CIisWebsite`
-* `Name` on functions:
+* `Name` on these functions (use the `VirtualPath` parameter instead):
   * `Get-CIisApplication`
   * `Install-CIisApplication`
 
