@@ -26,10 +26,18 @@ BeforeAll {
     $script:notQuiteDefaultValues = @{
     }
 
+    $script:excludedAttributes = @()
+
     function ThenDefaultsSetTo
     {
-        ThenHasValues $script:nonDefaultArgs -OnDefaults
-        ThenHasValues $script:nonDefaultArgs
+        param(
+            [hashtable] $Values = @{},
+
+            [hashtable] $OrValues = @{}
+        )
+
+        ThenHasValues $Values -OrValues $OrValues -OnDefaults
+        ThenHasValues $Values -OrValues $OrValues
     }
 
     function ThenHasDefaultValues
@@ -45,13 +53,15 @@ BeforeAll {
 
             [TimeSpan[]] $AndSchedule = @(),
 
+            [hashtable] $OrValues = @{},
+
             [switch] $OnDefaults
         )
 
-        $appPool = Get-CIisAppPool -Name $script:appPoolName -Defaults:$OnDefaults
-        $appPool  | Should -Not -BeNullOrEmpty
+        $targetParent = Get-CIisAppPool -Name $script:appPoolName -Defaults:$OnDefaults
+        $targetParent  | Should -Not -BeNullOrEmpty
 
-        $target = $appPool.Recycling.PeriodicRestart
+        $target = $targetParent.Recycling.PeriodicRestart
         $target | Should -Not -BeNullOrEmpty
 
         $schedule = $target.Schedule
@@ -69,9 +79,14 @@ BeforeAll {
 
         foreach( $attr in $target.Schema.AttributeSchemas )
         {
-            $currentValue = $target.GetAttributeValue($attr.Name)
+            if( $attr.Name -in $script:excludedAttributes )
+            {
+                continue
+            }
+
             $expectedValue = $attr.DefaultValue
             $becauseMsg = 'default'
+            $setMsg = 'set'
             if( $script:notQuiteDefaultValues.ContainsKey($attr.Name))
             {
                 $expectedValue = $script:notQuiteDefaultValues[$attr.Name]
@@ -82,8 +97,19 @@ BeforeAll {
                 $expectedValue = $Values[$attr.Name]
                 $becauseMsg = 'custom'
             }
+            elseif( $OrValues.ContainsKey($attr.Name) )
+            {
+                $expectedValue = $OrValues[$attr.Name]
+                $becauseMsg = 'custom'
+                $setMsg = 'not set'
+            }
 
-            if( $currentValue -is [TimeSpan] )
+            $currentValue = $target.GetAttributeValue($attr.Name)
+            if( $currentValue -is [securestring] )
+            {
+                $currentValue = [pscredential]::New('ignored', $currentValue).GetNetworkCredential().Password
+            }
+            elseif( $currentValue -is [TimeSpan] )
             {
                 if( $expectedValue -match '^\d+$' )
                 {
@@ -96,7 +122,7 @@ BeforeAll {
             }
 
             $currentValue |
-                Should -Be $expectedValue -Because "should set$($asDefaultsMsg) $($attr.Name) to $($becauseMsg) value"
+                Should -Be $expectedValue -Because "should $($setMsg)$($asDefaultsMsg) $($attr.Name) to $($becauseMsg) value"
         }
     }
 }
@@ -111,14 +137,15 @@ Describe 'Set-CIisAppPoolPeriodicRestart' {
     }
 
     BeforeEach {
-        $script:appPoolName = "Set-CIisAppPoolPeriodicRestart$($script:testNum++)"
-        Set-CIisAppPoolPeriodicRestart -AsDefaults @script:defaultDefaults
+        $script:appPoolName = "Set-CIisAppPoolPeriodicRestart$($script:testNum)"
+        $script:testNum++
+        Set-CIisAppPoolPeriodicRestart -AsDefaults @script:defaultDefaults -Reset
         Install-CIisAppPool -Name $script:appPoolName
     }
 
     AfterEach {
         Uninstall-CIisAppPool -Name $script:appPoolName
-        Set-CIisAppPoolPeriodicRestart -AsDefaults @script:defaultDefaults
+        Set-CIisAppPoolPeriodicRestart -AsDefaults @script:defaultDefaults -Reset
     }
 
     It 'should set and reset all values' {
@@ -126,6 +153,7 @@ Describe 'Set-CIisAppPoolPeriodicRestart' {
         Set-CIisAppPoolPeriodicRestart -AppPoolName $script:appPoolName `
                                        @script:nonDefaultArgs `
                                        -Schedule '01:00:00', '13:00:00' `
+                                       -Reset `
                                        -InformationVariable 'infos'
         $infos | Should -Not -BeNullOrEmpty
         ThenHasValues $script:nonDefaultArgs -AndSchedule '01:00:00', '13:00:00'
@@ -134,11 +162,12 @@ Describe 'Set-CIisAppPoolPeriodicRestart' {
         Set-CIisAppPoolPeriodicRestart -AppPoolName $script:appPoolName `
                                        @script:nonDefaultArgs `
                                        -Schedule '01:00:00', '13:00:00' `
+                                       -Reset `
                                        -InformationVariable 'infos'
         $infos | Should -BeNullOrEmpty
         ThenHasValues $script:nonDefaultArgs -AndSchedule '01:00:00', '13:00:00'
 
-        Set-CIisAppPoolPeriodicRestart -AppPoolName $script:appPoolName
+        Set-CIisAppPoolPeriodicRestart -AppPoolName $script:appPoolName -Reset
         ThenHasDefaultValues
     }
 
@@ -146,18 +175,19 @@ Describe 'Set-CIisAppPoolPeriodicRestart' {
         Set-CIisAppPoolPeriodicRestart -AppPoolName $script:appPoolName `
                                        @script:nonDefaultArgs `
                                        -Schedule '12:34:00', '23:45:00' `
+                                       -Reset `
                                        -WhatIf
         ThenHasDefaultValues
     }
 
     It 'should support WhatIf when resetting all values back to defaults' {
-        Set-CIisAppPoolPeriodicRestart -AppPoolName $script:appPoolName @script:nonDefaultArgs
+        Set-CIisAppPoolPeriodicRestart -AppPoolName $script:appPoolName -Reset @script:nonDefaultArgs
         ThenHasValues $script:nonDefaultArgs
-        Set-CIisAppPoolPeriodicRestart -AppPoolName $script:appPoolName -WhatIf
+        Set-CIisAppPoolPeriodicRestart -AppPoolName $script:appPoolName -Reset -WhatIf
         ThenHasValues $script:nonDefaultArgs
     }
 
-    It 'should change values and reset to defaults' {
+    It 'should change values and not reset to defaults' {
         Set-CIisAppPoolPeriodicRestart -AppPoolName $script:appPoolName @script:nonDefaultArgs -ErrorAction Ignore
         ThenHasValues $script:nonDefaultArgs
 
@@ -166,11 +196,18 @@ Describe 'Set-CIisAppPoolPeriodicRestart' {
             'privateMemory' = 7000000;
         }
         Set-CIisAppPoolPeriodicRestart -AppPoolName $script:appPoolName @someArgs
-        ThenHasValues $someArgs
+        ThenHasValues $someArgs -OrValues $script:nonDefaultArgs
     }
 
     It 'should change default settings' {
-        Set-CIisAppPoolPeriodicRestart -AsDefaults @script:nonDefaultArgs
-        ThenDefaultsSetTo @script:nonDefaultArgs
+        Set-CIisAppPoolPeriodicRestart -AsDefaults @script:nonDefaultArgs -Reset
+        ThenDefaultsSetTo $script:nonDefaultArgs
+
+        $someArgs = @{
+            'memory' = 6000000;
+            'privateMemory' = 7000000;
+        }
+        Set-CIisAppPoolPeriodicRestart -AsDefaults @someArgs
+        ThenDefaultsSetTo $someArgs -OrValues $script:nonDefaultArgs
     }
 }

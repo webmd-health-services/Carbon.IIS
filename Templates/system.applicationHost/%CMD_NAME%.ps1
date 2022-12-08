@@ -13,18 +13,14 @@ function %CMD_NAME%
     for documentation on each setting.
 
     You can configure the IIS default %TARGET_OBJECT_TYPE% instead of a specific %TARGET_OBJECT_TYPE% by using the
-    `Defaults` switch.
+    `AsDefaults` switch.
 
-    If any parameters are not passed, those settings will be reset to their default values.
+    If you want to ensure that any settings that may have gotten changed by hand are reset to their default values, use
+    the `-Reset` switch. When set, the `-Reset` switch will reset each setting not passed as an argument to its default
+    value.
 
     .LINK
     %DOCUMENTATION_URL%
-
-    .EXAMPLE
-    %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% 'ExampleOne'
-
-    Demonstrates how to reset an IIS %TARGET_OBJECT_TYPE%'s %TARGET_PROPERTY_DESCRIPTION% settings to their default
-    values by not passing any arguments.
 
     .EXAMPLE
     %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% 'ExampleTwo' %EXAMPLE_ARGUMENTS%
@@ -32,10 +28,17 @@ function %CMD_NAME%
     Demonstrates how to configure an IIS %TARGET_OBJECT_TYPE%'s %TARGET_PROPERTY_DESCRIPTION% settings.
 
     .EXAMPLE
+    %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% 'ExampleOne' %EXAMPLE_ARGUMENTS% -Reset
+
+    Demonstrates how to set *all* an IIS %TARGET_OBJECT_TYPE%'s %TARGET_PROPERTY_DESCRIPTION% settings by using the
+    `-Reset` switch. In this example, the %EXAMPLE_ARGUMENTS% settings are set to custom values, and all other settings
+    are deleted, which resets them to their default values.
+
+    .EXAMPLE
     %CMD_NAME% -AsDefaults %EXAMPLE_ARGUMENTS%
 
-    Demonstrates how to configure the IIS default %TARGET_OBJECT_TYPE%'s %TARGET_PROPERTY_DESCRIPTION% settings by using
-    the `AsDefaults` switch and not passing %TARGET_OBJECT_TYPE% name.
+    Demonstrates how to configure the IIS %TARGET_OBJECT_TYPE% defaults %TARGET_PROPERTY_DESCRIPTION% settings by using
+    the `AsDefaults` switch and not passing the %TARGET_OBJECT_TYPE% name.
     #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSShouldProcess', '')]
     [CmdletBinding(DefaultParameterSetName='SetInstance', SupportsShouldProcess)]
@@ -48,7 +51,12 @@ function %CMD_NAME%
         [Parameter(Mandatory, ParameterSetName='SetDefaults')]
         [switch] $AsDefaults,
 
-        %CMD_PARAMETERS%
+        %CMD_PARAMETERS%,
+
+        # If set, the %TARGET_OBJECT_TYPE% %TARGET_PROPERTY_DESCRIPTION% setting for each parameter *not* passed is
+        # deleted, which resets it to its default value. Otherwise, %TARGET_OBJECT_TYPE% %TARGET_PROPERTY_DESCRIPTION%
+        # settings whose parameters are not passed are left in place and not modified.
+        [switch] $Reset
     )
 
     Set-StrictMode -Version 'Latest'
@@ -60,7 +68,14 @@ function %CMD_NAME%
         return
     }
 
+    $targetMsg = 'IIS %TARGET_OBJECT_TYPE defaults'
+    if( $%CMD_NAME_PARAMETER_NAME% )
+    {
+        $targetMsg = """$($%CMD_NAME_PARAMETER_NAME%)"" IIS %TARGET_OBJECT_TYPE%'s %TARGET_PROPERTY_DESCRIPTION%"
+    }
+
     Invoke-SetConfigurationAttribute -ConfigurationElement $target.%PROPERTY_NAME% `
                                      -PSCmdlet $PSCmdlet `
-                                     -Target """$($%CMD_NAME_PARAMETER_NAME%)"" IIS %TARGET_OBJECT_TYPE%'s %TARGET_PROPERTY_DESCRIPTION%"
+                                     -Target $targetMsg `
+                                     -Reset:$Reset
 }

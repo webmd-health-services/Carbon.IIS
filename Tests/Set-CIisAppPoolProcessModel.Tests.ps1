@@ -9,7 +9,6 @@ BeforeAll {
 
     $script:testNum = 0
 
-    #
     $script:defaultDefaults = @{}
     (Set-CIisAppPoolProcessModel -AsDefaults) |
         Select-Object -ExpandProperty 'ProcessModel' |  # ProcessModel doesn't exist on some AppVeyor servers
@@ -40,10 +39,18 @@ BeforeAll {
     $script:notQuiteDefaultValues = @{
     }
 
+    $script:excludedAttributes = @()
+
     function ThenDefaultsSetTo
     {
-        ThenHasValues $script:nonDefaultArgs -OnDefaults
-        ThenHasValues $script:nonDefaultArgs
+        param(
+            [hashtable] $Values = @{},
+
+            [hashtable] $OrValues = @{}
+        )
+
+        ThenHasValues $Values -OrValues $OrValues -OnDefaults
+        ThenHasValues $Values -OrValues $OrValues
     }
 
     function ThenHasDefaultValues
@@ -56,6 +63,8 @@ BeforeAll {
         param(
             [Parameter(Position=0)]
             [hashtable] $Values = @{},
+
+            [hashtable] $OrValues = @{},
 
             [switch] $OnDefaults
         )
@@ -73,8 +82,14 @@ BeforeAll {
         }
         foreach( $attr in $target.Schema.AttributeSchemas )
         {
+            if( $attr.Name -in $script:excludedAttributes )
+            {
+                continue
+            }
+
             $expectedValue = $attr.DefaultValue
             $becauseMsg = 'default'
+            $setMsg = 'set'
             if( $script:notQuiteDefaultValues.ContainsKey($attr.Name))
             {
                 $expectedValue = $script:notQuiteDefaultValues[$attr.Name]
@@ -85,16 +100,17 @@ BeforeAll {
                 $expectedValue = $Values[$attr.Name]
                 $becauseMsg = 'custom'
             }
-
-            if( $expectedValue -is [securestring] )
+            elseif( $OrValues.ContainsKey($attr.Name) )
             {
-                $expectedValue = [pscredential]::New('ignoded', $expectedValue).GetNetworkCredential().Password
+                $expectedValue = $OrValues[$attr.Name]
+                $becauseMsg = 'custom'
+                $setMsg = 'not set'
             }
 
             $currentValue = $target.GetAttributeValue($attr.Name)
             if( $currentValue -is [securestring] )
             {
-                $currentValue = [pscredential]::New('ignorded', $currentValue).GetNetworkCredential().Password
+                $currentValue = [pscredential]::New('ignored', $currentValue).GetNetworkCredential().Password
             }
             elseif( $currentValue -is [TimeSpan] )
             {
@@ -109,7 +125,7 @@ BeforeAll {
             }
 
             $currentValue |
-                Should -Be $expectedValue -Because "should set$($asDefaultsMsg) $($attr.Name) to $($becauseMsg) value"
+                Should -Be $expectedValue -Because "should $($setMsg)$($asDefaultsMsg) $($attr.Name) to $($becauseMsg) value"
         }
     }
 }
@@ -124,57 +140,67 @@ Describe 'Set-CIisAppPoolProcessModel' {
     }
 
     BeforeEach {
-        $script:appPoolName = "Set-CIisAppPoolProcessModel$($script:testNum++)"
-        Set-CIisAppPoolProcessModel -AsDefaults @script:defaultDefaults
+        $script:appPoolName = "Set-CIisAppPoolProcessModel$($script:testNum)"
+        $script:testNum++
+        Set-CIisAppPoolProcessModel -AsDefaults @script:defaultDefaults -Reset
         Install-CIisAppPool -Name $script:appPoolName
     }
 
     AfterEach {
         Uninstall-CIisAppPool -Name $script:appPoolName
-        Set-CIisAppPoolProcessModel -AsDefaults @script:defaultDefaults
+        Set-CIisAppPoolProcessModel -AsDefaults @script:defaultDefaults -Reset
     }
 
     It 'should set and reset all values' {
         $infos = @()
-        Set-CIisAppPoolProcessModel -AppPoolName $script:appPoolName @nonDefaultArgs -InformationVariable 'infos'
+        Set-CIisAppPoolProcessModel -AppPoolName $script:appPoolName @script:nonDefaultArgs -Reset -InformationVariable 'infos'
         $infos | Should -Not -BeNullOrEmpty
-        ThenHasValues $nonDefaultArgs
+        ThenHasValues $script:nonDefaultArgs
 
         # Make sure no information messages get written because no changes are being made.
-        Set-CIisAppPoolProcessModel -AppPoolName $script:appPoolName @nonDefaultArgs -InformationVariable 'infos'
+        Set-CIisAppPoolProcessModel -AppPoolName $script:appPoolName @script:nonDefaultArgs -Reset -InformationVariable 'infos'
         $infos | Should -BeNullOrEmpty
-        ThenHasValues $nonDefaultArgs
+        ThenHasValues $script:nonDefaultArgs
 
-        Set-CIisAppPoolProcessModel -AppPoolName $script:appPoolName
+        Set-CIisAppPoolProcessModel -AppPoolName $script:appPoolName -Reset
         ThenHasDefaultValues
     }
 
     It 'should support WhatIf when updating all values' {
-        Set-CIisAppPoolProcessModel -AppPoolName $script:appPoolName @nonDefaultArgs -WhatIf
+        Set-CIisAppPoolProcessModel -AppPoolName $script:appPoolName @script:nonDefaultArgs -Reset -WhatIf
         ThenHasDefaultValues
     }
 
     It 'should support WhatIf when resetting all values back to defaults' {
-        Set-CIisAppPoolProcessModel -AppPoolName $script:appPoolName @nonDefaultArgs
-        ThenHasValues $nonDefaultArgs
-        Set-CIisAppPoolProcessModel -AppPoolName $script:appPoolName -WhatIf
-        ThenHasValues $nonDefaultArgs
+        Set-CIisAppPoolProcessModel -AppPoolName $script:appPoolName -Reset @script:nonDefaultArgs
+        ThenHasValues $script:nonDefaultArgs
+        Set-CIisAppPoolProcessModel -AppPoolName $script:appPoolName -Reset -WhatIf
+        ThenHasValues $script:nonDefaultArgs
     }
 
-    It 'should change values and reset to defaults' {
-        Set-CIisAppPoolProcessModel -AppPoolName $script:appPoolName @nonDefaultArgs -ErrorAction Ignore
-        ThenHasValues $nonDefaultArgs
+    It 'should change values and not reset to defaults' {
+        Set-CIisAppPoolProcessModel -AppPoolName $script:appPoolName @script:nonDefaultArgs -ErrorAction Ignore
+        ThenHasValues $script:nonDefaultArgs
 
         $someArgs = @{
             'UserName' = 'fubarsnafu';
             'Password' = (ConvertTo-SecureString -String 'ufansrabuf' -AsPlainText -Force);
         }
         Set-CIisAppPoolProcessModel -AppPoolName $script:appPoolName @someArgs
-        ThenHasValues $someArgs
+        $someArgs['Password'] = 'ufansrabuf'
+        ThenHasValues $someArgs -OrValues $script:nonDefaultArgs
     }
 
     It 'should change default settings' {
-        Set-CIisAppPoolProcessModel -AsDefaults @nonDefaultArgs
-        ThenDefaultsSetTo @nonDefaultArgs
+        Set-CIisAppPoolProcessModel -AsDefaults @script:nonDefaultArgs -Reset
+        ThenDefaultsSetTo $script:nonDefaultArgs
+
+        $someArgs = @{
+            'UserName' = 'fubarsnafu';
+            'Password' = (ConvertTo-SecureString -String 'ufansrabuf' -AsPlainText -Force);
+        }
+        Set-CIisAppPoolProcessModel -AsDefaults @someArgs
+        $someArgs['Password'] = 'ufansrabuf'
+        ThenDefaultsSetTo $someArgs -OrValues $script:nonDefaultArgs
     }
 }

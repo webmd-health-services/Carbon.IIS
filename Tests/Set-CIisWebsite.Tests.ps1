@@ -24,20 +24,25 @@ BeforeAll {
         'id' = 53;
     }
 
-    $script:excludedAttributes = @('name', 'state')
-
     # Sometimes the default values in the schema aren't quite the default values.
     $script:notQuiteDefaultValues = @{
         'id' = 53;
     }
 
+    $script:excludedAttributes = @('name', 'state')
+
     function ThenDefaultsSetTo
     {
-        ThenHasValues @{ 'id' = 0 ; 'serverAutoStart' = $script:nonDefaultArgs['serverAutoStart'] } -OnDefaults
-        ThenHasValues @{
-            'id' = (Get-CIisWebsite -Name $script:siteName).Id ;
-            'serverAutoStart' = $script:nonDefaultArgs['serverAutoStart']
-        }
+        param(
+            $Values = @{},
+
+            $OrValues = @{}
+        )
+
+        ThenHasValues $Values -OrValues $OrValues -OnDefaults
+        $Values['id'] = (Get-CIisWebsite -Name $script:siteName).ID
+        $OrValues.Remove('id')
+        ThenHasValues $Values -OrValues $OrValues
     }
 
     function ThenHasDefaultValues
@@ -45,6 +50,7 @@ BeforeAll {
         param(
             [hashtable] $Values = @{}
         )
+
         ThenHasValues $Values
     }
 
@@ -53,6 +59,8 @@ BeforeAll {
         param(
             [Parameter(Position=0)]
             [hashtable] $Values = @{},
+
+            [hashtable] $OrValues = @{},
 
             [switch] $OnDefaults
         )
@@ -68,6 +76,7 @@ BeforeAll {
         {
             $asDefaultsMsg = ' as default'
         }
+
         foreach( $attr in $target.Schema.AttributeSchemas )
         {
             if( $attr.Name -in $script:excludedAttributes )
@@ -77,6 +86,7 @@ BeforeAll {
 
             $expectedValue = $attr.DefaultValue
             $becauseMsg = 'default'
+            $setMsg = 'set'
             if( $script:notQuiteDefaultValues.ContainsKey($attr.Name))
             {
                 $expectedValue = $script:notQuiteDefaultValues[$attr.Name]
@@ -86,6 +96,12 @@ BeforeAll {
             {
                 $expectedValue = $Values[$attr.Name]
                 $becauseMsg = 'custom'
+            }
+            elseif( $OrValues.ContainsKey($attr.Name) )
+            {
+                $expectedValue = $OrValues[$attr.Name]
+                $becauseMsg = 'custom'
+                $setMsg = 'not set'
             }
 
             $currentValue = $target.GetAttributeValue($attr.Name)
@@ -106,7 +122,7 @@ BeforeAll {
             }
 
             $currentValue |
-                Should -Be $expectedValue -Because "should set$($asDefaultsMsg) $($attr.Name) to $($becauseMsg) value"
+                Should -Be $expectedValue -Because "should $($setMsg)$($asDefaultsMsg) $($attr.Name) to $($becauseMsg) value"
         }
     }
 }
@@ -123,45 +139,49 @@ Describe 'Set-CIisWebsite' {
     }
 
     BeforeEach {
-        $script:siteName = "Set-CIisWebsite$($script:testNum++)"
-        Set-CIisWebsite -AsDefaults @script:defaultDefaults
+        $script:siteName = "Set-CIisWebsite$($script:testNum)"
+        $script:testNum++
+        Set-CIisWebsite -AsDefaults @script:defaultDefaults -Reset
         Install-CIisWebsite -Name $script:siteName -PhysicalPath (New-TestDirectory) -AppPoolName 'Set-CIisWebsite'
     }
 
     AfterEach {
         Uninstall-CIisWebsite -Name $script:siteName
-        Set-CIisWebsite -AsDefaults @script:defaultDefaults
+        Set-CIisWebsite -AsDefaults @script:defaultDefaults -Reset
     }
 
     It 'should set and reset all values' {
         $infos = @()
-        Set-CIisWebsite -Name $script:siteName @nonDefaultArgs -InformationVariable 'infos'
+        Set-CIisWebsite -Name $script:siteName @script:nonDefaultArgs -Reset -InformationVariable 'infos'
         $infos | Should -Not -BeNullOrEmpty
-        ThenHasValues $nonDefaultArgs
+        ThenHasValues $script:nonDefaultArgs
 
         # Make sure no information messages get written because no changes are being made.
-        Set-CIisWebsite -Name $script:siteName @nonDefaultArgs -InformationVariable 'infos'
+        Set-CIisWebsite -Name $script:siteName @script:nonDefaultArgs -Reset -InformationVariable 'infos'
         $infos | Should -BeNullOrEmpty
-        ThenHasValues $nonDefaultArgs
+        ThenHasValues $script:nonDefaultArgs
 
-        Set-CIisWebsite -Name $script:siteName @script:requiredDefaults
+        Set-CIisWebsite -Name $script:siteName @script:requiredDefaults -Reset
         ThenHasDefaultValues @{ 'id' = $script:nonDefaultArgs['id'] }
     }
 
     It 'should support WhatIf when updating all values' {
-        Set-CIisWebsite -Name $script:siteName @nonDefaultArgs -WhatIf
+        Set-CIisWebsite -Name $script:siteName @script:nonDefaultArgs -Reset -WhatIf
         ThenHasDefaultValues @{ 'id' = (Get-CIisWebsite -Name $script:siteName).Id }
     }
 
     It 'should support WhatIf when resetting all values back to defaults' {
-        Set-CIisWebsite -Name $script:siteName @nonDefaultArgs
-        ThenHasValues $nonDefaultArgs
-        Set-CIisWebsite -Name $script:siteName -WhatIf
-        ThenHasValues $nonDefaultArgs
+        Set-CIisWebsite -Name $script:siteName -Reset @script:nonDefaultArgs
+        ThenHasValues $script:nonDefaultArgs
+        Set-CIisWebsite -Name $script:siteName -Reset -WhatIf
+        ThenHasValues $script:nonDefaultArgs
     }
 
     It 'should change default settings' {
+        Set-CIisWebsite -AsDefaults -Reset
+        ThenDefaultsSetTo @{ 'id' = 0 ; 'serverAutoStart' = $true }
+
         Set-CIisWebsite -AsDefaults -ServerAutoStart $false
-        ThenDefaultsSetTo @{ ServerAutoStart = $false }
+        ThenDefaultsSetTo @{ 'id' = 0 ; 'serverAutoStart' = $false }
     }
 }

@@ -38,6 +38,8 @@ BeforeAll {
         )
 
         $script:timeBeforeRemove = Get-Date
+        # AppVeyor builds can sometimes run *really* fast.
+        Start-Sleep -Milliseconds 5
         Remove-CIisConfigurationLocation @WithArgs
     }
 
@@ -80,17 +82,15 @@ Describe 'Remove-CIisConfigurationLocation' {
     }
 
     It 'should write an error when location does not exist' {
-        $timeBeforeRemove = Get-Date
         WhenRemoving -WithArgs @{ SiteName = 'fubar' ; ErrorAction = 'SilentlyContinue' }
         ThenError -Matches 'location "fubar" does not exist'
-        ThenAppHostConfig -Not -ModifiedSince $timeBeforeRemove
+        ThenAppHostConfig -Not -ModifiedSince $script:timeBeforeRemove
     }
 
     It 'should not write an error when location does not exist' {
-        $timeBeforeRemove = Get-Date
         WhenRemoving -WithArgs @{ SiteName = 'fubar' ; ErrorAction = 'Ignore' }
         ThenError -Empty
-        ThenAppHostConfig -Not -ModifiedSince $timeBeforeRemove
+        ThenAppHostConfig -Not -ModifiedSince $script:timeBeforeRemove
     }
 
     It 'should remove configuration location' {

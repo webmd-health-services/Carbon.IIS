@@ -8,7 +8,6 @@ BeforeAll {
 
     $script:testNum = 0
 
-    #
     $script:defaultDefaults = @{}
     (Get-CIisAppPool -Defaults).Attributes |
         Where-Object 'IsInheritedFromDefaultValue' -EQ $false |
@@ -33,10 +32,18 @@ BeforeAll {
         'managedRuntimeVersion' = 'v4.0'
     }
 
+    $script:excludedAttributes = @('applicationPoolSid', 'state', 'name')
+
     function ThenDefaultsSetTo
     {
-        ThenHasValues $script:nonDefaultArgs -OnDefaults
-        ThenHasValues $script:nonDefaultArgs
+        param(
+            [hashtable] $Values = @{},
+
+            [hashtable] $OrValues = @{}
+        )
+
+        ThenHasValues $Values -OrValues $OrValues -OnDefaults
+        ThenHasValues $Values -OrValues $OrValues
     }
 
     function ThenHasDefaultValues
@@ -49,6 +56,8 @@ BeforeAll {
         param(
             [Parameter(Position=0)]
             [hashtable] $Values = @{},
+
+            [hashtable] $OrValues = @{},
 
             [switch] $OnDefaults
         )
@@ -67,13 +76,14 @@ BeforeAll {
 
         foreach( $attr in $target.Schema.AttributeSchemas )
         {
-            if( $attr.Name -in @('applicationPoolSid', 'state', 'name') )
+            if( $attr.Name -in $script:excludedAttributes )
             {
                 continue
             }
 
             $expectedValue = $attr.DefaultValue
             $becauseMsg = 'default'
+            $setMsg = 'set'
             if( $script:notQuiteDefaultValues.ContainsKey($attr.Name))
             {
                 $expectedValue = $script:notQuiteDefaultValues[$attr.Name]
@@ -83,6 +93,12 @@ BeforeAll {
             {
                 $expectedValue = $Values[$attr.Name]
                 $becauseMsg = 'custom'
+            }
+            elseif( $OrValues.ContainsKey($attr.Name) )
+            {
+                $expectedValue = $OrValues[$attr.Name]
+                $becauseMsg = 'custom'
+                $setMsg = 'not set'
             }
 
             $currentValue = $target.GetAttributeValue($attr.Name)
@@ -103,7 +119,7 @@ BeforeAll {
             }
 
             $currentValue |
-                Should -Be $expectedValue -Because "should set$($asDefaultsMsg) $($attr.Name) to $($becauseMsg) value"
+                Should -Be $expectedValue -Because "should $($setMsg)$($asDefaultsMsg) $($attr.Name) to $($becauseMsg) value"
         }
     }
 }
@@ -111,66 +127,72 @@ BeforeAll {
 Describe 'Set-CIisAppPool' {
     BeforeAll {
         Start-W3ServiceTestFixture
-
     }
 
     AfterAll {
-
         Complete-W3ServiceTestFixture
     }
 
     BeforeEach {
-        $script:appPoolName = "Set-CIisAppPool$($script:testNum++)"
-        Set-CIisAppPool -AsDefaults @script:defaultDefaults
+        Set-CIisAppPool -AsDefaults @script:defaultDefaults -Reset
+        $script:appPoolName = "Set-CIisAppPool$($script:testNum)"
+        $script:testNum++
         Install-CIisAppPool -Name $script:appPoolName
     }
 
     AfterEach {
         Uninstall-CIisAppPool -Name $script:appPoolName
-        Set-CIisAppPool -AsDefaults @script:defaultDefaults
+        Set-CIisAppPool -AsDefaults @script:defaultDefaults -Reset
     }
 
     It 'should set and reset all values' {
         $infos = @()
-        Set-CIisAppPool -Name $script:appPoolName @nonDefaultArgs -InformationVariable 'infos'
+        Set-CIisAppPool -Name $script:appPoolName @script:nonDefaultArgs -Reset -InformationVariable 'infos'
         $infos | Should -Not -BeNullOrEmpty
-        ThenHasValues $nonDefaultArgs
+        ThenHasValues $script:nonDefaultArgs
 
         # Make sure no information messages get written because no changes are being made.
-        Set-CIisAppPool -Name $script:appPoolName @nonDefaultArgs -InformationVariable 'infos'
+        Set-CIisAppPool -Name $script:appPoolName @script:nonDefaultArgs -Reset -InformationVariable 'infos'
         $infos | Should -BeNullOrEmpty
-        ThenHasValues $nonDefaultArgs
+        ThenHasValues $script:nonDefaultArgs
 
-        Set-CIisAppPool -Name $script:appPoolName
+        Set-CIisAppPool -Name $script:appPoolName -Reset
         ThenHasDefaultValues
     }
 
     It 'should support WhatIf when updating all values' {
-        Set-CIisAppPool -Name $script:appPoolName @nonDefaultArgs -WhatIf
+        Set-CIisAppPool -Name $script:appPoolName @script:nonDefaultArgs -Reset -WhatIf
         ThenHasDefaultValues
     }
 
     It 'should support WhatIf when resetting all values back to defaults' {
-        Set-CIisAppPool -Name $script:appPoolName @nonDefaultArgs
-        ThenHasValues $nonDefaultArgs
-        Set-CIisAppPool -Name $script:appPoolName -WhatIf
-        ThenHasValues $nonDefaultArgs
+        Set-CIisAppPool -Name $script:appPoolName -Reset @script:nonDefaultArgs
+        ThenHasValues $script:nonDefaultArgs
+        Set-CIisAppPool -Name $script:appPoolName -Reset -WhatIf
+        ThenHasValues $script:nonDefaultArgs
     }
 
-    It 'should change values and reset to defaults' {
-        Set-CIisAppPool -Name $script:appPoolName @nonDefaultArgs -ErrorAction Ignore
-        ThenHasValues $nonDefaultArgs
+    It 'should change values and not reset to defaults' {
+        Set-CIisAppPool -Name $script:appPoolName @script:nonDefaultArgs -ErrorAction Ignore
+        ThenHasValues $script:nonDefaultArgs
 
         $someArgs = @{
             managedRuntimeVersion = 'v2.0';
             queueLength = [UInt32]3000;
         }
         Set-CIisAppPool -Name $script:appPoolName @someArgs
-        ThenHasValues $someArgs
+        ThenHasValues $someArgs -OrValues $script:nonDefaultArgs
     }
 
     It 'should change default settings' {
-        Set-CIisAppPool -AsDefaults @nonDefaultArgs
-        ThenDefaultsSetTo @nonDefaultArgs
+        Set-CIisAppPool -AsDefaults @script:nonDefaultArgs -Reset
+        ThenDefaultsSetTo $script:nonDefaultArgs
+
+        $someArgs = @{
+            managedRuntimeVersion = 'v2.0';
+            queueLength = [UInt32]3000;
+        }
+        Set-CIisAppPool -AsDefaults @someArgs
+        ThenDefaultsSetTo $someArgs -OrValues $script:nonDefaultArgs
     }
 }

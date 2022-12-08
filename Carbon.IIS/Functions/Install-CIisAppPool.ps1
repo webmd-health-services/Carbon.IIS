@@ -8,12 +8,9 @@ function Install-CIisAppPool
     .DESCRIPTION
     The `Install-CIisAppPool` function creates or updates an IIS application pool. Pass the name of the application pool
     to the `Name` parameter. If that application pool doesn't exist, it is created. If it does exist, its configuration
-    is updated to match the values of the arguments passed.
-
-    If you pass just a name, the function creates a 64-bit application pool that runs an integrated pipeline
-    using .NET 4.0 managed runtime. To use a 32-bit app pool, set the `Enable32BitAppOnWin64` parameter to `$true`. To use a
-    classic pipeline, set the `ManagedPipelineMode` parameter to `Classic`. To use a different version of .NET, use the
-    `ManagedRuntimeVersion` parameter.
+    is updated to match the values of the arguments passed. If you don't pass an argument, that argument's setting is
+    deleted and reset to its default value. You always get an application pool with the exact same configuration, even
+    if someone or something has changed an application pool's configuration in some other way.
 
     To configure the application pool's process model (i.e. the application pool's account/identity, idle timeout,
     etc.), use the `Set-CIisAppPoolProcessModel` function.
@@ -98,7 +95,7 @@ function Install-CIisAppPool
         }
         $setArgs[$parameterName] = $PSBoundParameters[$parameterName]
     }
-    Set-CIisAppPool @setArgs
+    Set-CIisAppPool @setArgs -Reset
 
     # TODO: Pull this out into its own Start-IisAppPool function. I think.
     $appPool = Get-CIisAppPool -Name $Name
