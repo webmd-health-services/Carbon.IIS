@@ -160,7 +160,6 @@ e.g. `SiteName/VirtualPath`.
   * `Get-CIisHttpRedirect`
   * `Get-CIisMimeMap`
   * `Get-CIisSecurityAuthentication`
-  * `Remove-CIisConfigurationAttribute`
   * `Remove-CIisConfigurationLocation`
   * `Remove-CIisMimeMap`
   * `Set-CIisAnonymousAuthentication`

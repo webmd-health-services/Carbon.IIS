@@ -18,9 +18,6 @@ function Remove-CIisConfigurationAttribute
     To delete/remove an attribute from the configuration of an application/virtual directory under a website, pass the
     application/virtual diretory's name/path to the `VirtualPath` parameter.
 
-    The current value of the attribute is written to the information stream. To mask the attribute's value in output,
-    use the `Sensitive` switch. Attributes named `Password` are always masked.
-
     .EXAMPLE
     Remove-CIisConfigurationAttribute -SiteName 'MySite' -SectionPath 'system.webServer/security/authentication/anonymousAuthentication' -Name 'userName'
 
@@ -55,10 +52,7 @@ function Remove-CIisConfigurationAttribute
         # You can pipe multiple names to clear/remove multiple attributes.
         [Parameter(Mandatory, ValueFromPipeline)]
         [Alias('Key')]
-        [String[]] $Name,
-
-        # If set, the current value of the attribute will be masked when written to the console.
-        [switch] $Sensitive
+        [String[]] $Name
     )
 
     begin
