@@ -35,9 +35,11 @@ function Test-CIisConfigurationSection
         [String] $SectionPath,
 
         # The name of the site whose configuration section to test.  Optional.  The default is the global configuration.
-        [String] $SiteName,
+        [Alias('SiteName')]
+        [String] $LocationPath,
 
-        # The optional path under `SiteName` whose configuration section to test.
+        # OBSOLETE. Use the `LocationPath` parameter instead.
+        [Alias('Path')]
         [String] $VirtualPath,
 
         # Test if the configuration section is locked.
@@ -46,25 +48,18 @@ function Test-CIisConfigurationSection
     )
 
     Set-StrictMode -Version 'Latest'
-
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
-    $getArgs = @{
-                    SectionPath = $SectionPath;
-                }
-    if( $SiteName )
+    $getArgs = @{}
+    if ($LocationPath)
     {
-        $getArgs.SiteName = $SiteName
+        $getArgs['LocationPath'] = $LocationPath
+        $getArgs['VirtualPath'] = $VirtualPath
     }
 
-    if( $VirtualPath )
-    {
-        $getArgs.VirtualPath = $VirtualPath
-    }
+    $section = Get-CIisConfigurationSection -SectionPath $SectionPath @getArgs -ErrorAction SilentlyContinue
 
-    $section = Get-CIisConfigurationSection @getArgs -ErrorAction SilentlyContinue
-
-    if( $pscmdlet.ParameterSetName -eq 'CheckExists' )
+    if( $PSCmdlet.ParameterSetName -eq 'CheckExists' )
     {
         if( $section )
         {
@@ -78,11 +73,15 @@ function Test-CIisConfigurationSection
 
     if( -not $section )
     {
-        Write-Error ('IIS:{0}: section {1} not found.' -f (Join-CIisVirtualPath $SiteName $VirtualPath),$SectionPath)
+        if ($VirtualPath)
+        {
+            $LocationPath = Join-CIisVirtualPath -Path $LocationPath -ChildPath $VirtualPath
+        }
+        Write-Error "IIS:$($LocationPath): section $($SectionPath) not found." -ErrorAction $ErrorActionPreference
         return
     }
 
-    if( $pscmdlet.ParameterSetName -eq 'CheckLocked' )
+    if( $PSCmdlet.ParameterSetName -eq 'CheckLocked' )
     {
         return $section.OverrideMode -eq 'Deny'
     }

@@ -34,12 +34,12 @@ function Get-CIisMimeMap
     Gets all the file extension to MIME type mappings whose MIME type matches the `text/*` wildcard.
 
     .EXAMPLE
-    Get-CIisMimeMap -SiteName DeathStar
+    Get-CIisMimeMap -LocationPath 'DeathStar'
 
     Gets all the file extenstion to MIME type mappings for the `DeathStar` website.
 
     .EXAMPLE
-    Get-CIisMimeMap -SiteName DeathStar -VirtualPath ExhaustPort
+    Get-CIisMimeMap -LocationPath 'DeathStar/ExhaustPort'
 
     Gets all the file extension to MIME type mappings for the `DeathStar`'s `ExhausePort` directory.
     #>
@@ -47,11 +47,13 @@ function Get-CIisMimeMap
     param(
         # The website whose MIME mappings to return.  If not given, returns the web server's MIME map.
         [Parameter(Mandatory, ParameterSetName='ForWebsite')]
-        [String] $SiteName,
+        [Alias('SiteName')]
+        [String] $LocationPath,
 
-        # The directory under the website whose MIME mappings to return.  Optional.
+        # OBSOLETE. Use the `LocationPath` parameter instead.
         [Parameter(ParameterSetName='ForWebsite')]
-        [String] $VirtualPath = '',
+        [Alias('Path')]
+        [String] $VirtualPath,
 
         # The name of the file extensions to return. Wildcards accepted.
         [String] $FileExtension = '*',
@@ -61,13 +63,12 @@ function Get-CIisMimeMap
     )
 
     Set-StrictMode -Version 'Latest'
-
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
     $getIisConfigSectionParams = @{ }
     if( $PSCmdlet.ParameterSetName -eq 'ForWebsite' )
     {
-        $getIisConfigSectionParams['SiteName'] = $SiteName
+        $getIisConfigSectionParams['LocationPath'] = $LocationPath
         $getIisConfigSectionParams['VirtualPath'] = $VirtualPath
     }
 

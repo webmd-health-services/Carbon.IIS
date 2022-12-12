@@ -22,11 +22,13 @@ function Get-CIisConfigurationSection
     param(
         # The site whose configuration should be returned.
         [Parameter(Mandatory, ParameterSetName='ForSite')]
-        [String] $SiteName,
+        [Alias('SiteName')]
+        [String] $LocationPath,
 
-        # The optional site path whose configuration should be returned.
+        # OBSOLETE. Use the `LocationPath` parameter instead.
         [Parameter(ParameterSetName='ForSite')]
-        [String] $VirtualPath = '',
+        [Alias('Path')]
+        [String] $VirtualPath,
 
         # The path to the configuration section to return.
         [Parameter(Mandatory, ParameterSetName='ForSite')]
@@ -44,13 +46,30 @@ function Get-CIisConfigurationSection
     $config = $mgr.GetApplicationHostConfiguration()
 
     $section = $null
-    $qualifier = ''
     try
     {
-        if( $PSCmdlet.ParameterSetName -eq 'ForSite' )
+        if ($PSCmdlet.ParameterSetName -eq 'ForSite')
         {
-            $qualifier = Join-CIisVirtualPath $SiteName $VirtualPath
-            $section = $config.GetSection( $SectionPath, $Type, $qualifier )
+            if ($VirtualPath)
+            {
+                $functionName = $PSCmdlet.MyInvocation.MyCommand.Name
+                $caller = Get-PSCallStack | Select-Object -Skip 1 | Select-Object -First 1
+                if ($caller.FunctionName -like '*-CIis*')
+                {
+                    $functionName = $caller.FunctionName
+                }
+
+                "The $($functionName) function''s ""SiteName"" and ""VirtualPath"" parameters are obsolete and have " +
+                'been replaced with a single "LocationPath" parameter, which should be the combined path of the ' +
+                'location/object to configure, e.g. ' +
+                "``$($functionName) -LocationPath '$($LocationPath)/$($VirtualPath)'``." |
+                    Write-CIisWarningOnce
+
+                $LocationPath = Join-CIisVirtualPath -Path $LocationPath -ChildPath $VirtualPath
+            }
+
+            $LocationPath = $LocationPath | ConvertTo-CIisVirtualPath
+            $section = $config.GetSection( $SectionPath, $Type, $LocationPath )
         }
         else
         {
@@ -63,11 +82,19 @@ function Get-CIisConfigurationSection
 
     if( $section )
     {
+        if (-not ($section | Get-Member -Name 'LocationPath'))
+        {
+            $section | Add-Member -Name 'LocationPath' -MemberType NoteProperty -Value ''
+        }
+        if ($LocationPath)
+        {
+            $section.LocationPath = $LocationPath
+        }
         return $section
     }
     else
     {
-        $msg = 'IIS:{0}: configuration section {1} not found.' -f $qualifier,$SectionPath
+        $msg = 'IIS:{0}: configuration section {1} not found.' -f $LocationPath,$SectionPath
         Write-Error $msg -ErrorAction $ErrorActionPreference
         return
     }

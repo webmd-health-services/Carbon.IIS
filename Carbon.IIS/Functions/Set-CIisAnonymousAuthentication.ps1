@@ -27,15 +27,16 @@ function Set-CIisAnonymousAuthentication
     path/application/virtual directry under a site. In this example, anonymous authentication is enabled in the `MySite`
     website's `allowAll` path/application/virtual directory.
     #>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSShouldProcess','')]
     [CmdletBinding(SupportsShouldProcess)]
     param(
         # The name of the website whose anonymous authentication settings to change.
         [Parameter(Mandatory)]
-        [String] $SiteName,
+        [Alias('SiteName')]
+        [String] $LocationPath,
 
-        # The path to a directory/application/virtual diectory under the `SiteName` website whose anonymous
-        # authentication settings to change.
-        [String] $VirtualPath = '',
+        # OBSOLETE. Use the `LocationPath` parameter instead.
+        [String] $VirtualPath,
 
         # Enable anonymous authentication. To disable anonymous authentication you must explicitly set `Enabled to
         # `$false`, e.g. `-Enabled:$false`.
@@ -56,7 +57,7 @@ function Set-CIisAnonymousAuthentication
 
     $attributes = $PSBoundParameters | Copy-Hashtable -Key @('enabled', 'logonMethod', 'password', 'userName')
 
-    Set-CIisConfigurationAttribute -SiteName $SiteName `
+    Set-CIisConfigurationAttribute -LocationPath $LocationPath `
                                    -VirtualPath $VirtualPath `
                                    -SectionPath 'system.webServer/security/authentication/anonymousAuthentication' `
                                    -Attribute $attributes

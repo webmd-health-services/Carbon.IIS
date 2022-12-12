@@ -358,8 +358,8 @@ BeforeAll {
             }
         }
 
-        `$section = Get-CIisConfigurationSection -SiteName `$script:siteName ``
-                                                -VirtualPath `$ForVirtualPath ``
+        `$locationPath = Join-CIisLocationPath -Path `$script:siteName -ChildPath `$ForVirtualPath
+        `$section = Get-CIisConfigurationSection -LocationPath `$locationPath ``
                                                 -SectionPath `$sectionPath
         foreach( `$attrName in `$ExpectedValues.Keys )
         {

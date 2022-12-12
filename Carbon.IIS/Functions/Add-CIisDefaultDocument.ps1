@@ -18,11 +18,13 @@ function Add-CIisDefaultDocument
 
     Adds `home.html` to the list of default documents for the MySite website.
     #>
-    [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSShouldProcess','')]
+    [CmdletBinding(SupportsShouldProcess)]
     param(
         # The name of the site where the default document should be added.
         [Parameter(Mandatory)]
-        [String] $SiteName,
+        [Alias('SiteName')]
+        [String] $LocationPath,
 
         # The default document to add.
         [Parameter(Mandatory)]
@@ -32,7 +34,7 @@ function Add-CIisDefaultDocument
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
-    $section = Get-CIisConfigurationSection -SiteName $SiteName -SectionPath 'system.webServer/defaultDocument'
+    $section = Get-CIisConfigurationSection -LocationPath $LocationPath -SectionPath 'system.webServer/defaultDocument'
     if( -not $section )
     {
         return
@@ -40,13 +42,15 @@ function Add-CIisDefaultDocument
 
     [Microsoft.Web.Administration.ConfigurationElementCollection] $files = $section.GetCollection('files')
     $defaultDocElement = $files | Where-Object { $_["value"] -eq $FileName }
-    if( -not $defaultDocElement )
+    if ($defaultDocElement)
     {
-        Write-IisVerbose $SiteName 'Default Document' '' $FileName
-        $defaultDocElement = $files.CreateElement('add')
-        $defaultDocElement["value"] = $FileName
-        $files.Add( $defaultDocElement )
-        Save-CIisConfiguration
+        return
     }
+
+    Write-Information "IIS:$($section.LocationPath):$($section.SectionPath)  + $($FileName)"
+    $defaultDocElement = $files.CreateElement('add')
+    $defaultDocElement["value"] = $FileName
+    $files.Add( $defaultDocElement )
+    Save-CIisConfiguration
 }
 

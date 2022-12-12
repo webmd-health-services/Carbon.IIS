@@ -38,9 +38,10 @@ function Remove-CIisConfigurationAttribute
     param(
         # The name of the website to configure.
         [Parameter(Mandatory)]
-        [String] $SiteName,
+        [Alias('SiteName')]
+        [String] $LocationPath,
 
-        # The virtual path to a directory, application, or virtual directory to configure.
+        # OBSOLETE. Use the `LocationPath` parameter instead.
         [String] $VirtualPath = '',
 
         # The configuration section path to configure, e.g.
@@ -65,7 +66,8 @@ function Remove-CIisConfigurationAttribute
         Set-StrictMode -Version 'Latest'
         Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
-        $section = Get-CIisConfigurationSection -SiteName $SiteName -VirtualPath $VirtualPath -SectionPath $SectionPath
+        $section =
+            Get-CIisConfigurationSection -LocationPath $LocationPath -VirtualPath $VirtualPath -SectionPath $SectionPath
         if( -not $section )
         {
             return
@@ -81,7 +83,12 @@ function Remove-CIisConfigurationAttribute
 
         $attrNames = [Collections.Arraylist]::New()
 
-        $basePrefix = "[IIS:/Sites/$(Join-CIisVirtualPath -Path $SiteName -ChildPath $VirtualPath):$($SectionPath)"
+        $locationPathMsg = $LocationPath
+        if ($VirtualPath)
+        {
+            $locationPathMsg = Join-CIisVirtualPath -Path $LocationPath -ChildPath $VirtualPath
+        }
+        $basePrefix = "[IIS:/Sites/$($locationPathMsg):$($SectionPath)"
     }
 
     process
@@ -108,12 +115,6 @@ function Remove-CIisConfigurationAttribute
             $hasDefaultValue = $attr.Value -eq $attr.Schema.DefaultValue
             if( -not $attr.IsInheritedFromDefaultValue -and -not $hasDefaultValue )
             {
-                $currentValue = $attr.Value
-                if( $Sensitive -or $nameItem -eq 'Password' )
-                {
-                    $currentValue = '*' * 8
-                }
-
                 [void]$attrNames.Add($nameItem)
             }
 
@@ -123,7 +124,8 @@ function Remove-CIisConfigurationAttribute
                 $pathMsg = ", path '$($VirtualPath)'"
             }
 
-            $target = "$($nameItem) from IIS website '$($SiteName)'$($pathMsg), configuration section '$($SectionPath)'"
+            $target =
+                "$($nameItem) from IIS website '$($LocationPath)'$($pathMsg), configuration section '$($SectionPath)'"
             $action = 'Remove Attribute'
             if( $PSCmdlet.ShouldProcess($target, $action) )
             {

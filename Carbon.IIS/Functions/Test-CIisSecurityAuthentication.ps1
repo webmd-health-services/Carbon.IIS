@@ -27,10 +27,12 @@ function Test-CIisSecurityAuthentication
     param(
         # The site where anonymous authentication should be set.
         [Parameter(Mandatory)]
-        [String] $SiteName,
+        [Alias('SiteName')]
+        [String] $LocationPath,
 
-        # The optional path where anonymous authentication should be set.
-        [String] $VirtualPath = '',
+        # OBSOLETE. Use the LocationPath parameter instead.
+        [Alias('Path')]
+        [String] $VirtualPath,
 
         # Tests if anonymous authentication is enabled.
         [Parameter(Mandatory, ParameterSetName='Anonymous')]
@@ -52,8 +54,8 @@ function Test-CIisSecurityAuthentication
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
-    $getConfigArgs = @{ $pscmdlet.ParameterSetName = $true }
-    $authSettings = Get-CIisSecurityAuthentication -SiteName $SiteName -VirtualPath $VirtualPath @getConfigArgs
+    $getConfigArgs = @{ $PSCmdlet.ParameterSetName = $true }
+    $authSettings = Get-CIisSecurityAuthentication -LocationPath $LocationPath -VirtualPath $VirtualPath @getConfigArgs
     return ($authSettings.GetAttributeValue('enabled') -eq 'true')
 }
 

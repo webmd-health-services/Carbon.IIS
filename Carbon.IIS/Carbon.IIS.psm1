@@ -24,6 +24,7 @@ $InformationPreference = 'Continue'
 # things. A published module has its function appended to this file, while a
 # module in development has its functions in the Functions directory.
 $moduleRoot = $PSScriptRoot
+$warningMessages = @{}
 
 Import-Module -Name (Join-Path -Path $moduleRoot -ChildPath 'PSModules\Carbon.Core' -Resolve) `
               -Function @('Add-CTypeData')

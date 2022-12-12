@@ -55,9 +55,9 @@ function Set-CIisConfigurationAttribute
         # The name of the website whose attribute values to configure.
         [Parameter(Mandatory, ParameterSetName='AllByConfigPath')]
         [Parameter(Mandatory, ParameterSetName='SingleByConfigPath')]
-        [String] $SiteName,
+        [String] $LocationPath,
 
-        # The virtual path to a directory, application, or virtual directory whose attribute values to configure.
+        # OBSOLETE. Use the `LocationPath` parameter instead.
         [Parameter(ParameterSetName='AllByConfigPath')]
         [Parameter(ParameterSetName='SingleByConfigPath')]
         [String] $VirtualPath = '',
@@ -248,10 +248,28 @@ function Set-CIisConfigurationAttribute
         }
     }
 
-    if( -not $ConfigurationElement )
+    if (-not $ConfigurationElement)
     {
-        $ConfigurationElement =
-            Get-CIisConfigurationSection -SiteName $SiteName -VirtualPath $VirtualPath -SectionPath $SectionPath
+        if ($VirtualPath)
+        {
+            $functionName = $PSCmdlet.MyInvocation.MyCommand.Name
+            $caller = Get-PSCallStack | Select-Object -Skip 1 | Select-Object -First 1
+            if ($caller.FunctionName -like '*-CIis*')
+            {
+                $functionName = $caller.FunctionName
+            }
+
+            $functionName = $PSCmdlet.MyInvocation.MyCommand.Name
+            "The $($functionName) function''s ""SiteName"" and ""VirtualPath"" parameters are obsolete and have " +
+            'been replaced with a single "LocationPath" parameter, which should be the combined path of the ' +
+            'location/object to configure, e.g. ' +
+            "``$($functionName) -LocationPath '$($LocationPath)/$($VirtualPath)'``." |
+                Write-CIisWarningOnce
+
+            $LocationPath = Join-CIisLocationPath -Path $LocationPath -ChildPath $VirtualPath
+        }
+
+        $ConfigurationElement = Get-CIisConfigurationSection -LocationPath $LocationPath -SectionPath $SectionPath
         if( -not $ConfigurationElement )
         {
             return

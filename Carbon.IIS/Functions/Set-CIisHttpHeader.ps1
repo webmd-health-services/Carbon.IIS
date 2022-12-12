@@ -14,44 +14,42 @@ function Set-CIisHttpHeader
     Get-CIisHttpHeader
 
     .EXAMPLE
-    Set-CIisHttpHeader -SiteName 'SopwithCamel' -Name 'X-Flown-By' -Value 'Snoopy'
+    Set-CIisHttpHeader -LocationPath 'SopwithCamel' -Name 'X-Flown-By' -Value 'Snoopy'
 
     Sets or creates the `SopwithCamel` website's `X-Flown-By` HTTP header to the value `Snoopy`.
 
     .EXAMPLE
-    Set-CIisHttpHeader -SiteName 'SopwithCamel' -VirtualPath 'Engine' -Name 'X-Powered-By' -Value 'Root Beer'
+    Set-CIisHttpHeader -LocationPath 'SopwithCamel/Engine' -Name 'X-Powered-By' -Value 'Root Beer'
 
     Sets or creates the `SopwithCamel` website's `Engine` sub-directory's `X-Powered-By` HTTP header to the value `Root Beer`.
     #>
-    [CmdletBinding(SupportsShouldProcess=$true)]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSShouldProcess','')]
+    [CmdletBinding(SupportsShouldProcess)]
     param(
-        [Parameter(Mandatory=$true)]
-        [string]
         # The name of the website where the HTTP header should be set/created.
-        $SiteName,
+        [Parameter(Mandatory)]
+        [Alias('SiteName')]
+        [String] $LocationPath,
 
-        [string]
-        # The optional path under `SiteName` where the HTTP header should be set/created.
-        $VirtualPath = '',
+        # OBSOLETE. Use the `LocationPath` parameter instead.
+        [Alias('Path')]
+        [String] $VirtualPath,
 
-        [Parameter(Mandatory=$true)]
-        [string]
         # The name of the HTTP header.
-        $Name,
+        [Parameter(Mandatory)]
+        [String] $Name,
 
-        [Parameter(Mandatory=$true)]
-        [string]
         # The value of the HTTP header.
-        $Value
+        [Parameter(Mandatory)]
+        [String] $Value
     )
 
     Set-StrictMode -Version 'Latest'
-
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
-    $httpProtocol = Get-CIisConfigurationSection -SiteName $SiteName `
-                                                 -VirtualPath $VirtualPath `
-                                                 -SectionPath 'system.webServer/httpProtocol'
+    $sectionPath = 'system.webServer/httpProtocol'
+    $httpProtocol =
+        Get-CIisConfigurationSection -LocationPath $locationPath -VirtualPath $VirtualPath -SectionPath $sectionPath
     $headers = $httpProtocol.GetCollection('customHeaders')
     $header = $headers | Where-Object { $_['name'] -eq $Name }
 
@@ -70,7 +68,10 @@ function Set-CIisHttpHeader
         [void] $headers.Add( $addElement )
     }
 
-    $fullPath = Join-CIisVirtualPath $SiteName $VirtualPath
-    Save-CIisConfiguration -Target "IIS Website '$($fullPath)'" -Action "$($action) $($Name) HTTP Header"
+    if ($VirtualPath)
+    {
+        $LocationPath = Join-CIisVirtualPath -Path $LocationPath -ChildPath $VirtualPath
+    }
+    Save-CIisConfiguration -Target "IIS Website '$($LocationPath)'" -Action "$($action) $($Name) HTTP Header"
 }
 

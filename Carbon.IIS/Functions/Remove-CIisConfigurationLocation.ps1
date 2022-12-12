@@ -12,47 +12,53 @@ function Remove-CIisConfigurationLocation
     site and path. This function removes the entire `<location>` section, i.e. all a site's/path's custom configuration
     that isn't stored in a web.config file.
 
-    Pass the website whose location configuration to remove to the `SiteName` parameter. To delete the location
+    Pass the website whose location configuration to remove to the `LocationPath` parameter. To delete the location
     configuration for a path under the website, pass that path to the `VirtualPath` parameter.
 
     If there is no location configuration, an error is written.
 
     .EXAMPLE
-    Remove-CIisConfigurationLocation -SiteName 'www'
+    Remove-CIisConfigurationLocation -LocationPath 'www'
 
     Demonstrates how to remove the `<location path="www">` element from IIS's applicationHost.config, i.e. all custom
     configuration for the www website that isn't in the site's web.config file.
 
     .EXAMPLE
-    Remove-CIisConfigurationLocation -SiteName 'www' -VirtualPath 'some/path'
+    Remove-CIisConfigurationLocation -LocationPath 'www/some/path'
 
     Demonstrates how to remove the `<location path="www/some/path">` element from IIS's applicationHost.config, i.e.
     all custom configuration for the `some/path` path in the `www` website that isn't in the path's or site's web.config
     file.
     #>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSShouldProcess','')]
     [CmdletBinding(SupportsShouldProcess)]
     param(
         [Parameter(Mandatory)]
-        [String] $SiteName,
+        [Alias('SiteName')]
+        [String] $LocationPath,
 
+        # OBSOLETE. Use the `LocationPath` parameter instead.
         [String] $VirtualPath
     )
 
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
-    $locationPath = Join-CIisVirtualPath -Path $SiteName -ChildPath $VirtualPath
-
-    if( -not (Get-CIisConfigurationLocationPath -SiteName $SiteName -VirtualPath $VirtualPath) )
+    if ($VirtualPath)
     {
-        $msg = "Configuration location ""$($locationPath)"" does not exist."
+        $LocationPath = Join-CIisVirtualPath -Path $LocationPath -ChildPath $VirtualPath
+    }
+
+    if (-not (Get-CIisConfigurationLocationPath -LocationPath $LocationPath))
+    {
+        $msg = "Configuration location ""$($LocationPath)"" does not exist."
         Write-Error -Message $msg -ErrorAction $ErrorActionPreference
         return
     }
 
-    (Get-CIisServerManager).GetApplicationHostConfiguration().RemoveLocationPath($locationPath)
-    $target = "$($locationPath)"
+    (Get-CIisServerManager).GetApplicationHostConfiguration().RemoveLocationPath($LocationPath)
+    $target = "$($LocationPath)"
     $action = "Remove IIS Location"
-    $infoMsg = "Removing ""$($locationPath)"" IIS location configuration."
+    $infoMsg = "Removing ""$($LocationPath)"" IIS location configuration."
     Save-CIisConfiguration -Target $target -Action $action -Message $infoMsg
 }

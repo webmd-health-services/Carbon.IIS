@@ -51,3 +51,4 @@ function Join-CIisVirtualPath
     return ''
 }
 
+Set-Alias -Name 'Join-CIisLocationPath' -Value 'Join-CIisVirtualPath'

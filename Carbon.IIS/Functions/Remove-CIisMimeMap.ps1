@@ -25,37 +25,34 @@ function Remove-CIisMimeMap
     #>
     [CmdletBinding(DefaultParameterSetName='ForWebServer')]
     param(
-        [Parameter(Mandatory=$true,ParameterSetName='ForWebsite')]
-        [string]
         # The name of the website whose MIME type to set.
-        $SiteName,
+        [Parameter(Mandatory, ParameterSetName='ForWebsite')]
+        [Alias('SiteName')]
+        [String] $LocationPath,
 
+        # OBSOLETE. Uset the `LocationPath` parameter instead.
         [Parameter(ParameterSetName='ForWebsite')]
-        [string]
-        # The optional site path whose configuration should be returned.
-        $VirtualPath = '',
+        [String] $VirtualPath = '',
 
-        [Parameter(Mandatory=$true)]
-        [string]
         # The file extension whose MIME map to remove.
-        $FileExtension
+        [Parameter(Mandatory)]
+        [String] $FileExtension
     )
 
     Set-StrictMode -Version 'Latest'
-
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
     $getIisConfigSectionParams = @{ }
     if( $PSCmdlet.ParameterSetName -eq 'ForWebsite' )
     {
-        $getIisConfigSectionParams['SiteName'] = $SiteName
+        $getIisConfigSectionParams['LocationPath'] = $LocationPath
         $getIisConfigSectionParams['VirtualPath'] = $VirtualPath
     }
 
-    $staticContent = Get-CIisConfigurationSection -SectionPath 'system.webServer/staticContent' @getIisConfigSectionParams
+    $staticContent =
+        Get-CIisConfigurationSection -SectionPath 'system.webServer/staticContent' @getIisConfigSectionParams
     $mimeMapCollection = $staticContent.GetCollection()
-    $mimeMapToRemove = $mimeMapCollection |
-                            Where-Object { $_['fileExtension'] -eq $FileExtension }
+    $mimeMapToRemove = $mimeMapCollection | Where-Object { $_['fileExtension'] -eq $FileExtension }
     if( -not $mimeMapToRemove )
     {
         Write-Verbose ('MIME map for file extension {0} not found.' -f $FileExtension)
