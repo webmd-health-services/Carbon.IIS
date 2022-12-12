@@ -50,17 +50,17 @@ function Set-CIisHttpRedirect
         [Parameter(Mandatory)]
         [String] $Destination,
 
-        # The HTTP status code to use.  Default is `Found`.  Should be one of `301` (`Permanent`), `302` (`Found`), or
-        # `307` (`Temporary`).
+        # The HTTP status code to use.  Default is `302` (`Found`).  Should be one of `301` (`Permanent`),
+        # `302` (`Found`), or `307` (`Temporary`).
         [Alias('StatusCode')]
         [ValidateSet(301, 302, 307)]
         [int] $HttpResponseStatus = 302,
 
-        # Redirect all requests to exact destination (instead of relative to destination).  I have no idea what this means.  [Maybe TechNet can help.](http://technet.microsoft.com/en-us/library/cc732969(v=WS.10).aspx)
-        [switch] $ExactDestination,
+        # Redirect all requests to exact destination (instead of relative to destination).
+        [bool] $ExactDestination,
 
-        # Only redirect requests to content in site and/or path, but nothing below it.  I have no idea what this means.  [Maybe TechNet can help.](http://technet.microsoft.com/en-us/library/cc732969(v=WS.10).aspx)
-        [switch] $ChildOnly
+        # Only redirect requests to content in site and/or path, but nothing below it.
+        [bool] $ChildOnly
     )
 
     Set-StrictMode -Version 'Latest'
@@ -73,7 +73,7 @@ function Set-CIisHttpRedirect
                                         'enabled' = $true;
                                         'destination' = $Destination;
                                         'httpResponseStatus' = $HttpResponseStatus;
-                                        'exactDestination' = [bool]$ExactDestination;
-                                        'childOnly' = [bool]$ChildOnly;
+                                        'exactDestination' = $ExactDestination;
+                                        'childOnly' = $ChildOnly;
                                     }
 }

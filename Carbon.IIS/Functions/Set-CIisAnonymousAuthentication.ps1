@@ -40,7 +40,7 @@ function Set-CIisAnonymousAuthentication
 
         # Enable anonymous authentication. To disable anonymous authentication you must explicitly set `Enabled to
         # `$false`, e.g. `-Enabled:$false`.
-        [switch] $Enabled,
+        [bool] $Enabled,
 
         # The username of the identity to use to run anonymous requests.
         [String] $UserName,
