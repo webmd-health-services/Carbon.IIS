@@ -23,7 +23,8 @@ function Remove-CIisMimeMap
 
     Removes the `.m4v` file extension so that IIS will no longer serve those files.
     #>
-    [CmdletBinding(DefaultParameterSetName='ForWebServer')]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSShouldProcess','')]
+    [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName='ForWebServer')]
     param(
         # The name of the website whose MIME type to set.
         [Parameter(Mandatory, ParameterSetName='ForWebsite')]
