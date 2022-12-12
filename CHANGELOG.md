@@ -72,7 +72,15 @@ installing it.
   * Add `-ManagedRuntimeVersion 'v4.0'` to all usages of `Install-CIisAppPool` that doesn't use the
   `-MangedRuntimeVersion` parameter. The `Install-CIisAppPool` function no longer sets the managed runtime version if
   that parameter isn't provided.
-* The `Install-CIIsAppPool` and `Install-CIisWebsite` functions
+* Update usages of the `Set-CIisAnonymousAuthentication` function's `Enabled` switch to take in a `$true` or `$false`
+value instead. The `Enabled` switch is now a boolean parameter. Change usages of `-Enabled` to `-Enabled $true` and
+usages of `-Enabled:$false` to `-Enabled $false`.
+* Update usages of the `Set-CIisHttpRedirect` function's `ExactDestination` switch to take in a `$true` or `$false`
+value. The `ExactDestination` switch is now a boolean parameter. Change usages of `-ExactDestination` to
+`-ExactDestination $true` and usages of `-ExactDestination:$false` to `-ExactDestination $false`.
+* Update usages of the `Set-CIisHttpRedirect` function's `ChildOnly` switch to take in a `$true` or `$false` value. The
+`ChildOnly` switch is now a boolean parameter. Change usages of `-ChildOnly` to `-ChildOnly $true` and usages of
+ `-ChildOnly:$false` to `-ChildOnly $false`.
 
 ### Added
 
@@ -115,6 +123,8 @@ pool defaults process model.
 
 * `Install-CIisWebsite`: parameter `ServerAutoStart`, which configures a website's `serverAutoStart` setting.
 * `Install-CIIsAppPool`: `Credential`, which replaces the `UserName`/`Password` parameters.
+* `Set-CIisWindowsAuthentication`: parameter `UseKernelMode` for configuring the Windows authentication "useKernelMode"
+setting.
 
 ### Changed
 
@@ -144,6 +154,10 @@ settings to their default values.
 to their default values.
 * The `Join-CIisVirtualPath` function's `ChildPath` parameter is now required. Usages that don't have a `ChildPath`
 argument should switch to `ConvertTo-CIisVirtualPath`.
+* The `Set-CIisAnonymousAuthentication` function's `Enabled` switch is now a parameter. Pass `$true` to enable anonymous
+authentication or `$false` to disable it.
+* The `Set-CIisHttpRedirect` function's `ExactDestination` and `ChildOnly` switches are now boolean parameters. Pass
+`$true` to enable or `$false` to disable.
 
 ### Deprecated
 
@@ -170,6 +184,8 @@ e.g. `SiteName/VirtualPath`.
   * `Set-CIisWindowsAuthentication`
   * `Test-CIisConfigurationSection`
   * `Test-CIisSecurityAuthentication`
+* The `Set-CIisWindowsAuthentication` function's `DisableKernelMode` switch. Use the new `UseKernelMode` parameter
+instead.
 
 ### Fixed
 

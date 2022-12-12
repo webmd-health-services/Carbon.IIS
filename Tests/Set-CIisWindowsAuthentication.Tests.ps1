@@ -21,7 +21,7 @@ BeforeAll {
     function Assert-WindowsAuthentication($VirtualPath = '', [bool]$KernelMode)
     {
         $authSettings = Get-CIisSecurityAuthentication -SiteName $script:SiteName -VirtualPath $VirtualPath -Windows
-        $KernelMode | Should -Be ($authSettings.GetAttributeValue( 'useKernelMode' ))
+        $KernelMode | Should -Be ($authSettings.GetAttributeValue('useKernelMode'))
     }
 }
 
@@ -56,7 +56,7 @@ Describe 'Set-CIisWindowsAuthentication' {
     }
 
     It 'should enable kernel mode' {
-        Set-CIisWindowsAuthentication -SiteName $script:siteName
+        Set-CIisWindowsAuthentication -SiteName $script:siteName -UseKernelMode $true
         Assert-WindowsAuthentication -KernelMode $true
     }
 
@@ -66,14 +66,14 @@ Describe 'Set-CIisWindowsAuthentication' {
     }
 
     It 'should disable kernel mode' {
-        Set-CIisWindowsAuthentication -SiteName $script:siteName -DisableKernelMode
+        Set-CIisWindowsAuthentication -SiteName $script:siteName -UseKernelMode $false
         Assert-WindowsAuthentication -KernelMode $false
     }
 
     It 'should support what if' {
         Set-CIisWindowsAuthentication -SiteName $script:siteName
         Assert-WindowsAuthentication -KernelMode $true
-        Set-CIisWindowsAuthentication -SiteName $script:siteName -WhatIf -DisableKernelMode
+        Set-CIisWindowsAuthentication -SiteName $script:siteName -WhatIf -UseKernelMode $false
         Assert-WindowsAuthentication -KernelMode $true
     }
 }
