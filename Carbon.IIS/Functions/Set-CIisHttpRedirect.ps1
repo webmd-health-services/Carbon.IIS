@@ -34,14 +34,17 @@ function Set-CIisHttpRedirect
     Redirects all requests to the `Peanuts` website to `http://new.peanuts.com` with a temporary HTTP status code.  You
     can also specify `Found` (HTTP 302), or `Permanent` (HTTP 301).
     #>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSShouldProcess','')]
     [CmdletBinding(SupportsShouldProcess)]
     param(
         # The site where the redirection should be setup.
         [Parameter(Mandatory)]
-        [String] $SiteName,
+        [Alias('SiteName')]
+        [String] $LocationPath,
 
-        # The optional path where redirection should be setup.
-        [String] $VirtualPath = '',
+        # OBSOLETE. Use the `LocationPath` parameter instead.
+        [Alias('Path')]
+        [String] $VirtualPath,
 
         # The destination to redirect to.
         [Parameter(Mandatory)]
@@ -63,15 +66,14 @@ function Set-CIisHttpRedirect
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
-    Set-CIisConfigurationAttribute -SiteName $SiteName `
+    Set-CIisConfigurationAttribute -LocationPath $LocationPath `
                                    -VirtualPath $VirtualPath `
                                    -SectionPath 'system.webServer/httpRedirect' `
                                    -Attribute @{
                                         'enabled' = $true;
-                                        'destination' = $destination;
+                                        'destination' = $Destination;
                                         'httpResponseStatus' = $HttpResponseStatus;
                                         'exactDestination' = [bool]$ExactDestination;
                                         'childOnly' = [bool]$ChildOnly;
                                     }
 }
-

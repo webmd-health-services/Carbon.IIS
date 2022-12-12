@@ -6,9 +6,10 @@ function Disable-CIisSecurityAuthentication
     Disables anonymous, basic, or Windows authentication for all or part of a website.
 
     .DESCRIPTION
-    By default, disables an authentication type for an entire website.  You can disable an authentication type at a
-    specific path under a website by passing the virtual path (*not* the physical path) to that directory as the value
-    of the `VirtualPath` parameter.
+    The `Disable-CIisSecurityAuthentication` function disables anonymous, basic, or Windows authentication for a
+    website, application, virtual directory, or directory. Pass the path to the `LocationPath` parameter. Use the
+    `Anonymous` switch to disable anonymous authentication, the `Basic` switch to disable basic authentication, or the
+    `Windows` switch to disable Windows authentication.
 
     .LINK
     Enable-CIisSecurityAuthentication
@@ -20,23 +21,27 @@ function Disable-CIisSecurityAuthentication
     Test-CIisSecurityAuthentication
 
     .EXAMPLE
-    Disable-CIisSecurityAuthentication -SiteName Peanuts -Anonymous
+    Disable-CIisSecurityAuthentication -LocationPath 'Peanuts' -Anonymous
 
     Turns off anonymous authentication for the `Peanuts` website.
 
     .EXAMPLE
-    Disable-CIisSecurityAuthentication -SiteName Peanuts Snoopy/DogHouse -Basic
+    Disable-CIisSecurityAuthentication -LocationPath 'Peanuts/Snoopy/DogHouse' -Basic
 
     Turns off basic authentication for the `Snoopy/DogHouse` directory under the `Peanuts` website.
     #>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSShouldProcess','')]
     [CmdletBinding(SupportsShouldProcess)]
     param(
-        # The site where authentication should be disabled.
+        # The location path to the website, directory, application, or virtual directory where authentication should be
+        # disabled.
         [Parameter(Mandatory)]
-        [String] $SiteName,
+        [Alias('SiteName')]
+        [String] $LocationPath,
 
-        # The optional path where authentication should be disabled.
-        [String] $VirtualPath = '',
+        # OBSOLETE. Use `LocationPath` parameter instead.
+        [Alias('Path')]
+        [String] $VirtualPath,
 
         # Disable anonymous authentication.
         [Parameter(Mandatory, ParameterSetName='anonymousAuthentication')]
@@ -55,7 +60,7 @@ function Disable-CIisSecurityAuthentication
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
     $sectionPath = "system.webServer/security/authentication/$($PSCmdlet.ParameterSetName)"
-    Set-CIisConfigurationAttribute -SiteName $SiteName `
+    Set-CIisConfigurationAttribute -LocationPath $LocationPath `
                                    -VirtualPath $VirtualPath `
                                    -SectionPath $sectionPath `
                                    -Name 'enabled' `

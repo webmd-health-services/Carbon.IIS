@@ -29,10 +29,12 @@ function Get-CIisSecurityAuthentication
     param(
         # The site where anonymous authentication should be set.
         [Parameter(Mandatory)]
-        [String] $SiteName,
+        [Alias('SiteName')]
+        [String] $LocationPath,
 
-        # The optional path where anonymous authentication should be set.
-        [String] $VirtualPath = '',
+        # OBSOLETE. Use the `LocationPath` parameter instead.
+        [Alias('Path')]
+        [String] $VirtualPath,
 
         # Gets a site's (and optional sub-directory's) anonymous authentication configuration section.
         [Parameter(Mandatory, ParameterSetName='anonymousAuthentication')]
@@ -55,5 +57,5 @@ function Get-CIisSecurityAuthentication
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
     $sectionPath = 'system.webServer/security/authentication/{0}' -f $PSCmdlet.ParameterSetName
-    Get-CIisConfigurationSection -SiteName $SiteName -VirtualPath $VirtualPath -SectionPath $sectionPath
+    Get-CIisConfigurationSection -LocationPath $locationPath -VirtualPath $VirtualPath -SectionPath $sectionPath
 }

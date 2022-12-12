@@ -17,6 +17,7 @@ function Lock-CIisConfigurationSection
 
     Locks the `basicAuthentication` configuration so that sites can't override/modify those settings.
     #>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSShouldProcess', '')]
     [CmdletBinding(SupportsShouldProcess)]
     param(
         # The path to the section to lock.  For a list of sections, run

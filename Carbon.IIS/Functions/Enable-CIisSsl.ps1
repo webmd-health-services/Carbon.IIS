@@ -12,53 +12,58 @@ function Enable-CIisSsl
      * Ignore/accept/require client certificates (the `AcceptClientCertificates` and `RequireClientCertificates` switches).
      * Requiring 128-bit SSL (the `Require128BitSsl` switch).
 
-    By default, this function will enable SSL, make SSL connections optional, ignores client certificates, and not require 128-bit SSL.
+    By default, this function will enable SSL, make SSL connections optional, ignores client certificates, and not
+    require 128-bit SSL.
 
-    Changing any SSL settings will do you no good if the website doesn't have an SSL binding or doesn't have an SSL certificate.  The configuration will most likely succeed, but won't work in a browser.  So sad.
+    Changing any SSL settings will do you no good if the website doesn't have an SSL binding or doesn't have an SSL
+    certificate.  The configuration will most likely succeed, but won't work in a browser.  So sad.
 
-    Beginning with IIS 7.5, the `Require128BitSsl` parameter won't actually change the behavior of a website since [there are no longer 128-bit crypto providers](https://forums.iis.net/p/1163908/1947203.aspx) in versions of Windows running IIS 7.5.
-
-    Beginning with Carbon 2.0.1, this function is available only if IIS is installed.
+    Beginning with IIS 7.5, the `Require128BitSsl` parameter won't actually change the behavior of a website since
+    [there are no longer 128-bit crypto providers](https://forums.iis.net/p/1163908/1947203.aspx) in versions of Windows
+    running IIS 7.5.
 
     .LINK
     http://support.microsoft.com/?id=907274
 
+    .LINK
+    Set-CIisWebsiteSslCertificate
+
     .EXAMPLE
-    Enable-CIisSsl -Site Peanuts
+    Enable-CIisSsl -LocationPath 'Peanuts'
 
     Enables SSL on the `Peanuts` website's, making makes SSL connections optional, ignoring client certificates, and making 128-bit SSL optional.
 
     .EXAMPLE
-    Enable-CIisSsl -Site Peanuts -VirtualPath Snoopy/DogHouse -RequireSsl
+    Enable-CIisSsl -LocationPath 'Peanuts/Snoopy/DogHouse' -RequireSsl
 
     Configures the `/Snoopy/DogHouse` directory in the `Peanuts` site to require SSL.  It also turns off any client certificate settings and makes 128-bit SSL optional.
 
     .EXAMPLE
-    Enable-CIisSsl -Site Peanuts -AcceptClientCertificates
+    Enable-CIisSsl -LocationPath 'Peanuts' -AcceptClientCertificates
 
     Enables SSL on the `Peanuts` website and configures it to accept client certificates, makes SSL optional, and makes 128-bit SSL optional.
 
     .EXAMPLE
-    Enable-CIisSsl -Site Peanuts -RequireSsl -RequireClientCertificates
+    Enable-CIisSsl -LocationPath 'Peanuts' -RequireSsl -RequireClientCertificates
 
     Enables SSL on the `Peanuts` website and configures it to require SSL and client certificates.  You can't require client certificates without also requiring SSL.
 
     .EXAMPLE
-    Enable-CIisSsl -Site Peanuts -Require128BitSsl
+    Enable-CIisSsl -LocationPath 'Peanuts' -Require128BitSsl
 
     Enables SSL on the `Peanuts` website and require 128-bit SSL.  Also, makes SSL connections optional and ignores client certificates.
-
-    .LINK
-    Set-CIisWebsiteSslCertificate
     #>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSShouldProcess','')]
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName='IgnoreClientCertificates')]
     param(
         # The website whose SSL flags should be modifed.
         [Parameter(Mandatory)]
-        [String] $SiteName,
+        [Alias('SiteName')]
+        [String] $LocationPath,
 
-        # The path to the folder/virtual directory/application under the website whose SSL flags should be set.
-        [String] $VirtualPath = '',
+        # OBSOLETE. Use the `LocationPath` parameter instead.
+        [Alias('Path')]
+        [String] $VirtualPath,
 
         # Should SSL be required?
         [Parameter(ParameterSetName='IgnoreClientCertificates')]
@@ -113,7 +118,9 @@ function Enable-CIisSsl
         $intFlag = $intFlag -bor $SslFlags_Ssl128
     }
 
-    $section = Get-CIisConfigurationSection -SiteName $SiteName -VirtualPath $VirtualPath -SectionPath 'system.webServer/security/access'
+    $sectionPath = 'system.webServer/security/access'
+    $section =
+        Get-CIisConfigurationSection -LocationPath $LocationPath -VirtualPath $VirtualPath -SectionPath $sectionPath
     if( -not $section )
     {
         return
@@ -152,19 +159,8 @@ function Enable-CIisSsl
 
     if( $section['sslFlags'] -ne $intFlag )
     {
-        $plural = ''
-        if( $flags -match ',' )
-        {
-            $plural = 's'
-        }
-
-        $pathMsg = ''
-        if( $VirtualPath )
-        {
-            $pathMsg = ", virtual path ""$($VirtualPath | ConvertTo-CIisVirtualPath)"""
-        }
-        $target = "IIS website ""$($SiteName)""$($pathMsg)"
-        $infoMsg = "Enabling SSL with ""$($flags)"" flag$($plural) on $($target)."
+        $target = "IIS:$($section.LocationPath):$($section.SectionPath)"
+        $infoMsg = "$($target)  sslFlags  $($section['sslFlags']) -> $($flags)"
         $section['sslFlags'] = $flags
         Save-CIisConfiguration -Target $target -Action 'Enable SSL' -Message $infoMsg
     }

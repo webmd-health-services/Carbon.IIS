@@ -23,12 +23,12 @@ function Get-CIisHttpRedirect
     http://www.iis.net/configreference/system.webserver/httpredirect
 
     .EXAMPLE
-    Get-CIisHttpRedirect -SiteName ExampleWebsite
+    Get-CIisHttpRedirect -LocationPath 'ExampleWebsite'
 
     Gets the redirect settings for ExampleWebsite.
 
     .EXAMPLE
-    Get-CIisHttpRedirect -SiteName ExampleWebsite -Path MyVirtualDirectory
+    Get-CIisHttpRedirect -LocationPath 'ExampleWebsite/MyVirtualDirectory'
 
     Gets the redirect settings for the MyVirtualDirectory virtual directory under ExampleWebsite.
     #>
@@ -37,16 +37,17 @@ function Get-CIisHttpRedirect
     param(
         # The site's whose HTTP redirect settings will be retrieved.
         [Parameter(Mandatory)]
-        [String] $SiteName,
+        [Alias('SiteName')]
+        [String] $LocationPath,
 
-        # The optional path to a sub-directory under `SiteName` whose settings to return.
-        [String] $VirtualPath = ''
+        # OBSOLETE. Use the `LocationPath` parameter instead.
+        [Alias('Path')]
+        [String] $VirtualPath
     )
 
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
-    Get-CIisConfigurationSection -SiteName $SiteName `
-                                 -VirtualPath $VirtualPath `
-                                 -SectionPath 'system.webServer/httpRedirect'
+    $sectionPath = 'system.webServer/httpRedirect'
+    Get-CIisConfigurationSection -LocationPath $LocationPath -VirtualPath $VirtualPath -SectionPath $sectionPath
 }

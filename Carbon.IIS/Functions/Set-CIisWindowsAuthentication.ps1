@@ -23,22 +23,25 @@ function Set-CIisWindowsAuthentication
     Enable-CIisSecurityAuthentication
 
     .EXAMPLE
-    Set-CIisWindowsAuthentication -SiteName Peanuts
+    Set-CIisWindowsAuthentication -LocationPath Peanuts
 
     Configures Windows authentication on the `Peanuts` site to use kernel mode.
 
     .EXAMPLE
-    Set-CIisWindowsAuthentication -SiteName Peanuts -VirtualPath Snoopy/DogHouse -DisableKernelMode
+    Set-CIisWindowsAuthentication -LocationPath 'Peanuts/Snoopy/DogHouse' -DisableKernelMode $true
 
     Configures Windows authentication on the `Doghouse` directory of the `Peanuts` site to not use kernel mode.
     #>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSShouldProcess','')]
     [CmdletBinding(SupportsShouldProcess)]
     param(
         # The site where Windows authentication should be set.
         [Parameter(Mandatory)]
-        [String] $SiteName,
+        [Alias('SiteName')]
+        [String] $LocationPath,
 
-        # The optional virtual path where Windows authentication should be set.
+        # OBSOLETE. Use the `LocationPath` parameter instead.
+        [Alias('Path')]
         [String] $VirtualPath = '',
 
         # Turn on kernel mode.  Default is false.
@@ -50,11 +53,11 @@ function Set-CIisWindowsAuthentication
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
     $sectionPath = 'system.webServer/security/authentication/windowsAuthentication'
-    Set-CIisConfigurationAttribute -SiteName $SiteName `
+    Set-CIisConfigurationAttribute -LocationPath $LocationPath `
                                    -VirtualPath $VirtualPath `
                                    -SectionPath $sectionPath `
                                    -Name 'useKernelMode' `
-                                   -Value (-not $DisableKernelMode)
+                                   -Value (-not $DisableKernelMode.IsPresent)
 }
 
 

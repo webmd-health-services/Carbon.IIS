@@ -12,7 +12,7 @@ BeforeAll {
                             -PhysicalPath $script:testDir `
                             -Binding 'http/*:80:removeconfiglocationone.localhost'
         Set-CIisHttpHeader -SiteName $Named -Name 'X-Carbon.IIS-RemoveConfigLocation' -Value $Named
-        Get-CIisConfigurationLocationPath -SiteName $Named | Should -Not -BeNullOrEmpty
+        Get-CIisConfigurationLocationPath -LocationPath $Named | Should -Not -BeNullOrEmpty
     }
 
     function GivenVirtualPathWithLocationConfiguration
@@ -27,7 +27,7 @@ BeforeAll {
                            -VirtualPath $VirtualPath `
                            -Name 'X-Carbon.IIS-RemoveConfigLocation-VirtualPath' `
                            -Value "$($UnderSite)/$($VirtualPath)"
-        Get-CIisConfigurationLocationPath -SiteName $UnderSite -VirtualPath $VirtualPath | Should -Not -BeNullOrEmpty
+        Get-CIisConfigurationLocationPath -LocationPath "$($UnderSite)/$($VirtualPath)" | Should -Not -BeNullOrEmpty
     }
 
     function WhenRemoving
@@ -58,7 +58,7 @@ BeforeAll {
             [switch] $Exists
         )
 
-        Get-CIisConfigurationLocationPath -SiteName $ForSite -VirtualPath $AndVirtualPath |
+        Get-CIisConfigurationLocationPath -LocationPath "$($ForSite)/$($AndVirtualPath)" |
             Should -Not:(-not $Not) -BeNullOrEmpty
     }
 }

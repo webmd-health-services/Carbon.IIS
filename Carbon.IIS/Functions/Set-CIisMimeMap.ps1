@@ -19,16 +19,17 @@ function Set-CIisMimeMap
     .EXAMPLE
     Set-CIisMimeMap -FileExtension '.m4v' -MimeType 'video/x-m4v'
 
-    Adds a MIME map so that IIS will serve `.m4v` files as `video/x-m4v`.
-
+    Adds a MIME map to all websites so that IIS will serve `.m4v` files as `video/x-m4v`.
     #>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSShouldProcess','')]
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName='ForWebServer')]
     param(
         # The name of the website whose MIME type to set.
         [Parameter(Mandatory, ParameterSetName='ForWebsite')]
-        [String] $SiteName,
+        [Alias('SiteName')]
+        [String] $LocationPath,
 
-        # The optional site path whose configuration should be returned.
+        # OBSOLETE. Use the `LocationPath` parameter instead.
         [Parameter(ParameterSetName='ForWebsite')]
         [String] $VirtualPath = '',
 
@@ -47,11 +48,12 @@ function Set-CIisMimeMap
     $getIisConfigSectionParams = @{ }
     if( $PSCmdlet.ParameterSetName -eq 'ForWebsite' )
     {
-        $getIisConfigSectionParams['SiteName'] = $SiteName
+        $getIisConfigSectionParams['LocationPath'] = $LocationPath
         $getIisConfigSectionParams['VirtualPath'] = $VirtualPath
     }
 
-    $staticContent = Get-CIisConfigurationSection -SectionPath 'system.webServer/staticContent' @getIisConfigSectionParams
+    $staticContent =
+        Get-CIisConfigurationSection -SectionPath 'system.webServer/staticContent' @getIisConfigSectionParams
     $mimeMapCollection = $staticContent.GetCollection()
 
     $mimeMap = $mimeMapCollection | Where-Object { $_['fileExtension'] -eq $FileExtension }

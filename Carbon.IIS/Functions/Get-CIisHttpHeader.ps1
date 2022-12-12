@@ -16,17 +16,17 @@ function Get-CIisHttpHeader
     Set-CIisHttpHeader
 
     .EXAMPLE
-    Get-CIisHttpHeader -SiteName SopwithCamel
+    Get-CIisHttpHeader -LocationPath SopwithCamel
 
     Returns the HTTP headers for the `SopwithCamel` website.
 
     .EXAMPLE
-    Get-CIisHttpHeader -SiteName SopwithCamel -Path Engine
+    Get-CIisHttpHeader -LocationPath 'SopwithCamel/Engine'
 
     Returns the HTTP headers for the `Engine` directory under the `SopwithCamel` website.
 
     .EXAMPLE
-    Get-CIisHttpHeader -SiteName SopwithCambel -Name 'X-*'
+    Get-CIisHttpHeader -LocationPath SopwithCambel -Name 'X-*'
 
     Returns all HTTP headers which match the `X-*` wildcard.
     #>
@@ -34,10 +34,12 @@ function Get-CIisHttpHeader
     param(
         # The name of the website whose headers to return.
         [Parameter(Mandatory)]
-        [String] $SiteName,
+        [Alias('SiteName')]
+        [String] $LocationPath,
 
-        # The optional path under `SiteName` whose headers to return.
-        [String] $VirtualPath = '',
+        # OBSOLETE. Use the `LocationPath` parameter instead.
+        [Alias('Path')]
+        [String] $VirtualPath,
 
         # The name of the HTTP header to return.  Optional.  If not given, all headers are returned.  Wildcards
         # supported.
@@ -47,9 +49,11 @@ function Get-CIisHttpHeader
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
-    $httpProtocol = Get-CIisConfigurationSection -SiteName $SiteName `
-                                                 -VirtualPath $VirtualPath `
-                                                 -SectionPath 'system.webServer/httpProtocol'
+    $sectionPath = 'system.webServer/httpProtocol'
+
+    $httpProtocol =
+        Get-CIisConfigurationSection -LocationPath $LocationPath -VirtualPath $VirtualPath -SectionPath $sectionPath
+
     $httpProtocol.GetCollection('customHeaders') |
         Where-Object { $_['name'] -like $Name } |
         ForEach-Object {

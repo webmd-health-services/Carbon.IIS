@@ -23,21 +23,6 @@ Rename usages of:
 * `Test-IisWebsiteExists` to `Test-CIisWebsite`
 * `Remove-CIisWebsite` to `Uninstall-CIisWebsite`
 * the `Install-CIisVirtualDirectory` function's `Path` parameter to `PhysicalPath` parameter. Then, rename usages of the `Install-CIisVirtualDirectory` function's `VirtualPath` parameter to `Path`.
-* the `Path` parameter on these functions to `VirtualPath`:
-  * `Disable-CIisSecurityAuthentication`
-  * `Enable-CIisSecurityAuthentication`
-  * `Enable-CIisSecurityAuthentication`
-  * `Enable-CIisSsl`
-  * `Get-CIisConfigurationSection`
-  * `Get-CIisHttpHeader`
-  * `Get-CIisHttpRedirect`
-  * `Get-CIisMimeMap`
-  * `Get-CIisSecurityAuthentication`
-  * `Set-CIisHttpHeader`
-  * `Set-CIisHttpRedirect`
-  * `Set-CIisWindowsAuthentication`
-  * `Test-CIisConfigurationSection`
-  * `Test-CIisSecurityAuthentication`
 * the `Install-CIisApplication` function's `Path` parameter to `PhysicalPath`.
 * the `Get-CIisApplication` and `Install-CIisApplication` functions' `VirtualPath` parameter to `Path`.
 * the `Name` parameter on these functions to `Path`:
@@ -64,8 +49,8 @@ usages to use the `GetAttributeValue` method instead, e.g. `GetAttributeValue('c
 enumeration.
 * Replace usages of the `Join-CIisVirtualPath` function that doesn't use the `ChildPath` parameter to use the new
 `ConvertTo-CIisVirtualPath` function. The `Join-CIisVirtualPath` function's `ChildPath` parameter is now mandatory.
-* Add `-ErrorAction Ignore` or `-ErrorAction SilentlyContinue` to usages of the following functions. They now write errors
-when an item doesn't exist.
+* Add `-ErrorAction Ignore` or `-ErrorAction SilentlyContinue` to usages of the following functions. They now write
+errors when an item doesn't exist.
   * `Get-CIisAppPool`
   * `Get-CIisWebsite`
 * Replace usages of the `CommitChanges` method on objects returned by any Carbon.IIS function with a call to the new
@@ -137,6 +122,13 @@ pool defaults process model.
   * Windows PowerShell 5.1 (on .NET Framework 4.6.2 and later) and PowerShell 7
   * Windows 8 and 10, and Windows Server 2012R2, 2016, and 2019.
 * Renamed `VirtualPath` parameter on `Get-CIisApplication` and `Install-CIisApplication` to `Path`.
+* Replaced the `SiteName` and `VirtualPath` parameters with a single `LocationPath` parameter on the following
+functions. The value of the `LocationPath` parameter should be the website name and virtual path combined with a `/`.
+  * `Add-CIisDefaultDocument`
+  * `Disable-CIisSecurityAuthentication`
+  * `Enable-CIisDirectoryBrowsing`
+  * `Enable-CIisSecurityAuthentication`
+  * `Enable-CIIsSsl`
 * `Get-CIisAppPool` now writes an error when an application pool does not exist. Add `-ErrorAction Ignore` or
 `-ErrorAction SilentlyContinue` to hide the error.
 * `Get-CIisHttpRedirect` now returns `Microsoft.Web.Administration.ConfigurationSection` objects (instead of a custom
@@ -152,6 +144,33 @@ settings to their default values.
 to their default values.
 * The `Join-CIisVirtualPath` function's `ChildPath` parameter is now required. Usages that don't have a `ChildPath`
 argument should switch to `ConvertTo-CIisVirtualPath`.
+
+### Deprecated
+
+* The `SiteName` and `VirtualPath` (which has a `Path` alias) parameter on the following functions. Use the
+`LocationPath` parameter instead and pass the site name and virtual path as a single location path, separated by a `/`,
+e.g. `SiteName/VirtualPath`.
+  * `Add-CIisDefaultDocument`
+  * `Disable-CIisSecurityAuthentication`
+  * `Enable-CIisDirectoryBrowsing`
+  * `Enable-CIisSecurityAuthentication`
+  * `Enable-CIisSsl`
+  * `Get-CIisConfigurationSection`
+  * `Get-CIisHttpHeader`
+  * `Get-CIisHttpRedirect`
+  * `Get-CIisMimeMap`
+  * `Get-CIisSecurityAuthentication`
+  * `Remove-CIisConfigurationAttribute`
+  * `Remove-CIisConfigurationLocation`
+  * `Remove-CIisMimeMap`
+  * `Set-CIisAnonymousAuthentication`
+  * `Set-CIisConfigurationAttribute`
+  * `Set-CIisHttpHeader`
+  * `Set-CIisHttpRedirect`
+  * `Set-CIisMimeMap`
+  * `Set-CIisWindowsAuthentication`
+  * `Test-CIisConfigurationSection`
+  * `Test-CIisSecurityAuthentication`
 
 ### Fixed
 
