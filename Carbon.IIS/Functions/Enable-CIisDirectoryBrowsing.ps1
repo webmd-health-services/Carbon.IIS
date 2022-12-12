@@ -20,7 +20,8 @@ function Enable-CIisDirectoryBrowsing
 
     Enables directory browsing on the `/Snoopy/DogHouse` directory under the `Peanuts` website.
     #>
-    [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSShouldProcess','')]
+    [CmdletBinding(SupportsShouldProcess)]
     param(
         # The location path to the website, directory, application, or virtual directory where directory browsing should
         # be enabled.

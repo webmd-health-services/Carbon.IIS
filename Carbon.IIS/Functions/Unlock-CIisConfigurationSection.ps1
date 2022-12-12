@@ -19,6 +19,7 @@ function Unlock-CIisConfigurationSection
 
     Unlocks the CGI section so that websites can configure their own CGI settings.
     #>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSShouldProcess','')]
     [CmdletBinding(SupportsShouldProcess)]
     param(
         # The path to the section to unlock.  For a list of sections, run

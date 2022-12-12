@@ -92,6 +92,9 @@ value. The `ExactDestination` switch is now a boolean parameter. Change usages o
 pool's `add` element in IIS' applicationHost.config file). Added parameters `QueueLength`, `AutoStart`,
 `Enable32BitAppOnWin64`, `ManagedRuntimeLoader`, `EnableConfigurationOverride`, `ManagedPipelineMode`, `CLRConfigFile`,
 `PassAnonymousToken`, and `StartMode` to `Install-CIisAppPool`.
+* `WhatIf` support to the following functions:
+  * `Enable-CIisDirectoryBrowsing`
+  * `Remove-CIisMimeMap`
 
 #### Functions
 
@@ -125,6 +128,9 @@ pool defaults process model.
 * `Install-CIIsAppPool`: `Credential`, which replaces the `UserName`/`Password` parameters.
 * `Set-CIisWindowsAuthentication`: parameter `UseKernelMode` for configuring the Windows authentication "useKernelMode"
 setting.
+* `Reset` switch on the following function. When set, the `Reset` switch will delete the IIS setting of each parameter
+*not* passed to the functions, which resets the IIS setting to its default value. Useful for ensuring that an object
+is configured *exactly* as specified in code.
 
 ### Changed
 
