@@ -6,18 +6,16 @@ function %CMD_NAME%
     Configures an IIS %TARGET_OBJECT_TYPE%'s %TARGET_PROPERTY_DESCRIPTION% settings.
 
     .DESCRIPTION
-    The `%CMD_NAME%` function configures an IIS %TARGET_OBJECT_TYPE%'s %TARGET_PROPERTY_DESCRIPTION%. Pass the name of
-    the %TARGET_OBJECT_TYPE% to the `%CMD_NAME_PARAMETER_NAME%` parameter. Pass the %TARGET_PROPERTY_DESCRIPTION% configuration you want to one
-    or more of the %PARAMETER_LIST% parameters. See
-    [%DOCUMENTATION_TITLE%](%DOCUMENTATION_URL%)
-    for documentation on each setting.
+    The `%CMD_NAME%` function configures an IIS %TARGET_OBJECT_TYPE%'s %TARGET_PROPERTY_DESCRIPTION% settings. Pass the
+    name of the %TARGET_OBJECT_TYPE% to the `%CMD_NAME_PARAMETER_NAME%` parameter. Pass the
+    %TARGET_PROPERTY_DESCRIPTION% configuration you want to one or more of the %PARAMETER_LIST% parameters. See
+    [%DOCUMENTATION_TITLE%](%DOCUMENTATION_URL%) for documentation on each setting.
 
     You can configure the IIS default %TARGET_OBJECT_TYPE% instead of a specific %TARGET_OBJECT_TYPE% by using the
     `AsDefaults` switch.
 
-    If you want to ensure that any settings that may have gotten changed by hand are reset to their default values, use
-    the `-Reset` switch. When set, the `-Reset` switch will reset each setting not passed as an argument to its default
-    value.
+    If the `Reset` switch is set, each setting *not* passed as a parameter is deleted, which resets it to its default
+    values.
 
     .LINK
     %DOCUMENTATION_URL%
@@ -53,9 +51,8 @@ function %CMD_NAME%
 
         %CMD_PARAMETERS%,
 
-        # If set, the %TARGET_OBJECT_TYPE% %TARGET_PROPERTY_DESCRIPTION% setting for each parameter *not* passed is
-        # deleted, which resets it to its default value. Otherwise, %TARGET_OBJECT_TYPE% %TARGET_PROPERTY_DESCRIPTION%
-        # settings whose parameters are not passed are left in place and not modified.
+        # If set, each %TARGET_OBJECT_TYPE% %TARGET_PROPERTY_DESCRIPTION% setting *not* passed as a parameter is
+        # deleted, which resets it to its default value.
         [switch] $Reset
     )
 
@@ -68,7 +65,7 @@ function %CMD_NAME%
         return
     }
 
-    $targetMsg = 'IIS %TARGET_OBJECT_TYPE defaults'
+    $targetMsg = 'default IIS %TARGET_OBJECT_TYPE% %TARGET_PROPERTY_DESCRIPTION%'
     if( $%CMD_NAME_PARAMETER_NAME% )
     {
         $targetMsg = """$($%CMD_NAME_PARAMETER_NAME%)"" IIS %TARGET_OBJECT_TYPE%'s %TARGET_PROPERTY_DESCRIPTION%"
