@@ -8,14 +8,14 @@ function %CMD_NAME%
     .DESCRIPTION
     The `%CMD_NAME%` function configures an IIS %TARGET_OBJECT_TYPE%'s %TARGET_PROPERTY_DESCRIPTION% settings. Pass the
     name of the %TARGET_OBJECT_TYPE% to the `%CMD_NAME_PARAMETER_NAME%` parameter. Pass the
-    %TARGET_PROPERTY_DESCRIPTION% configuration you want to one or more of the %PARAMETER_LIST% parameters. See
+    %TARGET_PROPERTY_DESCRIPTION% configuration to one or more of the %PARAMETER_LIST% parameters. See
     [%DOCUMENTATION_TITLE%](%DOCUMENTATION_URL%) for documentation on each setting.
 
     You can configure the IIS default %TARGET_OBJECT_TYPE% instead of a specific %TARGET_OBJECT_TYPE% by using the
     `AsDefaults` switch.
 
     If the `Reset` switch is set, each setting *not* passed as a parameter is deleted, which resets it to its default
-    values.
+    value.
 
     .LINK
     %DOCUMENTATION_URL%
@@ -28,9 +28,9 @@ function %CMD_NAME%
     .EXAMPLE
     %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% 'ExampleOne' %EXAMPLE_ARGUMENTS% -Reset
 
-    Demonstrates how to set *all* an IIS %TARGET_OBJECT_TYPE%'s %TARGET_PROPERTY_DESCRIPTION% settings by using the
-    `-Reset` switch. In this example, the %EXAMPLE_ARGUMENTS% settings are set to custom values, and all other settings
-    are deleted, which resets them to their default values.
+    Demonstrates how to set *all* an IIS %TARGET_OBJECT_TYPE%'s %TARGET_PROPERTY_DESCRIPTION% settings (even if not
+    passing all parameters) by using the `-Reset` switch. In this example, the %EXAMPLE_ARGUMENTS% settings are set to
+    custom values, and all other settings are deleted, which resets them to their default values.
 
     .EXAMPLE
     %CMD_NAME% -AsDefaults %EXAMPLE_ARGUMENTS%

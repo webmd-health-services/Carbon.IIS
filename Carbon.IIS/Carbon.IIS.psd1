@@ -115,6 +115,7 @@
         'Set-CIisMimeMap',
         'Set-CIisWebsite',
         'Set-CIisWebsiteID',
+        'Set-CIisWebsiteLimit',
         'Set-CIisWebsiteLogFile',
         'Set-CIisWebsiteSslCertificate',
         'Set-CIisWindowsAuthentication',
