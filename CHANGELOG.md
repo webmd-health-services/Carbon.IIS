@@ -22,15 +22,6 @@ Rename usages of:
 * `Test-IisAppPoolExists` to `Test-CIisAppPool`
 * `Test-IisWebsiteExists` to `Test-CIisWebsite`
 * `Remove-CIisWebsite` to `Uninstall-CIisWebsite`
-* the `Install-CIisVirtualDirectory` function's `Path` parameter to `PhysicalPath` parameter. Then, rename usages of the `Install-CIisVirtualDirectory` function's `VirtualPath` parameter to `Path`.
-* the `Install-CIisApplication` function's `Path` parameter to `PhysicalPath`.
-* the `Get-CIisApplication` and `Install-CIisApplication` functions' `VirtualPath` parameter to `Path`.
-* the `Name` parameter on these functions to `Path`:
-  * `Get-CIisApplication`
-  * `Install-CIisApplication`
-* the following functions' `SiteName` parameter to `Name`:
-  * `Install-CIisWebsite`
-* the `Install-CIisWebsite` function's `SiteID` parameter to `ID`.
 
 #### Removals
 
@@ -47,6 +38,8 @@ It no longer has `ChildOnly`, `Destination`, `Enabled`, `ExactDestination`, and 
 usages to use the `GetAttributeValue` method instead, e.g. `GetAttributeValue('childOnly')`,
 `GetAttributeValue('destination')`, etc. The value of `httpResponseStatus` is now returned as an int, instead of an
 enumeration.
+* Remove usages of the `Install-CIisAppPool` function's `UserName` and `Password` parameters and instead use
+`Set-CIisAppPoolProcessModel` to configure an application pool's identity.
 * Replace usages of the `Join-CIisVirtualPath` function that doesn't use the `ChildPath` parameter to use the new
 `ConvertTo-CIisVirtualPath` function. The `Join-CIisVirtualPath` function's `ChildPath` parameter is now mandatory.
 * Add `-ErrorAction Ignore` or `-ErrorAction SilentlyContinue` to usages of the following functions. They now write
@@ -55,25 +48,13 @@ errors when an item doesn't exist.
   * `Get-CIisWebsite`
 * Replace usages of the `CommitChanges` method on objects returned by any Carbon.IIS function with a call to the new
 `Save-CIisConfiguration` function. Objects returned by Carbon.IIS no longer have a `CommitChanges` method.
-* Replace usages of `Set-CIisWebsiteID` with `Set-CIisWebsite`.
 * Add a call to `Set-CIisAnonymousAuthentication` after usages of `Install-CIisWebsite`. The `Install-CIisWebsite` no
-longer sets the default anonymous authentication username on a website to nothing.
+longer sets the default anonymous authentication username to nothing on a website.
 * Add a call to `Uninstall-CIisWebsite` before calls to `Install-CIisWebsite` and remove usages of the
 `Install-CIisWebsite` function's `-Force` switch. The `Install-CIisWebsite` function no longer deletes a website before
 installing it.
-* `Install-CIisAppPool`:
-  * Remove usages of the `IdleTimeout`, `ServiceUser`, and `Credential` parameters and move them to a call
-  to the new `Set-CIisAppPoolProcessModel` function (which should come *after* `Install-CIisAppPool`).
-  * Replace usages of the `-Enable32BitApps` switch with `-Enable32BitAppOnWin64 $true`.
-  * Replace usages of the `-ClassicPipelineMode` switch with `-ManagedPipelineMode Classic`.
-  * Add `-ManagedPipelineMode Integrated` to all usages of `Install-CIisAppPool` that don't use the
-  `ManagedPipelineMode` (née `ClassicPipelineMode`) parameter. The `Install-CIisAppPool` function no longer sets the
-  pipeline mode of an app pool if the `ManagedPipelineMode` parameter isn't provided.
-  * Add `-ManagedRuntimeVersion 'v4.0'` to all usages of `Install-CIisAppPool` that doesn't use the
-  `-MangedRuntimeVersion` parameter. The `Install-CIisAppPool` function no longer sets the managed runtime version if
-  that parameter isn't provided.
 * Update usages of the `Set-CIisAnonymousAuthentication` function's `Enabled` switch to take in a `$true` or `$false`
-value instead. The `Enabled` switch is now a boolean parameter. Change usages of `-Enabled` to `-Enabled $true` and
+value. The `Enabled` switch is now a boolean parameter. Change usages of `-Enabled` to `-Enabled $true` and
 usages of `-Enabled:$false` to `-Enabled $false`.
 * Update usages of the `Set-CIisHttpRedirect` function's `ExactDestination` switch to take in a `$true` or `$false`
 value. The `ExactDestination` switch is now a boolean parameter. Change usages of `-ExactDestination` to
@@ -110,16 +91,16 @@ removes its `<location>` element from applicationHost.config).
 * `Save-CIisConfiguration` for saving configuration changes to IIS. Only needed if you make changes to any of the
 objects returned by the Carbon.IIS module.
 * `Set-CIisAnonymousAuthentication` for configuring anonymous authentication.
-* `Set-CIisAppPool` for configuring an application pool's base settings.
-* `Set-CIisAppPoolCpu` for configuring an application pool's CPU settings and the application pool defaults CPU
+* `Set-CIisAppPool` for configuring an application pool's settings.
+* `Set-CIisAppPoolCpu` for configuring an application pool's CPU settings and the default application pool CPU
 settings.
-* `Set-CIisAppPoolPeriodicRestart` for configuring an application pool's periodic restart settings and the application
-pool defaults periodic restart settings.
-* `Set-CIisAppPoolProcessModel` for configuring an IIS application pool's process model or configuring the application
-pool defaults process model.
-* `Set-CIisConfigurationAttribute` for configuring attributes on IIS configuration elements
-* `Set-CIisWebsite`, for setting a website's `id` and `serverAutoStart` properties.
-* `Set-CIisWebsiteLogFile` for configuring a website's log file settings and the website defaults log file settings.
+* `Set-CIisAppPoolPeriodicRestart` for configuring an application pool's periodic restart settings and the default
+application pool periodic restart settings.
+* `Set-CIisAppPoolProcessModel` for configuring an IIS application pool's process model or configuring the default
+application pool process model.
+* `Set-CIisConfigurationAttribute` for configuring attributes on IIS configuration elements.
+* `Set-CIisWebsite` for setting a website's `id` and `serverAutoStart` properties.
+* `Set-CIisWebsiteLogFile` for configuring a website's log file settings and the default website log file settings.
 * Many functions now write messages to PowerShell's information stream when they make configuration changes.
 
 #### Parameters
@@ -190,6 +171,22 @@ e.g. `SiteName/VirtualPath`.
   * `Set-CIisWindowsAuthentication`
   * `Test-CIisConfigurationSection`
   * `Test-CIisSecurityAuthentication`
+* The `Get-CIisApplication` function's `Name` parameter. Use the `VirtualPath` parameter instead.
+* The `Install-CIisApplication` function's `Name` parameter. Use the `VirtualPath` parameter instead.
+* The `Install-CIisApplication` function's `Path` parameter. Use the `PhysicalPath` parameter instead.
+* The `Install-CIisAppPool` function:
+  * The `IdleTimeout`, `ServiceUser`, and `Credential` parameters. Use the `Set-CIisAppPoolProcessModel` function and
+  its `IdleTimeout`, `IdentityType`, `UserName`, and `Password` parameters instead.
+  * The `-Enable32BitApps` switch. Use the `-Enable32BitAppOnWin64` parameter instead.
+  * The `-ClassicPipelineMode` switch. Use `-ManagedPipelineMode Classic` instead.
+  * Setting the managed pipeline mode to `Integrated` by default. Use the `ManagedPipelineMode` parameter to set the
+  pipeline mode.
+  * Setting the managed .NET runtime version to `v4.0` by default. Use the `ManagedRuntimeVersion` parameter to set the
+  pipeline mode.
+* The `Install-CIisVirtualDirectory` function's `Name` parameter. Use the `VirtualPath` parameter instead.
+* The `Install-CIisVirtualDirectory` function's `Path` parameter. Use the `PhysicalPath` parameter instead.
+* The `Install-CIisWebsite` function's `SiteID` parameter. Use the `ID` parameter instead.
+* The `Set-CIisWebsiteID` function. Use `Set-CIisWebsite` instead.
 * The `Set-CIisWindowsAuthentication` function's `DisableKernelMode` switch. Use the new `UseKernelMode` parameter
 instead.
 
@@ -207,9 +204,8 @@ instead.
 
 #### Parameters
 
-* `Install-CIisAppPool`: `-UserName` and `-Password`. Use the new `-Credential` parameter instead.
-* The `Install-CIisAppPool` function's `IdleTimeout`, `ServiceAccount`, and `Credential` parameters. Use the new
-`Set-CIisAppPoolProcessModel` function to configure an application pool's process model.
+* `Install-CIisAppPool`: `UserName` and `Password`. Use the `Set-CIisAppPoolProcessModel` function instead, which
+also has `UserName` and `Password` parameters.
 
 #### Aliases
 
@@ -219,38 +215,7 @@ instead.
 * `Test-IisWebsiteExists` (use `Test-CIisWebsite` instead)
 * `Remove-CIisWebsite` (use `Uninstall-CIisWebsite` instead)
 
-##### Parameter Aliases
-
-* `Path` on these functions (use the `VirtualPath` parameter instead):
-  * `Disable-CIisSecurityAuthentication`
-  * `Enable-CIisSecurityAuthentication`
-  * `Enable-CIisSecurityAuthentication`
-  * `Enable-CIisSsl`
-  * `Get-CIisApplication`
-  * `Get-CIisConfigurationSection`
-  * `Get-CIisHttpHeader`
-  * `Get-CIisHttpRedirect`
-  * `Get-CIisMimeMap`
-  * `Get-CIisSecurityAuthentication`
-  * `Set-CIisHttpHeader`
-  * `Set-CIisHttpRedirect`
-  * `Set-CIisWindowsAuthentication`
-  * `Test-CIisConfigurationSection`
-  * `Test-CIisSecurityAuthentication`
-* `Path` on function `Install-CIisApplication` (use the `PhysicalPath` parameter instead).
-* `SiteName` on these functions (use the `Name` parameter instead):
-  * `Get-CIisWebsite`
-  * `Install-CIisWebsite`
-* `Name` on these functions (use the `VirtualPath` parameter instead):
-  * `Get-CIisApplication`
-  * `Install-CIisApplication`
-
 #### Members
 
 * The `CommitChanges()` method and `ServerManager` property on objects returned by many Carbon.IIS functions. Use the
 new `Save-CIisConfiguration` function to save changes you make to objects returned by any Carbon.IIS function.
-* The `Install-CIisAppPool` function's `Enable32BitApps` switch replaced with parameter `Enable32BitAppOnWin64`, which
-should be `$true` or `$false`.
-* The `Install-CIisAppPool` function's `ClassicPipelineMode` switch. Replaced by parameter `ManagedPipelineMode`, which
-allows values `Classic` or `Integrated`.
-* Function `Set-CIisWebsiteID`. Use `Set-CIisWebsite` instead.

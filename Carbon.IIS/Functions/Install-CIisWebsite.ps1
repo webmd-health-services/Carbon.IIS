@@ -91,6 +91,7 @@ function Install-CIisWebsite
         [String] $AppPoolName,
 
         # Sets the IIS website's `id` setting.
+        [Alias('SiteID')]
         [UInt32] $ID,
 
         # Sets the IIS website's `serverAutoStart` setting.

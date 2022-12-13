@@ -40,6 +40,7 @@ function Get-CIisApplication
 
         # The path/name of the application. Default is to return all applications running under the website given by
         # the `SiteName` parameter.
+        [Alias('Name')]
         [String] $VirtualPath
     )
 

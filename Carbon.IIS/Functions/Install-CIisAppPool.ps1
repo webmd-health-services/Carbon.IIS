@@ -36,47 +36,149 @@ function Install-CIisAppPool
     application pool is created that is 32-bit, uses .NET 2.0, and a classic pipeline.
     #>
     [OutputType([Microsoft.Web.Administration.ApplicationPool])]
+    [CmdletBinding(DefaultParameterSetName='New')]
     param(
         # The app pool's name.
         [Parameter(Mandatory)]
         [String] $Name,
 
         # Sets the IIS application pool's `autoStart` setting.
+        [Parameter(ParameterSetName='New')]
         [bool] $AutoStart,
 
         # Sets the IIS application pool's `CLRConfigFile` setting.
+        [Parameter(ParameterSetName='New')]
         [String] $CLRConfigFile,
 
         # Sets the IIS application pool's `enable32BitAppOnWin64` setting.
+        [Parameter(ParameterSetName='New')]
         [bool] $Enable32BitAppOnWin64,
 
         # Sets the IIS application pool's `enableConfigurationOverride` setting.
+        [Parameter(ParameterSetName='New')]
         [bool] $EnableConfigurationOverride,
 
         # Sets the IIS application pool's `managedPipelineMode` setting.
         [ManagedPipelineMode] $ManagedPipelineMode,
 
         # Sets the IIS application pool's `managedRuntimeLoader` setting.
+        [Parameter(ParameterSetName='New')]
         [String] $ManagedRuntimeLoader,
 
         # Sets the IIS application pool's `managedRuntimeVersion` setting.
         [String] $ManagedRuntimeVersion,
 
         # Sets the IIS application pool's `passAnonymousToken` setting.
+        [Parameter(ParameterSetName='New')]
         [bool] $PassAnonymousToken,
 
         # Sets the IIS application pool's `queueLength` setting.
+        [Parameter(ParameterSetName='New')]
         [UInt32] $QueueLength,
 
         # Sets the IIS application pool's `startMode` setting.
+        [Parameter(ParameterSetName='New')]
         [StartMode] $StartMode,
 
         # Return an object representing the app pool.
-        [switch] $PassThru
+        [switch] $PassThru,
+
+        #Idle Timeout value in minutes. Default is 0.
+        [Parameter(ParameterSetName='Deprecated')]
+        [ValidateScript({$_ -gt 0})]
+        [int] $IdleTimeout = 0,
+
+        # Run the app pool under the given local service account.  Valid values are `NetworkService`, `LocalService`,
+        # and `LocalSystem`.  The default is `ApplicationPoolIdentity`, which causes IIS to create a custom local user
+        # account for the app pool's identity.  The default is `ApplicationPoolIdentity`.
+        [Parameter(ParameterSetName='Deprecated')]
+        [ValidateSet('NetworkService', 'LocalService', 'LocalSystem')]
+        [String] $ServiceAccount,
+
+        # The credential to use to run the app pool.
+        #
+        # The `Credential` parameter is new in Carbon 2.0.
+        [Parameter(ParameterSetName='Deprecated', Mandatory)]
+        [pscredential] $Credential,
+
+        # Enable 32-bit applications.
+        [Parameter(ParameterSetName='Deprecated')]
+        [switch] $Enable32BitApps,
+
+        # Use the classic pipeline mode, i.e. don't use an integrated pipeline.
+        [Parameter(ParameterSetName='Deprecated')]
+        [switch] $ClassicPipelineMode
     )
 
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
+
+    if ($PSCmdlet.ParameterSetName -eq 'Deprecated')
+    {
+        $functionName = $PSCmdlet.MyInvocation.MyCommand.Name
+
+        $installArgs = @{
+            'ManagedPipelineMode' = [ManagedPipelineMode]::Integrated
+            'ManagedRuntimeVersion' = 'v4.0'
+        }
+
+        $installArgs['Enable32BitAppOnWin64'] = $Enable32BitApps.IsPresent
+
+        if ($ClassicPipelineMode)
+        {
+            "The ""$($functionName)"" function's ""ClassicPipelineMode"" switch is deprecated. Use the " +
+            '"ManagedPipelineMode" parameter instead.' | Write-CIIsWarningOnce
+
+            $installArgs['ManagedPipelineMode'] = [ManagedPipelineMode]::Classic
+        }
+
+        if ($ManagedRuntimeVersion)
+        {
+            $installArgs['ManagedRuntimeVersion'] = $ManagedRuntimeVersion
+        }
+
+        if ($PassThru)
+        {
+            $installArgs['PassThru'] = $PassThru
+        }
+
+        Install-CIisAppPool -Name $Name @installArgs
+
+        $setProcessModelArgs = @{}
+
+        if ($Credential)
+        {
+            "The ""$($functionName)"" function's ""Credential"" parameter is deprecated. Use the " +
+            '"Set-CIisAppPoolProcessModel" function and its "IdentityType", "UserName", and "Password" parameters ' +
+            'instead.' | Write-CIIsWarningOnce
+
+            $setProcessModelArgs['IdentityType'] = [ProcessModelIdentityType]::SpecificUser
+            $setProcessModelArgs['UserName'] = $Credential.UserName
+            $setProcessModelArgs['Password'] = $Credential.Password
+        }
+        elseif ($ServiceAccount)
+        {
+            "The $($functionName) function's ""ServiceAccount"" parameter is deprecated. Use the " +
+            '"Set-CIisAppPoolProcessModel" function and its "IdentityType" parameter instead.' | Write-CIIsWarningOnce
+
+            $setProcessModelArgs['IdentityType'] = $ServiceAccount
+        }
+
+        if ($IdleTimeout)
+        {
+            "The $($functionName) function's ""IdleTimeout"" parameter is deprecated. Use the " +
+            '"Set-CIisAppPoolProcessModel" function and its "IdleTimeout" parameter instead.' | Write-CIIsWarningOnce
+            $setProcessModelArgs['IdleTimeout'] = $IdleTimeout
+        }
+
+        if ($setProcessModelArgs.Count -eq 0)
+        {
+            return
+        }
+
+        Set-CIisAppPoolProcessModel -AppPoolName $Name @setProcessModelArgs
+        return
+    }
 
     if( -not (Test-CIisAppPool -Name $Name) )
     {

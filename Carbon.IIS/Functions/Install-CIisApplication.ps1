@@ -40,10 +40,12 @@ function Install-CIisApplication
 
         # The path of the application.
         [Parameter(Mandatory)]
+        [Alias('Name')]
         [String] $VirtualPath,
 
         # The path to the application.
         [Parameter(Mandatory)]
+        [Alias('Path')]
         [String] $PhysicalPath,
 
         # The app pool for the application. Default is `DefaultAppPool`.
