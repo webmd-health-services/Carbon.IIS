@@ -102,6 +102,7 @@ application pool process model.
 application pool recycling settings.
 * `Set-CIisConfigurationAttribute` for configuring attributes on IIS configuration elements.
 * `Set-CIisWebsite` for setting a website's `id` and `serverAutoStart` properties.
+* `Set-CIisWebsiteLimit` for setting a website's limits (connections, bandwidth, etc.).
 * `Set-CIisWebsiteLogFile` for configuring a website's log file settings and the default website log file settings.
 * Many functions now write messages to PowerShell's information stream when they make configuration changes.
 
