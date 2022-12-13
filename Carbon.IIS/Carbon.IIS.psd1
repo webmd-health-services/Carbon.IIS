@@ -108,6 +108,7 @@
         'Set-CIisAppPoolCpu',
         'Set-CIisAppPoolPeriodicRestart',
         'Set-CIisAppPoolProcessModel',
+        'Set-CIisAppPoolRecycling',
         'Set-CIisConfigurationAttribute',
         'Set-CIisHttpHeader',
         'Set-CIisHttpRedirect',
