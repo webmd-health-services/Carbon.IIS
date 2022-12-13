@@ -29,9 +29,10 @@ function Install-CIisVirtualDirectory
         [Parameter(Mandatory)]
         [String] $SiteName,
 
-        [Parameter(Mandatory)]
         # The virtual path of the virtual directory to install, i.e. the path in the URL to this directory. If creating
         # under an applicaton, this should be the path in the URL *after* the path in the URL to the application.
+        [Parameter(Mandatory)]
+        [Alias('Name')]
         [String] $VirtualPath,
 
         # The path of the application under which the virtual directory should get created. The default is to create
@@ -40,6 +41,7 @@ function Install-CIisVirtualDirectory
 
         # The file system path to the virtual directory.
         [Parameter(Mandatory)]
+        [Alias('Path')]
         [String] $PhysicalPath,
 
         # Deletes the virtual directory before installation, if it exists.
