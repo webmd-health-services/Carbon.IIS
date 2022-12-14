@@ -98,8 +98,11 @@ settings.
 application pool periodic restart settings.
 * `Set-CIisAppPoolProcessModel` for configuring an IIS application pool's process model or configuring the default
 application pool process model.
+* `Set-CIisAppPoolRecycling` for configuring an IIS applicaiton pool's recycling settings or configuring the default
+application pool recycling settings.
 * `Set-CIisConfigurationAttribute` for configuring attributes on IIS configuration elements.
 * `Set-CIisWebsite` for setting a website's `id` and `serverAutoStart` properties.
+* `Set-CIisWebsiteLimit` for setting a website's limits (connections, bandwidth, etc.).
 * `Set-CIisWebsiteLogFile` for configuring a website's log file settings and the default website log file settings.
 * Many functions now write messages to PowerShell's information stream when they make configuration changes.
 

@@ -9,18 +9,19 @@ BeforeAll {
     $script:testNum = 0
 
     $script:defaultDefaults = @{}
-    (%GET_CMD_NAME% -Defaults).%PROPERTY_NAME%.Attributes |
+    (Get-CIisAppPool -Defaults).recycling.Attributes |
         Where-Object 'IsInheritedFromDefaultValue' -EQ $false |
         ForEach-Object { $script:defaultDefaults[$_.Name] = $_.Value }
 
     # All non-default values.
     $script:nonDefaultArgs = @{
-        %NON_DEFAULT_ARGS%
+        'disallowOverlappingRotation' = $true;
+        'disallowRotationOnConfigChange' = $true;
+        'logEventOnRecycle' = [RecyclingLogEventOnRecycle]::None;
     }
 
     # Values that once set, can only be changed, never removed.
     $script:requiredDefaults = @{
-        'id' = 53;
     }
     # Sometimes the default values in the schema aren't quite the default values.
     $script:notQuiteDefaultValues = @{
@@ -56,10 +57,10 @@ BeforeAll {
             [switch] $OnDefaults
         )
 
-        $targetParent = %GET_CMD_NAME% -Name $script:%TARGET_VAR_NAME% -Defaults:$OnDefaults
+        $targetParent = Get-CIisAppPool -Name $script:appPoolName -Defaults:$OnDefaults
         $targetParent | Should -Not -BeNullOrEmpty
 
-        $target = $targetParent.%PROPERTY_NAME%
+        $target = $targetParent.recycling
         $target | Should -Not -BeNullOrEmpty
 
         $asDefaultsMsg = ''
@@ -118,77 +119,79 @@ BeforeAll {
     }
 }
 
-Describe '%CMD_NAME%' {
+Describe 'Set-CIisAppPoolRecycling' {
     BeforeAll {
         Start-W3ServiceTestFixture
-        %BEFORE_ALL%
     }
 
     AfterAll {
-        %AFTER_ALL%
         Complete-W3ServiceTestFixture
     }
 
     BeforeEach {
-        $script:%TARGET_VAR_NAME% = "%CMD_NAME%$($script:testNum)"
+        $script:appPoolName = "Set-CIisAppPoolRecycling$($script:testNum)"
         $script:testNum++
-        %CMD_NAME% -AsDefaults @script:defaultDefaults -Reset
-        %BEFORE_EACH%
+        Set-CIisAppPoolRecycling -AsDefaults @script:defaultDefaults -Reset
+        Install-CIisAppPool -Name $script:appPoolName
     }
 
     AfterEach {
-        %AFTER_EACH%
-        %CMD_NAME% -AsDefaults @script:defaultDefaults -Reset
+        Uninstall-CIisAppPool -Name $script:appPoolName
+        Set-CIisAppPoolRecycling -AsDefaults @script:defaultDefaults -Reset
     }
 
     It 'should set and reset all values' {
         $infos = @()
-        %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME% @script:nonDefaultArgs -Reset -InformationVariable 'infos'
+        Set-CIisAppPoolRecycling -AppPoolName $script:appPoolName `
+                                 @script:nonDefaultArgs `
+                                 -Reset `
+                                 -InformationVariable 'infos'
         $infos | Should -Not -BeNullOrEmpty
         ThenHasValues $script:nonDefaultArgs
 
         # Make sure no information messages get written because no changes are being made.
-        %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME% @script:nonDefaultArgs -Reset -InformationVariable 'infos'
+        Set-CIisAppPoolRecycling -AppPoolName $script:appPoolName `
+                                 @script:nonDefaultArgs `
+                                 -Reset `
+                                 -InformationVariable 'infos'
         $infos | Should -BeNullOrEmpty
         ThenHasValues $script:nonDefaultArgs
 
-        %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME% -Reset
+        Set-CIisAppPoolRecycling -AppPoolName $script:appPoolName -Reset
         ThenHasDefaultValues
     }
 
     It 'should support WhatIf when updating all values' {
-        %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME% @script:nonDefaultArgs -Reset -WhatIf
+        Set-CIisAppPoolRecycling -AppPoolName $script:appPoolName @script:nonDefaultArgs -Reset -WhatIf
         ThenHasDefaultValues
     }
 
     It 'should support WhatIf when resetting all values back to defaults' {
-        %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME% -Reset @script:nonDefaultArgs
+        Set-CIisAppPoolRecycling -AppPoolName $script:appPoolName -Reset @script:nonDefaultArgs
         ThenHasValues $script:nonDefaultArgs
-        %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME% -Reset -WhatIf
+        Set-CIisAppPoolRecycling -AppPoolName $script:appPoolName -Reset -WhatIf
         ThenHasValues $script:nonDefaultArgs
     }
 
     It 'should change values and not reset to defaults' {
-        %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME% @script:nonDefaultArgs -ErrorAction Ignore
+        Set-CIisAppPoolRecycling -AppPoolName $script:appPoolName @script:nonDefaultArgs -ErrorAction Ignore
         ThenHasValues $script:nonDefaultArgs
 
         $someArgs = @{
-            PARAM_ONE = VALUE_ONE;
-            PARAM_TWO = VALUE_TWO;
+            DisallowOverlappingRotation = $true;
         }
-        %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME% @someArgs
+        Set-CIisAppPoolRecycling -AppPoolName $script:appPoolName @someArgs
         ThenHasValues $someArgs -OrValues $script:nonDefaultArgs
     }
 
     It 'should change default settings' {
-        %CMD_NAME% -AsDefaults @script:nonDefaultArgs -Reset
+        Set-CIisAppPoolRecycling -AsDefaults @script:nonDefaultArgs -Reset
         ThenDefaultsSetTo $script:nonDefaultArgs
 
         $someArgs = @{
-            PARAM_ONE = VALUE_ONE;
-            PARAM_TWO = VALUE_TWO;
+            LogEventOnRecycle = [RecyclingLogEventOnRecycle]::Requests;
         }
-        %CMD_NAME% -AsDefaults @someArgs
+        Set-CIisAppPoolRecycling -AsDefaults @someArgs
         ThenDefaultsSetTo $someArgs -OrValues $script:nonDefaultArgs
     }
 }
