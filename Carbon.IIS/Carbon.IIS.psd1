@@ -36,8 +36,7 @@
     Copyright = 'Aaron Jensen and WebMD Health Services'
 
     # Description of the functionality provided by this module
-    Description = 'Carbon.IIS is a module for installing and managing IIS app pools, websites, applications, and ' +
-                  'configuring other parts of IIS.'
+    Description = 'Carbon.IIS is a module for installing and managing IIS app pools, websites, applications, and configuring other parts of IIS.'
 
     # Minimum version of the Windows PowerShell engine required by this module
     PowerShellVersion = '5.1'
