@@ -46,7 +46,7 @@ function Get-CIisMimeMap
     [CmdletBinding(DefaultParameterSetName='ForWebServer')]
     param(
         # The website whose MIME mappings to return.  If not given, returns the web server's MIME map.
-        [Parameter(Mandatory, ParameterSetName='ForWebsite')]
+        [Parameter(Mandatory, ParameterSetName='ForWebsite', Position=0)]
         [Alias('SiteName')]
         [String] $LocationPath,
 

@@ -28,7 +28,7 @@ function Get-CIisSecurityAuthentication
     [OutputType([Microsoft.Web.Administration.ConfigurationSection])]
     param(
         # The site where anonymous authentication should be set.
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory, Position=0)]
         [Alias('SiteName')]
         [String] $LocationPath,
 

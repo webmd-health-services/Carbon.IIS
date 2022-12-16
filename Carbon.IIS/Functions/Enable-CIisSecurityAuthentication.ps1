@@ -35,7 +35,7 @@ function Enable-CIisSecurityAuthentication
     param(
         # The location path to the website, application, virtual directory, or directory where the authentication
         # method should be enabled.
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory, Position=0)]
         [Alias('SiteName')]
         [String] $LocationPath,
 

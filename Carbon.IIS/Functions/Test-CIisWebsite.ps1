@@ -17,7 +17,7 @@ function Test-CIisWebsite
     #>
     [CmdletBinding()]
     param(
-        # The name of the website whose existence to check.
+        # The name of the website whose existence to check. Wildcards supported.
         [Parameter(Mandatory)]
         [String] $Name
     )
@@ -25,8 +25,7 @@ function Test-CIisWebsite
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
-    $manager = Get-CIisServerManager
-    $site = $manager.Sites | Where-Object { $_.Name -eq $Name }
+    $site = Get-CIisWebsite -Name $Name -ErrorAction Ignore
     if( $site )
     {
         return $true

@@ -21,7 +21,7 @@ function Get-CIisConfigurationSection
     [OutputType([Microsoft.Web.Administration.ConfigurationSection])]
     param(
         # The site whose configuration should be returned.
-        [Parameter(Mandatory, ParameterSetName='ForSite')]
+        [Parameter(Mandatory, ParameterSetName='ForSite', Position=0)]
         [Alias('SiteName')]
         [String] $LocationPath,
 

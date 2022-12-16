@@ -53,8 +53,8 @@ function Set-CIisConfigurationAttribute
     [CmdletBinding(SupportsShouldProcess)]
     param(
         # The name of the website whose attribute values to configure.
-        [Parameter(Mandatory, ParameterSetName='AllByConfigPath')]
-        [Parameter(Mandatory, ParameterSetName='SingleByConfigPath')]
+        [Parameter(Mandatory, ParameterSetName='AllByConfigPath', Position=0)]
+        [Parameter(Mandatory, ParameterSetName='SingleByConfigPath', Position=0)]
         [String] $LocationPath,
 
         # OBSOLETE. Use the `LocationPath` parameter instead.

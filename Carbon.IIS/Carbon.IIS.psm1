@@ -134,11 +134,19 @@ Add-CTypeData -TypeName 'Microsoft.Web.Administration.Application' `
 # this file, so only dot-source files that exist on the file system. This allows
 # developers to work on a module without having to build it first. Grab all the
 # functions that are in their own files.
-$functionsPath = Join-Path -Path $moduleRoot -ChildPath 'Functions\*.ps1'
-if( (Test-Path -Path $functionsPath) )
+$functionsPath = & {
+    Join-Path -Path $moduleRoot -ChildPath 'Functions\*.ps1'
+    Join-Path -Path $moduleRoot -ChildPath 'Carbon.IIS.ArgumentCompleters.ps1'
+}
+foreach ($importPath in $functionsPath)
 {
-    foreach( $functionPath in (Get-Item $functionsPath) )
+    if( -not (Test-Path -Path $importPath) )
     {
-        . $functionPath.FullName
+        continue
+    }
+
+    foreach( $fileInfo in (Get-Item $importPath) )
+    {
+        . $fileInfo.FullName
     }
 }

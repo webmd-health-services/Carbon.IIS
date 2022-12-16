@@ -40,8 +40,6 @@ usages to use the `GetAttributeValue` method instead, e.g. `GetAttributeValue('c
 enumeration.
 * Remove usages of the `Install-CIisAppPool` function's `UserName` and `Password` parameters and instead use
 `Set-CIisAppPoolProcessModel` to configure an application pool's identity.
-* Replace usages of the `Join-CIisVirtualPath` function that doesn't use the `ChildPath` parameter to use the new
-`ConvertTo-CIisVirtualPath` function. The `Join-CIisVirtualPath` function's `ChildPath` parameter is now mandatory.
 * Add `-ErrorAction Ignore` or `-ErrorAction SilentlyContinue` to usages of the following functions. They now write
 errors when an item doesn't exist.
   * `Get-CIisAppPool`
@@ -67,12 +65,18 @@ value. The `ExactDestination` switch is now a boolean parameter. Change usages o
 
 #### Functionality
 
+* Tab auto-completion for parameters that accept application pool names, website names, application paths, and location
+paths.
 * `Get-CIIsAppPool` can now return application pool defaults settings. Use the new `AsDefaults` switch.
 * `Get-CIisWebsite` can now return website defaults settings. Use the new `AsDefaults` switch.
 * `Install-CIisAppPool` can now configure *all* application pool settings (i.e. all settings stored on an application
 pool's `add` element in IIS' applicationHost.config file). Added parameters `QueueLength`, `AutoStart`,
 `Enable32BitAppOnWin64`, `ManagedRuntimeLoader`, `EnableConfigurationOverride`, `ManagedPipelineMode`, `CLRConfigFile`,
 `PassAnonymousToken`, and `StartMode` to `Install-CIisAppPool`.
+* The `Join-CIisVirtualPath` function's `Path` parameter now accepts an array of paths that will be joined together.
+* The `Join-CIisVirtualPath` function now accepts paths as pipeline input. All pats are joined together.
+* The `Join-CIisVirtualPath` function now accepts and joins multiple paths as unnamed parameters. For example,
+`Join-CIisVirtualPath 'a' 'b' 'c' 'd' 'e'` would return `a/b/c/d/e`.
 * `WhatIf` support to the following functions:
   * `Enable-CIisDirectoryBrowsing`
   * `Remove-CIisMimeMap`
@@ -142,8 +146,6 @@ to set the managed runtime.
 settings to their default values.
 * `Install-CIisWebsite` now clears *all* website settings that aren't passed as parameters, which resets those settings
 to their default values.
-* The `Join-CIisVirtualPath` function's `ChildPath` parameter is now required. Usages that don't have a `ChildPath`
-argument should switch to `ConvertTo-CIisVirtualPath`.
 * The `Set-CIisAnonymousAuthentication` function's `Enabled` switch is now a parameter. Pass `$true` to enable anonymous
 authentication or `$false` to disable it.
 * The `Set-CIisHttpRedirect` function's `ExactDestination` and `ChildOnly` switches are now boolean parameters. Pass

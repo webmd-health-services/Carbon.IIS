@@ -33,7 +33,7 @@ function Get-CIisHttpHeader
     [CmdletBinding()]
     param(
         # The name of the website whose headers to return.
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory, Position=0)]
         [Alias('SiteName')]
         [String] $LocationPath,
 

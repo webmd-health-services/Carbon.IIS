@@ -25,7 +25,7 @@ function Set-CIisMimeMap
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName='ForWebServer')]
     param(
         # The name of the website whose MIME type to set.
-        [Parameter(Mandatory, ParameterSetName='ForWebsite')]
+        [Parameter(Mandatory, ParameterSetName='ForWebsite', Position=0)]
         [Alias('SiteName')]
         [String] $LocationPath,
 
