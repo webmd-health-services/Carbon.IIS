@@ -33,7 +33,7 @@ function Remove-CIisConfigurationLocation
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSShouldProcess','')]
     [CmdletBinding(SupportsShouldProcess)]
     param(
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory, Position=0)]
         [Alias('SiteName')]
         [String] $LocationPath,
 

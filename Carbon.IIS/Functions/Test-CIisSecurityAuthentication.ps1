@@ -26,7 +26,7 @@ function Test-CIisSecurityAuthentication
     [CmdletBinding()]
     param(
         # The site where anonymous authentication should be set.
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory, Position=0)]
         [Alias('SiteName')]
         [String] $LocationPath,
 

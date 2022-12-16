@@ -91,6 +91,7 @@
         'Get-CIisMimeMap',
         'Get-CIisSecurityAuthentication',
         'Get-CIisVersion',
+        'Get-CIisVirtualDirectory',
         'Get-CIisWebsite',
         'Install-CIisApplication',
         'Install-CIisAppPool',

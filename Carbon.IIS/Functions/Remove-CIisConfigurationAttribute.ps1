@@ -34,7 +34,7 @@ function Remove-CIisConfigurationAttribute
     [CmdletBinding(SupportsShouldProcess)]
     param(
         # The name of the website to configure.
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory, Position=0)]
         [Alias('SiteName')]
         [String] $LocationPath,
 

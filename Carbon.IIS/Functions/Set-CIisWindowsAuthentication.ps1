@@ -37,7 +37,7 @@ function Set-CIisWindowsAuthentication
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName='New')]
     param(
         # The site where Windows authentication should be set.
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory, Position=0)]
         [Alias('SiteName')]
         [String] $LocationPath,
 
