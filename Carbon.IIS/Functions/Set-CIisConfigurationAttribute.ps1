@@ -23,14 +23,14 @@ function Set-CIisConfigurationAttribute
     switch, and the attribute's current and new value will be masked with eight `*` characters.
 
     .EXAMPLE
-    Set-CIisConfigurationAttribute -SiteName 'SiteOne' -SectionPath 'system.webServer/httpRedirect' -Name 'destination' -Value 'http://example.com'
+    Set-CIisConfigurationAttribute -LocationPath 'SiteOne' -SectionPath 'system.webServer/httpRedirect' -Name 'destination' -Value 'http://example.com'
 
     Demonstrates how to call `Set-CIisConfigurationAttribute` to set a single attribute value. In this example, the
     http redirect "destination" setting is set for site "SiteOne". All other attributes on
     `system.webServer/httpRedirect` are left unchanged.
 
     .EXAMPLE
-    Set-CIisConfigurationAttribute -SiteName 'SiteTwo' -SectionPath 'system.webServer/httpRedirect' -Attribute @{ 'destination' = 'http://example.com'; 'httpResponseStatus' = 302 }
+    Set-CIisConfigurationAttribute -LocationPath 'SiteTwo' -SectionPath 'system.webServer/httpRedirect' -Attribute @{ 'destination' = 'http://example.com'; 'httpResponseStatus' = 302 }
 
     Demonstrates how to set *all* attributes on a configuration section by pipling a hashtable of attribute names and
     values to `Set-CIisConfigurationAttribute`. In this example, the `destination` and `httpResponseStatus` attributes
@@ -38,7 +38,7 @@ function Set-CIisConfigurationAttribute
     are removed, whic resets them to their default value.
 
     .EXAMPLE
-    Set-CIisConfigurationAttribute -SiteName 'SiteOne' -VirtualPath 'old_app' -SectionPath 'system.webServer/httpRedirect' -Name 'destination' -Value 'http://example.com'
+    Set-CIisConfigurationAttribute -LocationPath 'SiteOne/old_app' -SectionPath 'system.webServer/httpRedirect' -Name 'destination' -Value 'http://example.com'
 
     Demonstrates how to set attribute values on a sub-path in a website by passing the path to the `VirtualPath`
     parameter.

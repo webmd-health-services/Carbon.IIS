@@ -100,11 +100,13 @@ Describe 'Set-CIisHttpRedirect' {
 
         New-Item -Path (Join-Path -Path $script:testWebRoot -ChildPath 'SubFolder') -ItemType 'Directory'
 
-        Set-CIisHttpRedirect -SiteName $script:siteName -VirtualPath 'SubFolder' -Destination 'http://www.example.com'
+        $locationPath = $script:siteName, 'SubFolder' | Join-CIisVirtualPath
+
+        Set-CIisHttpRedirect -LocationPath $locationPath -Destination 'http://www.example.com'
         ThenUrlContent "http://localhost:$($script:port)/SubFolder" -Match 'Example Domain'
         ThenUrlContent "http://localhost:$($script:port)/" -Is $PSCommandPath
 
-        $settings = Get-CIisHttpRedirect -SiteName $script:siteName -VirtualPath 'SubFolder'
+        $settings = Get-CIisHttpRedirect -LocationPath $locationPath
         $settings.GetAttributeValue('enabled') | Should -BeTrue
         $settings.GetAttributeValue('destination') | Should -Be 'http://www.example.com'
     }

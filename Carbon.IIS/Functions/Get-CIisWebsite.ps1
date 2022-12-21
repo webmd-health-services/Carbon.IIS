@@ -56,6 +56,8 @@ function Get-CIisWebsite
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
+    $WhatIfPreference = $false
+
     if( $Defaults )
     {
         return (Get-CIisServerManager).SiteDefaults
