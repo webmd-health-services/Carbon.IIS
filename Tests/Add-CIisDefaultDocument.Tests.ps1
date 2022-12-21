@@ -72,7 +72,8 @@ Describe 'Add-CIisDefaultDocument' {
         Add-CIISDefaultDocument -Site $script:SiteName -FileName 'newdefault.html'
         Add-CIISDefaultDocument -Site $script:SiteName -FileName 'newdefault.html'
         $Global:Error | Should -BeNullOrEmpty
-        $section = Get-CIisConfigurationSection -SiteName $script:SiteName -SectionPath 'system.webServer/defaultDocument'
+        $section =
+            Get-CIisConfigurationSection -LocationPath $script:SiteName -SectionPath 'system.webServer/defaultDocument'
         $section | Should -Not -BeNullOrEmpty
         ($section.GetCollection('files') | Where-Object { $_['value'] -eq 'newdefault.html' }) | Should -BeOfType ([Microsoft.Web.Administration.ConfigurationElement])
         Assert-DefaultDocumentReturned

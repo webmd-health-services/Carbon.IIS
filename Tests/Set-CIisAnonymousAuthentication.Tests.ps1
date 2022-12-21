@@ -46,9 +46,9 @@ BeforeAll {
             }
         }
 
-        $section = Get-CIisConfigurationSection -SiteName $script:siteName `
-                                                -VirtualPath $ForVirtualPath `
-                                                -SectionPath $sectionPath
+        $section =
+            Get-CIisConfigurationSection -LocationPath (Join-CIisVirtualPath -Path $script:siteName, $ForVirtualPath) `
+                                         -SectionPath $sectionPath
         foreach( $attrName in $ExpectedValues.Keys )
         {
             $expectedValue = $ExpectedValues[$attrName]
@@ -68,11 +68,14 @@ BeforeAll {
     function WhenSetting
     {
         param(
-            [hashtable] $WithArgument = @{}
+            [hashtable] $WithArgument = @{},
+
+            [String] $ForVirtualPath
         )
 
         $Global:Error.Clear()
-        Set-CIisAnonymousAuthentication -SiteName $script:siteName @WithArgument
+        $locationPath = $script:siteName, $ForVirtualPath | Join-CIisVirtualPath
+        Set-CIisAnonymousAuthentication -LocationPath $locationPath @WithArgument
     }
 }
 
@@ -117,10 +120,9 @@ Describe 'Set-CIisAnonymousAuthentication' {
             LogonMethod = [Microsoft.Web.Administration.AuthenticationLogonMethod]::Batch;
             Password = (ConvertTo-SecureString -String '2w1epswgv0i' -AsPlainText -Force);
             UserName = 'qy33lcg23iy';
-            VirtualPath = 'somepath';
         }
         GivenVirtualPath 'somepath'
-        WhenSetting -WithArgument $setArgs
+        WhenSetting -WithArgument $setArgs -ForVirtualPath 'somepath'
         ThenCommittedToAppHost
         ThenAttributesSetTo -Defaults
         $setArgs.Remove('VirtualPath')
