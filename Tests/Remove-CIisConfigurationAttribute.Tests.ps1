@@ -29,9 +29,7 @@ BeforeAll {
             }
         }
 
-        Set-CIisAnonymousAuthentication -SiteName $script:siteName `
-                                        -VirtualPath $ForVirtualPath `
-                                        @Values
+        Set-CIisAnonymousAuthentication ($script:siteName,$ForVirtualPath | Join-CIisVirtualPath) @Values
     }
 
     function GivenVirtualPath
@@ -64,7 +62,7 @@ BeforeAll {
             [String] $ForVirtualPath = ''
         )
 
-        $section = Get-CIisConfigurationSection -SiteName $script:siteName -SectionPath $script:sectionPath
+        $section = Get-CIisConfigurationSection -LocationPath $script:siteName -SectionPath $script:sectionPath
         foreach( $attr in $section.Attributes )
         {
             $expectedValue = $Values[$attr.Name]
@@ -93,24 +91,18 @@ BeforeAll {
             [switch] $ByPiping
         )
 
-        $optionalArgs = @{}
-        if( $ForVirtualPath )
-        {
-            $optionalArgs['VirtualPath'] = $ForVirtualPath
-        }
+        $locationPath = Join-CIisVirtualPath -Path $script:siteName, $ForVirtualPath
         $Global:Error.Clear()
         if( $ByPiping )
         {
-            $Attributes | Remove-CIisConfigurationAttribute -SiteName $script:siteName `
-                                                           -SectionPath $script:sectionPath `
-                                                           @optionalArgs
+            $Attributes |
+                Remove-CIisConfigurationAttribute -LocationPath $locationPath  -SectionPath $script:sectionPath
         }
         else
         {
-            Remove-CIisConfigurationAttribute -SiteName $script:siteName `
-                                             -SectionPath $script:sectionPath `
-                                             -Name $Attributes `
-                                             @optionalArgs
+            Remove-CIisConfigurationAttribute -LocationPath $locationPath `
+                                              -SectionPath $script:sectionPath `
+                                              -Name $Attributes
         }
     }
 }

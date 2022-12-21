@@ -15,12 +15,12 @@ function Get-CIisSecurityAuthentication
     Microsoft.Web.Administration.ConfigurationSection.
 
     .EXAMPLE
-    Get-CIisSecurityAuthentication -SiteName Peanuts -Anonymous
+    Get-CIisSecurityAuthentication -LocationPath 'Peanuts' -Anonymous
 
     Gets the `Peanuts` site's anonymous authentication configuration section.
 
     .EXAMPLE
-    Get-CIisSecurityAuthentication -SiteName Peanuts -VirtualPath Doghouse -Basic
+    Get-CIisSecurityAuthentication -LocationPath 'Peanuts/Doghouse' -Basic
 
     Gets the `Peanuts` site's `Doghouse` sub-directory's basic authentication configuration section.
     #>
@@ -28,7 +28,7 @@ function Get-CIisSecurityAuthentication
     [OutputType([Microsoft.Web.Administration.ConfigurationSection])]
     param(
         # The site where anonymous authentication should be set.
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory, Position=0)]
         [Alias('SiteName')]
         [String] $LocationPath,
 

@@ -27,7 +27,7 @@ function Set-CIisHttpHeader
     [CmdletBinding(SupportsShouldProcess)]
     param(
         # The name of the website where the HTTP header should be set/created.
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory, Position=0)]
         [Alias('SiteName')]
         [String] $LocationPath,
 

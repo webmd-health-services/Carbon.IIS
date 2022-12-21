@@ -20,7 +20,9 @@ BeforeAll {
 
     function Assert-WindowsAuthentication($VirtualPath = '', [bool]$KernelMode)
     {
-        $authSettings = Get-CIisSecurityAuthentication -SiteName $script:SiteName -VirtualPath $VirtualPath -Windows
+        $authSettings =
+            Get-CIisSecurityAuthentication -LocationPath (Join-CIisLocationPath -Path $script:SiteName, $VirtualPath) `
+                                           -Windows
         $KernelMode | Should -Be ($authSettings.GetAttributeValue('useKernelMode'))
     }
 }
@@ -61,7 +63,7 @@ Describe 'Set-CIisWindowsAuthentication' {
     }
 
     It 'set windows authentication on sub folders' {
-        Set-CIisWindowsAuthentication -SiteName $script:siteName -VirtualPath 'SubFolder'
+        Set-CIisWindowsAuthentication -LocationPath (Join-CIisVirtualPath -Path $script:siteName, 'SubFolder')
         Assert-WindowsAuthentication -VirtualPath SubFolder -KernelMode $true
     }
 

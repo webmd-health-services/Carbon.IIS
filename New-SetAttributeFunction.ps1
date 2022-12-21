@@ -193,7 +193,7 @@ else
 
     `$PSBoundParameters.GetEnumerator() |
         Where-Object 'Key' -In `$paramNames |
-        Set-CIisConfigurationAttribute -SiteName `$SiteName -VirtualPath `$VirtualPath -SectionPath `$sectionPath
+        Set-CIisConfigurationAttribute -LocationPath (Join-CIisVirtualPath -Path `$SiteName, `$VirtualPath) -SectionPath `$sectionPath
 "@)
     }
     else

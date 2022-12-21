@@ -141,7 +141,7 @@ Describe 'Install-CIisWebsite' {
 
         $details.PhysicalPath | Should -Be $script:testDir
 
-        $anonymousAuthInfo = Get-CIisSecurityAuthentication -Anonymous -SiteName $script:siteName
+        $anonymousAuthInfo = Get-CIisSecurityAuthentication -Anonymous -LocationPath $script:siteName
         $anonymousAuthInfo['userName'] | Should -Be 'IUSR'
 
         $website = Get-CIisWebsite -Name $script:siteName

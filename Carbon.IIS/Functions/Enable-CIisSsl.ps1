@@ -57,7 +57,7 @@ function Enable-CIisSsl
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName='IgnoreClientCertificates')]
     param(
         # The website whose SSL flags should be modifed.
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory, Position=0)]
         [Alias('SiteName')]
         [String] $LocationPath,
 

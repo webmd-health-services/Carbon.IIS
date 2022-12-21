@@ -22,7 +22,7 @@ function Add-CIisDefaultDocument
     [CmdletBinding(SupportsShouldProcess)]
     param(
         # The name of the site where the default document should be added.
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory, Position=0)]
         [Alias('SiteName')]
         [String] $LocationPath,
 

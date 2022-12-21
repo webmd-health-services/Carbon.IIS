@@ -36,7 +36,7 @@ function Get-CIisHttpRedirect
     [OutputType([Microsoft.Web.Administration.ConfigurationSection])]
     param(
         # The site's whose HTTP redirect settings will be retrieved.
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory, Position=0)]
         [Alias('SiteName')]
         [String] $LocationPath,
 

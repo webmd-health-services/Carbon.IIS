@@ -9,18 +9,20 @@ BeforeAll {
     $script:testNum = 0
 
     $script:defaultDefaults = @{}
-    (%GET_CMD_NAME% -Defaults).%PROPERTY_NAME%.Attributes |
+    (Get-CIisWebsite -Defaults).limits.Attributes |
         Where-Object 'IsInheritedFromDefaultValue' -EQ $false |
         ForEach-Object { $script:defaultDefaults[$_.Name] = $_.Value }
 
     # All non-default values.
     $script:nonDefaultArgs = @{
-        %NON_DEFAULT_ARGS%
+        'connectionTimeout' = '00:01:00';
+        'maxBandwidth' = 2147483647;
+        'maxConnections' = 1073741823;
+        'maxUrlSegments' = 16;
     }
 
     # Values that once set, can only be changed, never removed.
     $script:requiredDefaults = @{
-        'id' = 53;
     }
     # Sometimes the default values in the schema aren't quite the default values.
     $script:notQuiteDefaultValues = @{
@@ -56,10 +58,10 @@ BeforeAll {
             [switch] $OnDefaults
         )
 
-        $targetParent = %GET_CMD_NAME% -Name $script:%TARGET_VAR_NAME% -Defaults:$OnDefaults
+        $targetParent = Get-CIisWebsite -Name $script:siteName -Defaults:$OnDefaults
         $targetParent | Should -Not -BeNullOrEmpty
 
-        $target = $targetParent.%PROPERTY_NAME%
+        $target = $targetParent.limits
         $target | Should -Not -BeNullOrEmpty
 
         $asDefaultsMsg = ''
@@ -118,77 +120,77 @@ BeforeAll {
     }
 }
 
-Describe '%CMD_NAME%' {
+Describe 'Set-CIisWebsiteLimit' {
     BeforeAll {
         Start-W3ServiceTestFixture
-        %BEFORE_ALL%
+        Install-CIisAppPool -Name 'Set-CIisWebsiteLimit'
     }
 
     AfterAll {
-        %AFTER_ALL%
+        Uninstall-CIisAppPool -Name 'Set-CIisWebsiteLimit'
         Complete-W3ServiceTestFixture
     }
 
     BeforeEach {
-        $script:%TARGET_VAR_NAME% = "%CMD_NAME%$($script:testNum)"
+        $script:siteName = "Set-CIisWebsiteLimit$($script:testNum)"
         $script:testNum++
-        %CMD_NAME% -AsDefaults @script:defaultDefaults -Reset
-        %BEFORE_EACH%
+        Set-CIisWebsiteLimit -AsDefaults @script:defaultDefaults -Reset
+        Install-CIisWebsite -Name $script:siteName -PhysicalPath (New-TestDirectory) -AppPoolName 'Set-CIisWebsiteLimit'
     }
 
     AfterEach {
-        %AFTER_EACH%
-        %CMD_NAME% -AsDefaults @script:defaultDefaults -Reset
+        Uninstall-CIisWebsite -Name $script:siteName
+        Set-CIisWebsiteLimit -AsDefaults @script:defaultDefaults -Reset
     }
 
     It 'should set and reset all values' {
         $infos = @()
-        %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME% @script:nonDefaultArgs -Reset -InformationVariable 'infos'
+        Set-CIisWebsiteLimit -SiteName $script:siteName @script:nonDefaultArgs -Reset -InformationVariable 'infos'
         $infos | Should -Not -BeNullOrEmpty
         ThenHasValues $script:nonDefaultArgs
 
         # Make sure no information messages get written because no changes are being made.
-        %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME% @script:nonDefaultArgs -Reset -InformationVariable 'infos'
+        Set-CIisWebsiteLimit -SiteName $script:siteName @script:nonDefaultArgs -Reset -InformationVariable 'infos'
         $infos | Should -BeNullOrEmpty
         ThenHasValues $script:nonDefaultArgs
 
-        %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME% -Reset
+        Set-CIisWebsiteLimit -SiteName $script:siteName -Reset
         ThenHasDefaultValues
     }
 
     It 'should support WhatIf when updating all values' {
-        %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME% @script:nonDefaultArgs -Reset -WhatIf
+        Set-CIisWebsiteLimit -SiteName $script:siteName @script:nonDefaultArgs -Reset -WhatIf
         ThenHasDefaultValues
     }
 
     It 'should support WhatIf when resetting all values back to defaults' {
-        %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME% -Reset @script:nonDefaultArgs
+        Set-CIisWebsiteLimit -SiteName $script:siteName -Reset @script:nonDefaultArgs
         ThenHasValues $script:nonDefaultArgs
-        %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME% -Reset -WhatIf
+        Set-CIisWebsiteLimit -SiteName $script:siteName -Reset -WhatIf
         ThenHasValues $script:nonDefaultArgs
     }
 
     It 'should change values and not reset to defaults' {
-        %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME% @script:nonDefaultArgs -ErrorAction Ignore
+        Set-CIisWebsiteLimit -SiteName $script:siteName @script:nonDefaultArgs -ErrorAction Ignore
         ThenHasValues $script:nonDefaultArgs
 
         $someArgs = @{
-            PARAM_ONE = VALUE_ONE;
-            PARAM_TWO = VALUE_TWO;
+            'connectionTimeout' = '00:00:30';
+            'maxUrlSegments' = 8;
         }
-        %CMD_NAME% -%CMD_NAME_PARAMETER_NAME% $script:%TARGET_VAR_NAME% @someArgs
+        Set-CIisWebsiteLimit -SiteName $script:siteName @someArgs
         ThenHasValues $someArgs -OrValues $script:nonDefaultArgs
     }
 
     It 'should change default settings' {
-        %CMD_NAME% -AsDefaults @script:nonDefaultArgs -Reset
+        Set-CIisWebsiteLimit -AsDefaults @script:nonDefaultArgs -Reset
         ThenDefaultsSetTo $script:nonDefaultArgs
 
         $someArgs = @{
-            PARAM_ONE = VALUE_ONE;
-            PARAM_TWO = VALUE_TWO;
+            'maxBandwidth' = 268435455;
+            'maxConnections' = 134217727;
         }
-        %CMD_NAME% -AsDefaults @someArgs
+        Set-CIisWebsiteLimit -AsDefaults @someArgs
         ThenDefaultsSetTo $someArgs -OrValues $script:nonDefaultArgs
     }
 }

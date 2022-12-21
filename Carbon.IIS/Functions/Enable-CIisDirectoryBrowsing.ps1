@@ -25,7 +25,7 @@ function Enable-CIisDirectoryBrowsing
     param(
         # The location path to the website, directory, application, or virtual directory where directory browsing should
         # be enabled.
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory, Position=0)]
         [Alias('SiteName')]
         [String] $LocationPath,
 

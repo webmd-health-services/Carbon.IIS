@@ -45,7 +45,7 @@ function Get-CIisWebsite
     [CmdletBinding()]
     [OutputType([Microsoft.Web.Administration.Site])]
     param(
-        # The name of the site to get.
+        # The name of the site to get. Wildcards supported.
         [String] $Name,
 
         # Instead of getting all websites or a specifid website, return website defaults settings. If true, the `Name`
@@ -56,26 +56,30 @@ function Get-CIisWebsite
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
+    $WhatIfPreference = $false
+
     if( $Defaults )
     {
         return (Get-CIisServerManager).SiteDefaults
     }
 
-    if( $Name -and -not (Test-CIisWebsite -Name $Name) )
-    {
-        Write-Error -Message "Website ""$($Name)"" does not exist." -ErrorAction $ErrorActionPreference
-        return
-    }
-
+    $sites = @()
     $mgr = Get-CIisServerManager
     $mgr.Sites |
         Where-Object {
             if( $Name )
             {
-                return $_.Name -eq $Name
+                return $_.Name -like $Name
             }
 
             return $true
-        }
+        } |
+        Tee-Object -Variable 'sites' |
+        Write-Output
+
+    if ($Name -and -not [wildcardpattern]::ContainsWildcardCharacters($Name) -and -not $sites)
+    {
+        Write-Error -Message "Website ""$($Name)"" does not exist." -ErrorAction $ErrorActionPreference
+    }
 }
 

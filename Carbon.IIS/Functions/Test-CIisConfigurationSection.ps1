@@ -35,6 +35,7 @@ function Test-CIisConfigurationSection
         [String] $SectionPath,
 
         # The name of the site whose configuration section to test.  Optional.  The default is the global configuration.
+        [Parameter(Position=0)]
         [Alias('SiteName')]
         [String] $LocationPath,
 

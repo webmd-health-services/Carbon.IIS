@@ -31,7 +31,7 @@ function Set-CIisAnonymousAuthentication
     [CmdletBinding(SupportsShouldProcess)]
     param(
         # The name of the website whose anonymous authentication settings to change.
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory, Position=0)]
         [Alias('SiteName')]
         [String] $LocationPath,
 

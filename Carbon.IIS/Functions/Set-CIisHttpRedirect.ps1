@@ -38,7 +38,7 @@ function Set-CIisHttpRedirect
     [CmdletBinding(SupportsShouldProcess)]
     param(
         # The site where the redirection should be setup.
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory, Position=0)]
         [Alias('SiteName')]
         [String] $LocationPath,
 

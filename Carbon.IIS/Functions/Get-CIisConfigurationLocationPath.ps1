@@ -47,6 +47,7 @@ function Get-CIisConfigurationLocationPath
     [CmdletBinding()]
     param(
         # The name of a website whose location paths to get.
+        [Parameter(Position=0)]
         [String] $LocationPath,
 
         # If true, returns all location paths under the website or website/virtual path provided.

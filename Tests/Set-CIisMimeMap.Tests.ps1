@@ -101,7 +101,9 @@ Describe 'Set-CIisMimeMap' {
         Install-CIisVirtualDirectory -SiteName $script:siteName -VirtualPath '/recurse' -PhysicalPath $PSScriptRoot
 
         Set-CIisMimeMap -SiteName $script:siteName -FileExtension '.carbon' -MimeType 'carbon/test+site'
-        Set-CIisMimeMap -SiteName $script:siteName -VirtualPath '/recurse' -FileExtension '.carbon' -MimeType 'carbon/test+vdir'
+        Set-CIisMimeMap -LocationPath ($script:siteName, '/recurse' | Join-CIisVirtualPath) `
+                        -FileExtension '.carbon' `
+                        -MimeType 'carbon/test+vdir'
 
         try
         {
@@ -113,12 +115,15 @@ Describe 'Set-CIisMimeMap' {
             $mime = Get-CIisMimeMap -SiteName $script:siteName -FileExtension '.carbon'
             $mime | Should -BeNullOrEmpty
 
-            $mime = Get-CIisMimeMap -SiteName $script:siteName -VirtualPath '/recurse' -FileExtension '.carbon'
+            $mime = Get-CIisMimeMap -LocationPath ($script:siteName, '/recurse' | Join-CIisVirtualPath) `
+                                    -FileExtension '.carbon'
             $mime | Should -Not -BeNullOrEmpty
             $mime.MimeType | Should -Be 'carbon/test+vdir'
 
-            Remove-CIisMimeMap -SiteName $script:siteName -VirtualPath '/recurse' -FileExtension '.carbon'
-            $mime = Get-CIisMimeMap -SiteName $script:siteName -VirtualPath '/recurse' -FileExtension '.carbon'
+            Remove-CIisMimeMap -LocationPath ($script:siteName, '/recurse' | Join-CIisVirtualPath) `
+                               -FileExtension '.carbon'
+            $mime = Get-CIisMimeMap -LocationPath ($script:siteName, '/recurse' | Join-CIisVirtualPath) `
+                                    -FileExtension '.carbon'
             $mime | Should -BeNullOrEmpty
         }
         finally

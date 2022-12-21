@@ -1,5 +1,5 @@
 
-function Get-CIisApplication
+function Get-CIisVirtualDirectory
 {
     <#
     .SYNOPSIS
@@ -35,27 +35,24 @@ function Get-CIisApplication
     [OutputType([Microsoft.Web.Administration.Application])]
     param(
         # The site where the application is running.
-        [Parameter(Mandatory)]
-        [String] $SiteName,
-
-        # The path/name of the application. Default is to return all applications running under the website given by
-        # the `SiteName` parameter. Wildcards supported.
-        [Alias('Name')]
-        [String] $VirtualPath
+        [Parameter(Mandatory, Position=0)]
+        [String] $LocationPath
     )
 
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
-    $site = Get-CIisWebsite -Name $SiteName
+    $siteName, $virtualPath = $LocationPath | Split-CIisLocationPath
+
+    $site = Get-CIisWebsite -Name $siteName
     if( -not $site )
     {
         return
     }
 
-    $VirtualPath = $VirtualPath | ConvertTo-CIisVirtualPath
-
+    # Argh. Hard. Should handle /path/APP/path/VDIR.
     $site.Applications |
+        Select-Object -ExpandProperty 'VirtualDirectories' |
         Where-Object {
             if ($PSBoundParameters.ContainsKey('VirtualPath'))
             {
