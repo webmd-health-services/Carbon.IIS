@@ -8,6 +8,35 @@ $alwaysExclude = @{
     'Write-IisVerbose' = $true;
 }
 
+function Format-Argument
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory, ValueFromPipeline)]
+        [String] $InputObject
+    )
+
+    process
+    {
+        # If it contains any quote characters, enclose in single quotes and escape just the single quotes. This will
+        # handle any double quotes, backticks, and spaces.
+        if ($_.Contains("'") -or $_.Contains('"'))
+        {
+            return "'$($_ -replace "'", "''")'"
+        }
+
+        # No quotes, but contains spaces, so enclose in single quotes, which will handle the spaces and any backtick
+        # characters.
+        if ($_.Contains(' '))
+        {
+            return "'$($_)'"
+        }
+
+        # Sweet. Nothing fancy. Return the original string.
+        return $_
+    }
+}
+
 function Register-CIisArgumentCompleter
 {
     [CmdletBinding()]
@@ -94,7 +123,17 @@ $appPoolNameCompleter = {
         [hashtable] $FakeBoundParameters
     )
 
-    Get-CIisAppPool -Name "$($WordToComplete)*" | Select-Object -ExpandProperty 'Name'
+    Write-Debug "$($WordToComplete)"
+
+    $completions = @()
+
+    Get-CIisAppPool -Name "$($WordToComplete)*" -ErrorAction Ignore |
+        Select-Object -ExpandProperty 'Name' |
+        Tee-Object -Variable 'completions' |
+        Format-Argument |
+        Write-Output
+
+    $completions | ForEach-Object { Write-Debug "> $($_)" }
 }
 
 Register-CIisArgumentCompleter -Filter '*-CIisAppPool' `
@@ -117,7 +156,17 @@ $websiteNameCompleter = {
         [hashtable] $FakeBoundParameters
     )
 
-    Get-CIisWebsite -Name "$($WordToComplete)*" -ErrorAction Ignore | Select-Object -ExpandProperty 'Name'
+    Write-Debug "$($WordToComplete)"
+
+    $completions = @()
+
+    Get-CIisWebsite -Name "$($WordToComplete)*" -ErrorAction Ignore |
+        Select-Object -ExpandProperty 'Name' |
+        Tee-Object -Variable 'completions' |
+        Format-Argument |
+        Write-Output
+
+    $completions | ForEach-Object { Write-Debug "> $($_)" }
 }
 
 Register-CIisArgumentCompleter -Filter '*-CIisWebsite' `
@@ -150,8 +199,15 @@ $appCompleter = {
         $WordToComplete = "/$($WordToComplete)"
     }
 
-    Get-CIisApplication -SiteName $FakeBoundParameters['SiteName'] -VirtualPath "$($WordToComplete)*" |
-        Select-Object -ExpandProperty 'Path'
+    $completions = @()
+
+    Get-CIisApplication -LocationPath (Join-CIisVirtualPath $FakeBoundParameters['SiteName'], "$($WordToComplete)*") |
+        Select-Object -ExpandProperty 'Path' |
+        Tee-Object -Variable 'completions' |
+        Format-Argument |
+        Write-Output
+
+    $completions | ForEach-Object { Write-Debug "> $($_)" }
 }
 
 Register-CIisArgumentCompleter -ParameterName 'VirtualPath' `
@@ -180,7 +236,15 @@ $appCompleter = {
         $WordToComplete = "/$($WordToComplete)"
     }
 
-    Get-CIisApplication -SiteName $FakeBoundParameters['SiteName'] | Select-Object -ExpandProperty 'Path'
+    $completions = @()
+
+    Get-CIisApplication -SiteName $FakeBoundParameters['SiteName'] |
+        Select-Object -ExpandProperty 'Path'
+        Tee-Object -Variable 'completions' |
+        Format-Argument |
+        Write-Output
+
+    $completions | ForEach-Object { Write-Debug "> $($_)" }
 }
 
 Register-CIisArgumentCompleter -Description 'virtual directory' `
@@ -230,6 +294,7 @@ $locationCompleter = {
                 Get-CIisWebsite -Name "$($siteName)*" |
                     Select-Object -ExpandProperty 'Name' |
                     ConvertTo-CIisVirtualPath -NoLeadingSlash |
+                    Format-Argument |
                     Write-Output
                 return
             }
@@ -302,6 +367,7 @@ $locationCompleter = {
             while ($true)
         } |
         Tee-Object -Variable 'completions' |
+        Format-Argument |
         Write-Output
 
     $completions | ForEach-Object { Write-Debug "> $($_)" }
