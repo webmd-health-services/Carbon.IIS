@@ -16,6 +16,9 @@ function Get-CIisAppPool
     If you make any changes to any of the objects returned by `Get-CIisAppPool`, call the `Save-CIisConfiguration`
     function to save those changes to IIS.
 
+    This function disposes the current server manager object that Carbon.IIS uses internally. Make sure you have no
+    pending, unsaved changes when calling `Get-CIisAppPool`.
+
     .LINK
     http://msdn.microsoft.com/en-us/library/microsoft.web.administration.applicationpool(v=vs.90).aspx
 
@@ -37,45 +40,46 @@ function Get-CIisAppPool
 
     Demonstrates how to get IIS application pool defaults settings.
     #>
-    [CmdletBinding(DefaultParameterSetName='AppPool')]
+    [CmdletBinding(DefaultParameterSetName='AllAppPools')]
     [OutputType([Microsoft.Web.Administration.ApplicationPool])]
     param(
-        # The name of the application pool to return. If not supplied, all application pools are returned.
+        # The name of the application pool to return. If not supplied, all application pools are returned. Wildcards
+        # supported.
+        [Parameter(Mandatory, ParameterSetName='AppPoolByWildcard', Position=0)]
         [String] $Name,
 
         # Instead of getting app pools or a specific app pool, return  application pool defaults settings. If true, the
         # `Name` parameter is ignored.
+        [Parameter(Mandatory, ParameterSetName='Defaults')]
         [switch] $Defaults
     )
 
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
-    $mgr = Get-CIisServerManager
+    $WhatIfPreference = $false
+
+    $mgr = Get-CIisServerManager -Reset
 
     if( $Defaults )
     {
         return $mgr.ApplicationPoolDefaults
     }
 
-    $foundOne = $false
+    $appPools = @()
     $mgr.ApplicationPools |
         Where-Object {
-            if( -not $PSBoundParameters.ContainsKey('Name') )
+            if ($Name)
             {
-                $foundOne = $true
-                return $true
+                return $_.Name -like $Name
             }
 
-            $isTheOne = $_.Name -eq $Name
-            if( $isTheOne )
-            {
-                $foundOne = $true
-            }
-            return $isTheOne
-        }
+            return $true
+        } |
+        Tee-Object -Variable 'appPools' |
+        Write-Output
 
-    if( -not $foundOne )
+    if (($Name -and -not [wildcardpattern]::ContainsWildcardCharacters($Name) -and -not $appPools))
     {
         $msg = "IIS application pool ""$($Name)"" does not exist."
         Write-Error $msg -ErrorAction $ErrorActionPreference

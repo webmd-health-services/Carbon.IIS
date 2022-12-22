@@ -90,7 +90,17 @@ function Set-CIisAppPoolCpu
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
-    $appPool = Get-CIisAppPool -Name $AppPoolName -Defaults:$AsDefaults
+    $getArgs = @{}
+    if ($AsDefaults)
+    {
+        $getArgs['Defaults'] = $true
+    }
+    elseif ($AppPoolName)
+    {
+        $getArgs['Name'] = $AppPoolName
+    }
+
+    $appPool = Get-CIisAppPool @getArgs
     if( -not $appPool )
     {
         return
