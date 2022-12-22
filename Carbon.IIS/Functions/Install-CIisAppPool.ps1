@@ -184,7 +184,7 @@ function Install-CIisAppPool
     {
         Write-Information "Creating IIS Application Pool ""$($Name)""."
         $mgr = Get-CIisServerManager
-        $appPool = $mgr.ApplicationPools.Add($Name)
+        $mgr.ApplicationPools.Add($Name) | Out-Null
         Save-CIisConfiguration
     }
 
@@ -199,23 +199,11 @@ function Install-CIisAppPool
     }
     Set-CIisAppPool @setArgs -Reset
 
-    # TODO: Pull this out into its own Start-IisAppPool function. I think.
-    $appPool = Get-CIisAppPool -Name $Name
-    if($appPool -and $appPool.state -eq [Microsoft.Web.Administration.ObjectState]::Stopped )
-    {
-        try
-        {
-            $appPool.Start()
-        }
-        catch
-        {
-            Write-Error ('Failed to start {0} app pool: {1}' -f $Name,$_.Exception.Message)
-        }
-    }
+    Start-CIisAppPool -Name $Name
 
     if( $PassThru )
     {
-        $appPool
+        return (Get-CIisAppPool -Name $Name)
     }
 }
 
