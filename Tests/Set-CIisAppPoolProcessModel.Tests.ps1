@@ -69,7 +69,16 @@ BeforeAll {
             [switch] $OnDefaults
         )
 
-        $targetParent = Get-CIisAppPool -Name $script:appPoolName -Defaults:$OnDefaults
+        $getArgs = @{}
+        if ($OnDefaults)
+        {
+            $getArgs['Defaults'] = $true
+        }
+        else
+        {
+            $getArgs['Name'] = $script:appPoolName
+        }
+        $targetParent = Get-CIisAppPool @getArgs
         $targetParent | Should -Not -BeNullOrEmpty
 
         $target = $targetParent.ProcessModel

@@ -135,6 +135,7 @@ functions. The value of the `LocationPath` parameter should be the website name 
   * `Enable-CIIsSsl`
 * `Get-CIisAppPool` now writes an error when an application pool does not exist. Add `-ErrorAction Ignore` or
 `-ErrorAction SilentlyContinue` to hide the error.
+* `Get-CIisAppPool` now supports wildcards in values of its `Name` parameter.
 * `Get-CIisHttpRedirect` now returns `Microsoft.Web.Administration.ConfigurationSection` objects (instead of a custom
 object), which don't longer have `ChildOnly`, `Destination`, `Enabled`, `ExactDestination`, and `HttpResponseStatus`.
 * `Get-CIisWebsite` now writes an error if a specific website doesn't exist.

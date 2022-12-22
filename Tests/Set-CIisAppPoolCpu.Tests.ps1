@@ -62,7 +62,16 @@ BeforeAll {
             [switch] $OnDefaults
         )
 
-        $appPool = Get-CIisAppPool -Name $script:appPoolName -Defaults:$OnDefaults
+        $getArgs = @{}
+        if ($OnDefaults)
+        {
+            $getArgs['Defaults'] = $true
+        }
+        else
+        {
+            $getArgs['Name'] = $script:appPoolName
+        }
+        $appPool = Get-CIisAppPool @getArgs
         $appPool | Should -Not -BeNullOrEmpty
 
         $target = $appPool.Cpu
