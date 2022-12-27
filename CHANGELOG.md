@@ -122,6 +122,8 @@ application pool recycling settings.
 * `Get-CIisAppPool`: parameter `Defaults` for getting application pool default settings.
 * `Get-CIisWebsite`: parameter `Defaults` for getting website default settings.
 * `Install-CIisWebsite`: parameter `ServerAutoStart`, which configures a website's `serverAutoStart` setting.
+* `Install-CIisWebsite`: parameter `Timeout`, which controls how long `Install-CIisWebsite` waits for a website to be
+available before returning. The default value is 30 seconds.
 * `Install-CIIsAppPool`: `Credential`, which replaces the `UserName`/`Password` parameters.
 * `Set-CIisWindowsAuthentication`: parameter `UseKernelMode` for configuring the Windows authentication "useKernelMode"
 setting.
