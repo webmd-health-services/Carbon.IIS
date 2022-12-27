@@ -130,19 +130,19 @@ Describe 'Start-CIisAppPool' {
         Uninstall-CIisAppPool -Name $script:appPoolName
     }
 
-    It 'should start a stopped app pool' {
+    It 'should start a stopped application pool' {
         GivenAppPool $script:appPoolName -IsStopped
         WhenStarting $script:appPoolName
         ThenAppPool $script:appPoolName -IsStarted
     }
 
-    It 'should do nothing to an already started app pool' {
+    It 'should do nothing to an already started application pool' {
         GivenAppPool $script:appPoolName -IsStarted
         WhenStarting $script:appPoolName
         ThenAppPool $script:appPoolName -IsStarted
     }
 
-    It 'should stop waiting to start app pool' {
+    It 'should stop waiting to start application pool' {
         GivenAppPool $script:appPoolName -IsStopped
         GivenAppPoolTimesOutStarting $script:appPoolName
         WhenStarting $script:appPoolName -ErrorAction SilentlyContinue
