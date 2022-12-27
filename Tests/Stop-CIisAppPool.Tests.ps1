@@ -26,17 +26,18 @@ BeforeAll {
             [switch] $IsStopped
         )
 
-        $appPool = Install-CIisAppPool -Name $Named -ManagedRuntimeVersion 'v4.0' -PassThru
+        Install-CIisAppPool -Name $Named -ManagedRuntimeVersion 'v4.0'
         if ($IsStarted)
         {
-            $state = $appPool.Start()
-            $state | Should -Be ([ObjectState]::Started)
+            Start-CIisAppPool -Name $Named
+            $expectedState = [ObjectState]::Started
         }
         elseif ($IsStopped)
         {
-            $state = $appPool.Stop()
-            $state | Should -Be ([ObjectState]::Stopped)
+            Stop-CIisAppPool -Name $Named
+            $expectedState = [ObjectState]::Stopped
         }
+        Get-CIisAppPool -Name $Named | ForEach-Object -MemberName 'State' | Should -Be $expectedState
     }
 
     function GivenAppPoolTimesOutStopping

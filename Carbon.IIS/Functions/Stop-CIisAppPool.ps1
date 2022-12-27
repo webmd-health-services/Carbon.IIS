@@ -91,6 +91,7 @@ function Stop-CIisAppPool
             $state = $null
             $lastError = $null
             $timer.Restart()
+            $numErrors = $Global:Error.Count
             while ($null -eq $state -and $timer.Elapsed -lt $Timeout)
             {
                 try
@@ -107,9 +108,15 @@ function Stop-CIisAppPool
 
             if ($null -eq $state)
             {
-                $msg = "Failed to stop IIS application pool ""$($appPool.Name)"": $($lastError)"
+                $msg = "Exception stopping IIS application pool ""$($appPool.Name)"": $($lastError)"
                 Write-Error -Message $msg -ErrorAction $ErrorActionPreference
                 continue
+            }
+
+            # Clear any errors that occurred since the app pool eventually stopped.
+            for ($idx = $numErrors; $idx -lt $Global:Error.Count; ++$idx)
+            {
+                $Global:Error.RemoveAt(0)
             }
 
             if ($state -eq [ObjectState]::Stopped)

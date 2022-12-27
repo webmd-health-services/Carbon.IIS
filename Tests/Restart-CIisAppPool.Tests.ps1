@@ -25,33 +25,34 @@ BeforeAll {
             [switch] $IsStopped
         )
 
-        $appPool = Install-CIisAppPool -Name $Named `
-                                       -ManagedRuntimeVersion 'v4.0' `
-                                       -AutoStart $true `
-                                       -StartMode AlwaysRunning `
-                                       -PassThru
+        Install-CIisAppPool -Name $Named `
+                            -ManagedRuntimeVersion 'v4.0' `
+                            -AutoStart $true `
+                            -StartMode AlwaysRunning `
+                            -PassThru
         Install-CIIsWebsite -Name $script:appPoolName `
                             -PhysicalPath 'C:\inetpub\wwwroot' `
                             -AppPoolName $Named `
                             -Binding "http/*:$($script:port)" `
                             -ServerAutoStart $true
-        $appPool = Get-CIisAppPool -Name $Named
         if ($IsStarted)
         {
-            $state = $appPool.Start()
-            $state | Should -Be 'Started'
+            Start-CIisAppPool -Name $Named
+            $expectedState = 'Started'
             Invoke-WebRequest $script:siteUrl | Out-Null
-            $appPool.WorkerProcesses | Should -Not -BeNullOrEmpty
         }
         elseif ($IsStopped)
         {
-            $state = $appPool.Stop()
-            while ($state -ne 'Stopped')
-            {
-                Start-Sleep -Milliseconds 100
-                $state = $appPool.State
-            }
-            $state | Should -Be 'Stopped'
+            Stop-CIisAppPool -Name $Named
+            $expectedState = 'Stopped'
+        }
+        $appPool = Get-CIisAppPool -Name $Named
+        $appPool | Should -Not -BeNullOrEmpty
+        $appPool.State | Should -Be $expectedState
+
+        if ($isStarted)
+        {
+            $appPool.WorkerProcesses | Should -Not -BeNullOrEmpty
         }
     }
 
