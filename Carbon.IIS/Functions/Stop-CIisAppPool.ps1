@@ -3,7 +3,7 @@ function Stop-CIisAppPool
 {
     <#
     .SYNOPSIS
-    Restarts an IIS application pool.
+    Stops an IIS application pool.
 
     .DESCRIPTION
     The `Stop-CIisAppPool` stops an IIS application pool. Pass the names of the application pools to the `Name`
