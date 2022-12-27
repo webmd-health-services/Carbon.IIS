@@ -74,16 +74,15 @@ function Install-CIisWebsite
         [Alias('Path')]
         [String] $PhysicalPath,
 
-        # The site's network bindings.  Default is `http/*:80:`.  Bindings should be specified in
-        # `protocol/IPAddress:Port:Hostname` format.
+        # The site's network bindings. Bindings should be specified in `protocol/IPAddress:Port:Hostname` format.
         #
         #  * Protocol should be http or https.
         #  * IPAddress can be a literal IP address or `*`, which means all of the computer's IP addresses.  This
         #  function does not validate if `IPAddress` is actually in use on this computer.
         #  * Leave hostname blank for non-named websites.
-        [Parameter(Position=2)]
+        [Parameter(Mandatory, Position=2)]
         [Alias('Bindings')]
-        [String[]] $Binding = @('http/*:80:'),
+        [String[]] $Binding,
 
         # The name of the app pool under which the website runs. The app pool must exist. If not provided, IIS picks
         # one for you.  No whammy, no whammy! It is recommended that you create an app pool for each website. That's
@@ -148,6 +147,7 @@ function Install-CIisWebsite
         Write-Error $errorMsg
         return
     }
+
 
     [Microsoft.Web.Administration.Site] $site = $null
     $modified = $false
@@ -225,9 +225,20 @@ function Install-CIisWebsite
         $modified = $true
     }
 
-    if( $AppPoolName )
+    if (-not $AppPoolName )
     {
-        if( $rootApp.ApplicationPoolName -ne $AppPoolName )
+        $AppPoolName = Get-CIisApplication -Defaults | Select-Object -ExpandProperty 'ApplicationPoolName'
+    }
+
+    if( $rootApp.ApplicationPoolName -ne $AppPoolName )
+    {
+        if (-not (Test-CIisAppPool -Name $AppPoolName))
+        {
+            $msg = "Unable to set the ""$($Name)"" IIS website's application pool to ""$($AppPoolName)"" because " +
+                "that application pool does not exist."
+            Write-Error -Message $msg -ErrorAction $ErrorActionPreference
+        }
+        else
         {
             Write-Information "Setting ""$($Name)"" IIS website's application pool to ""$($AppPoolName)""."
             $rootApp.ApplicationPoolName = $AppPoolName
@@ -273,7 +284,7 @@ function Install-CIisWebsite
 
     if( $PassThru )
     {
-        return $website
+        return (Get-CIisWebsite -Name $Name)
     }
 }
 

@@ -14,7 +14,6 @@ Set-StrictMode -Version 'Latest'
 
 BeforeAll {
     $script:siteName = 'Windows Authentication'
-    $script:sitePort = 4387
 
     & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-CarbonTest.ps1' -Resolve)
 
@@ -25,21 +24,19 @@ BeforeAll {
                                            -Windows
         $KernelMode | Should -Be ($authSettings.GetAttributeValue('useKernelMode'))
     }
+
+    Start-W3ServiceTestFixture
+}
+
+AfterAll {
+    Complete-W3ServiceTestFixture
 }
 
 Describe 'Set-CIisWindowsAuthentication' {
-    BeforeAll {
-        Start-W3ServiceTestFixture
-    }
-
-    AfterAll {
-        Complete-W3ServiceTestFixture
-    }
-
     BeforeEach {
         $script:testWebRoot = New-TestDirectory
         Uninstall-CIisWebsite $script:siteName
-        Install-CIisWebsite -Name $script:siteName -Path $script:testWebRoot -Bindings "http://*:$script:sitePort"
+        Install-CIisTestWebsite -Name $script:siteName -PhysicalPath $script:testWebRoot
         $script:webConfigPath = Join-Path -Path $script:testWebRoot -ChildPath 'web.config'
         if( Test-Path $script:webConfigPath -PathType Leaf )
         {

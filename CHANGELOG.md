@@ -60,6 +60,8 @@ value. The `ExactDestination` switch is now a boolean parameter. Change usages o
 * Update usages of the `Set-CIisHttpRedirect` function's `ChildOnly` switch to take in a `$true` or `$false` value. The
 `ChildOnly` switch is now a boolean parameter. Change usages of `-ChildOnly` to `-ChildOnly $true` and usages of
  `-ChildOnly:$false` to `-ChildOnly $false`.
+* Add `-Binding '*:80:'` to usages of `Install-CIisWebsite` that don't currently have a `-Bindings` parameter. This
+parameter is now required and no longer has a default.
 
 ### Added
 
@@ -73,6 +75,8 @@ paths.
 pool's `add` element in IIS' applicationHost.config file). Added parameters `QueueLength`, `AutoStart`,
 `Enable32BitAppOnWin64`, `ManagedRuntimeLoader`, `EnableConfigurationOverride`, `ManagedPipelineMode`, `CLRConfigFile`,
 `PassAnonymousToken`, and `StartMode` to `Install-CIisAppPool`.
+* `Install-CIisWebsite` now validates that the website's chosen application pool exists and writes an error if it
+doesn't.
 * The `Join-CIisVirtualPath` function's `Path` parameter now accepts an array of paths that will be joined together.
 * The `Join-CIisVirtualPath` function now accepts paths as pipeline input. All pats are joined together.
 * The `Join-CIisVirtualPath` function now accepts and joins multiple paths as unnamed parameters. For example,
@@ -92,6 +96,8 @@ separators are `/`, etc.).
 * `Remove-CIisConfigurationAttribute` for removing attributes from configuration sections.
 * `Remove-CIisConfigurationLocation` for removing a website's or website/virtual path's custom configuration (i.e.
 removes its `<location>` element from applicationHost.config).
+* `Reset-CIisServerManager` for disposing the Carbon.IIS module's current server manager object, and replacing it with
+a new instance.
 * `Restart-CIisAppPool` for stopping and starting an application pool.
 * `Restart-CIisWebsite` for stopping and starting a website.
 * `Save-CIisConfiguration` for saving configuration changes to IIS. Only needed if you make changes to any of the

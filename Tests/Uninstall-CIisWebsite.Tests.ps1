@@ -21,8 +21,7 @@ BeforeAll {
             [String] $Named
         )
 
-        Install-CIisWebsite -Name $Named -Path $script:testDir -Binding "http/*:80:$($Named).localhost"
-
+        Install-CIisTestWebsite -Name $Named -PhysicalPath $script:testDir
     }
 
     function ThenSite

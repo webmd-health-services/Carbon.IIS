@@ -31,6 +31,7 @@ BeforeAll {
                             -AppPoolName $Named `
                             -Binding (New-Binding) `
                             -ServerAutoStart $true
+        Reset-CIisServerManager
         $website = Get-CIisWebsite -Name $Named
         if ($IsStarted)
         {

@@ -13,7 +13,6 @@
 BeforeAll {
     & (Join-Path -Path $PSScriptRoot 'Initialize-CarbonTest.ps1' -Resolve)
     $script:siteName = 'CarbonGetIisHttpHeader'
-    $script:sitePort = 47939
 }
 
 Describe 'Get-CIisHttpHeader' {
@@ -27,7 +26,7 @@ Describe 'Get-CIisHttpHeader' {
 
     BeforeEach {
         $script:testDir = New-TestDirectory
-        Install-CIisWebsite -Name $script:siteName -Path $script:testDir -Binding "http/*:$($script:sitePort):*"
+        Install-CIisTestWebsite -Name $script:siteName -PhysicalPath $script:testDir
     }
 
     AfterEach {

@@ -13,29 +13,27 @@
 Set-StrictMode -Version 'Latest'
 
 BeforeAll {
+    $Global:DebugPreference = 'Continue'
     Write-Debug 'BeforeAll'
     $script:siteName = 'Anonymous Authentication'
-    $script:sitePort = 4387
 
     & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-CarbonTest.ps1' -Resolve)
+
+    Start-W3ServiceTestFixture
+}
+
+AfterAll {
+    Write-Debug 'AfterAll'
+    Complete-W3ServiceTestFixture
+    $Global:DebugPreference = 'SilentlyContinue'
 }
 
 Describe 'Disable-CIisSecurityAuthentication' {
-    BeforeAll {
-        Write-Debug 'BeforeAll'
-        Start-W3ServiceTestFixture
-    }
-
-    AfterAll {
-        Write-Debug 'AfterAll'
-        Complete-W3ServiceTestFixture
-    }
-
     BeforeEach {
         Write-Debug 'BeforeEach'
         $script:webRoot = New-TestDirectory
         Uninstall-CIisWebsite $script:siteName
-        Install-CIisWebsite -Name $script:siteName -Path $script:webRoot -Bindings "http://*:$script:sitePort"
+        Install-CIisTestWebsite -Name $script:siteName -PhysicalPath $script:webRoot
 
         $webConfigPath = Join-Path -Path $script:webRoot -ChildPath 'web.config'
         if( Test-Path -Path $webConfigPath)

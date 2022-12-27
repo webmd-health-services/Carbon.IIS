@@ -13,23 +13,24 @@
 BeforeAll {
     & (Join-Path -Path $PSScriptRoot 'Initialize-CarbonTest.ps1' -Resolve)
 
-    $script:siteName = 'CarbonSetIisHttpHeader'
-    $script:sitePort = 47938
+    $script:siteName = $null
+    $script:testNum = 0
     $script:testDir = $null
+
+    Start-W3ServiceTestFixture
+}
+
+AfterAll {
+    Complete-W3ServiceTestFixture
 }
 
 Describe 'Set-CIisHttpHeader' {
-    BeforeAll {
-        Start-W3ServiceTestFixture
-    }
-
-    AfterAll {
-        Complete-W3ServiceTestFixture
-    }
 
     BeforeEach {
         $script:testDir = New-TestDirectory
-        Install-CIisWebsite -Name $script:siteName -Path $script:testDir -Binding ('http/*:{0}:*' -f $script:sitePort)
+        $script:siteName = "Set-CIisHttpHeader$($script:testNum)"
+        $script:testNum += 1
+        Install-CIisTestWebsite -Name $script:siteName -PhysicalPath $script:testDir
     }
 
     AfterEach {

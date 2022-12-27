@@ -130,11 +130,9 @@ BeforeAll {
 Describe 'Set-CIisWebsite' {
     BeforeAll {
         Start-W3ServiceTestFixture
-        Install-CIisAppPool -Name 'Set-CIisWebsite'
     }
 
     AfterAll {
-        Uninstall-CIisAppPool -Name 'Set-CIisWebsite'
         Complete-W3ServiceTestFixture
     }
 
@@ -142,7 +140,7 @@ Describe 'Set-CIisWebsite' {
         $script:siteName = "Set-CIisWebsite$($script:testNum)"
         $script:testNum++
         Set-CIisWebsite -AsDefaults @script:defaultDefaults -Reset
-        Install-CIisWebsite -Name $script:siteName -PhysicalPath (New-TestDirectory) -AppPoolName 'Set-CIisWebsite'
+        Install-CIisTestWebsite -Name $script:siteName -PhysicalPath (New-TestDirectory)
     }
 
     AfterEach {

@@ -10,18 +10,40 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+#Requires -Version 5.1
+Set-StrictMode -Version 'Latest'
+
 BeforeAll {
     & (Join-Path -Path $PSScriptRoot 'Initialize-CarbonTest.ps1' -Resolve)
 
     $script:appPoolName = 'Carbon-Get-CIisWebsite'
     $script:siteName = 'Carbon-Get-CIisWebsite'
+    $script:defaultProtocol = 'http'
+
+    $script:ipAddress1 = '*'
+    $script:port1 = New-Port
+
+    $script:protocol2 = 'https'
+    $script:ipAddress2 = '*'
+    $script:port2 = New-Port
+
+    $script:ipAddress3 = '1.2.3.4'
+    $script:port3 = New-Port
+
+    $script:ipaddress4 = '5.6.7.8'
+    $script:port4 = New-Port
 }
 
 Describe 'Get-CIisWebsite' {
     BeforeAll {
         Start-W3ServiceTestFixture
         Install-CIisAppPool -Name $script:appPoolName
-        $bindings = @( 'http/*:8401:', 'https/*:8401:', 'http/1.2.3.4:80:', "http/5.6.7.8:80:$script:siteName" )
+        $bindings = @(
+            (New-Binding -Protocol $script:defaultProtocol -IPAddress $script:ipAddress1 -Port $script:port1),
+            (New-Binding -Protocol $script:protocol2 -IPAddress $script:ipAddress2 -Port $script:port2),
+            (New-Binding -Protocol $script:defaultProtocol -IPAddress $script:ipAddress3 -Port $script:port3),
+            (New-Binding -Protocol $script:defaultProtocol -IPAddress $script:ipAddress4 -Port $script:port4 -HostName $script:siteName)
+        )
         Install-CIisWebsite -Name $script:siteName -Bindings $bindings -Path $TestDrive -AppPoolName $script:appPoolName
     }
 
@@ -52,24 +74,24 @@ Describe 'Get-CIisWebsite' {
         $website.Name | Should -Be $script:siteName
         ($website.ID -gt 0) | Should -BeTrue
         $website.Bindings.Count | Should -Be 4
-        $website.Bindings[0].Protocol | Should -Be 'http'
+        $website.Bindings[0].Protocol | Should -Be $script:defaultProtocol
         $website.Bindings[0].Endpoint.Address | Should -Be '0.0.0.0'
-        $website.Bindings[0].Endpoint.Port | Should -Be 8401
+        $website.Bindings[0].Endpoint.Port | Should -Be $script:port1
         $website.Bindings[0].Host | Should -BeNullOrEmpty
 
-        $website.Bindings[1].Protocol | Should -Be 'https'
+        $website.Bindings[1].Protocol | Should -Be $script:protocol2
         $website.Bindings[1].Endpoint.Address | Should -Be '0.0.0.0'
-        $website.Bindings[1].Endpoint.Port | Should -Be 8401
+        $website.Bindings[1].Endpoint.Port | Should -Be $script:port2
         $website.Bindings[1].Host | Should -BeNullOrEmpty
 
-        $website.Bindings[2].Protocol | Should -Be 'http'
-        $website.Bindings[2].Endpoint.Address | Should -Be '1.2.3.4'
-        $website.Bindings[2].Endpoint.Port | Should -Be 80
+        $website.Bindings[2].Protocol | Should -Be $script:defaultProtocol
+        $website.Bindings[2].Endpoint.Address | Should -Be $script:ipAddress3
+        $website.Bindings[2].Endpoint.Port | Should -Be $script:port3
         $website.Bindings[2].Host | Should -BeNullOrEmpty
 
-        $website.Bindings[3].Protocol | Should -Be 'http'
-        $website.Bindings[3].Endpoint.Address | Should -Be '5.6.7.8'
-        $website.Bindings[3].Endpoint.Port | Should -Be 80
+        $website.Bindings[3].Protocol | Should -Be $script:defaultProtocol
+        $website.Bindings[3].Endpoint.Address | Should -Be $script:ipAddress4
+        $website.Bindings[3].Endpoint.Port | Should -Be $script:port4
         $website.Bindings[3].Host | Should -Be $script:siteName
 
         $physicalPath = $website.Applications |

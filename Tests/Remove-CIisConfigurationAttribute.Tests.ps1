@@ -3,7 +3,6 @@
 Set-StrictMode -Version 'Latest'
 
 BeforeAll {
-    $script:port = 9877
     $script:webConfigPath = ''
     $script:siteName = $PSCommandPath | Split-Path -Leaf
     $script:testWebRoot = ''
@@ -118,7 +117,7 @@ Describe 'Remove-CIisConfigurationAttribute' {
 
     BeforeEach {
         $script:testWebRoot = New-TestDirectory
-        Install-CIisWebsite -Name $script:siteName -Path $script:testWebRoot -Bindings "http://*:$($script:port)"
+        Install-CIisTestWebsite -Name $script:siteName -PhysicalPath $script:testWebRoot
         $script:webConfigPath = Join-Path -Path $script:testWebRoot -ChildPath 'web.config'
         if( Test-Path $script:webConfigPath )
         {

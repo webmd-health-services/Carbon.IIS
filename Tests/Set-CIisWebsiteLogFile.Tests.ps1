@@ -7,6 +7,7 @@ BeforeAll {
     & (Join-Path -Path $PSScriptRoot 'Initialize-CarbonTest.ps1' -Resolve)
 
     $script:testNum = 0
+    $script:appPoolName = 'Set-CIisWebsiteLogFile'
 
     $script:defaultDefaults = @{}
     (Get-CIisWebsite -Defaults).LogFile.Attributes |
@@ -128,19 +129,17 @@ BeforeAll {
 Describe 'Set-CIisWebsiteLogFile' {
     BeforeAll {
         Start-W3ServiceTestFixture
-        Install-CIisAppPool -Name 'Set-CIisWebsiteLogFile'
     }
 
     AfterAll {
         Uninstall-CIisAppPool -Name 'Set-CIisWebsiteLogFile'
-        Complete-W3ServiceTestFixture
     }
 
     BeforeEach {
         $script:websiteName = "Set-CIisWebsiteLogFile$($script:testNum)"
         $script:testNum++
         Set-CIisWebsiteLogFile -AsDefaults @script:defaultDefaults -Reset
-        Install-CIisWebsite -Name $script:websiteName -PhysicalPath (New-TestDirectory) -AppPoolName $script:websiteName
+        Install-CIisTestWebsite -Name $script:websiteName -PhysicalPath (New-TestDirectory)
     }
 
     AfterEach {

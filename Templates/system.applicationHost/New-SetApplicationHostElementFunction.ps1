@@ -49,10 +49,8 @@ if( $TargetObjectType -eq 'website' )
     $tokens['CMD_NAME_PARAMETER_NAME'] = 'SiteName'
     $tokens['GET_CMD_NAME'] = 'Get-CIisWebsite'
     $tokens['TARGET_VAR_NAME'] = 'siteName'
-    $tokens['BEFORE_ALL'] = "Install-CIisAppPool -Name '$($Name)'"
-    $tokens['AFTER_ALL'] = "Uninstall-CIisAppPool -Name '$($Name)'"
     $tokens['BEFORE_EACH'] =
-        "Install-CIisWebsite -Name `$script:siteName -PhysicalPath (New-TestDirectory) -AppPoolName '$($Name)'"
+        "Install-CIisTestWebsite -Name `$script:siteName -PhysicalPath (New-TestDirectory)"
     $tokens['AFTER_EACH'] = 'Uninstall-CIisWebsite -Name $script:siteName'
 }
 elseif( $TargetObjectType -eq 'application pool' )

@@ -15,7 +15,6 @@ BeforeAll {
 
     & (Join-Path -Path $PSScriptRoot 'Initialize-CarbonTest.ps1' -Resolve)
 
-    $script:port = 9878
     $script:siteName = 'TestApplication'
     $script:appName = 'App'
     $script:appPoolName = 'TestApplication'
@@ -67,7 +66,7 @@ BeforeAll {
             [String] $ExpectedContent = $script:appIndexHtmlContent
         )
 
-        ThenUrlContent "http://localhost:$($script:port)/$($VirtualPath)/" -Is $ExpectedContent
+        ThenUrlContent "$($script:siteUrl)/$($VirtualPath)/" -Is $ExpectedContent
     }
 
     function ThenPhysicalPathIs
@@ -118,7 +117,10 @@ Describe 'Install-CIisApplication' {
         Install-CIisAppPool -Name $script:appPoolName
         Install-CIisAppPool -Name 'DefaultAppPool'
         $script:websiteRoot = New-TestDirectory
-        Install-CIisWebsite -Name $script:siteName -PhysicalPath $script:websiteRoot -Bindings "http://*:$($script:port)"
+        $port = New-Port
+        $binding = New-Binding -Port $port
+        $script:siteUrl = "http://localhost:$($port)"
+        Install-CIisTestWebsite -Name $script:siteName -PhysicalPath $script:websiteRoot -Binding $binding
     }
 
     AfterAll {

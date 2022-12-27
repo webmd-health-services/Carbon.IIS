@@ -123,11 +123,9 @@ BeforeAll {
 Describe 'Set-CIisWebsiteLimit' {
     BeforeAll {
         Start-W3ServiceTestFixture
-        Install-CIisAppPool -Name 'Set-CIisWebsiteLimit'
     }
 
     AfterAll {
-        Uninstall-CIisAppPool -Name 'Set-CIisWebsiteLimit'
         Complete-W3ServiceTestFixture
     }
 
@@ -135,7 +133,7 @@ Describe 'Set-CIisWebsiteLimit' {
         $script:siteName = "Set-CIisWebsiteLimit$($script:testNum)"
         $script:testNum++
         Set-CIisWebsiteLimit -AsDefaults @script:defaultDefaults -Reset
-        Install-CIisWebsite -Name $script:siteName -PhysicalPath (New-TestDirectory) -AppPoolName 'Set-CIisWebsiteLimit'
+        Install-CIisTestWebsite -Name $script:siteName -PhysicalPath (New-TestDirectory)
     }
 
     AfterEach {

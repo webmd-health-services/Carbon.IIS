@@ -102,6 +102,7 @@
         'Remove-CIisConfigurationAttribute',
         'Remove-CIisConfigurationLocation',
         'Remove-CIisMimeMap',
+        'Reset-CIisServerManager',
         'Restart-CIisAppPool',
         'Restart-CIisWebsite',
         'Save-CIisConfiguration',

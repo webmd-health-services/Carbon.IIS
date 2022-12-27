@@ -13,14 +13,18 @@
 BeforeAll {
     & (Join-Path -Path $PSScriptRoot 'Initialize-CarbonTest.ps1' -Resolve)
 
-    $script:siteName = 'CarbonSetIisMimeMap'
+    $script:siteName = $null
+    $script:testNum = 0
+
+    Start-W3ServiceTestFixture
 }
 
 Describe 'Set-CIisMimeMap' {
     BeforeEach {
-        Start-W3ServiceTestFixture
         $script:testDir = New-TestDirectory
-        Install-CIisWebsite -Name $script:siteName -Binding 'http/*:48284:*' -Path $script:testDir
+        $script:siteName = "Set-CIisMimeMap$($script:testNum)"
+        $script:testNum += 1
+        Install-CIisTestWebsite -Name $script:siteName -PhysicalPath $script:testDir
     }
 
     AfterEach {

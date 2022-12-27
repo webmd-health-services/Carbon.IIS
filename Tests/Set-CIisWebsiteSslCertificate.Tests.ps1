@@ -17,25 +17,26 @@ BeforeAll {
     $script:cert = $null
     $script:appID = '990ae75d-b1c3-4c4e-93f2-9b22dfbfe0ca'
     $script:ipAddress = '43.27.98.0'
-    $script:port = '443'
-    $script:allPort = '8013'
+    $script:port = -1
+    $script:allPort = -1
+    Start-W3ServiceTestFixture
+}
+
+AfterAll {
+    Complete-W3ServiceTestFixture
 }
 
 
 Describe 'Set-CIisWebsiteSslCertificate' {
-    BeforeAll {
-        Start-W3ServiceTestFixture
-    }
-
-    AfterAll {
-        Complete-W3ServiceTestFixture
-    }
-
     BeforeEach {
         $script:testDir = New-TestDirectory
-        Install-CIisWebsite -Name $script:siteName `
-                            -Path $script:testDir `
-                            -Bindings @( "https/$($script:ipAddress):$($script:port):", "https/*:$($script:allPort):" )
+        $script:port = New-Port
+        $script:allPort = New-Port
+        $bindings = @(
+            (New-Binding -Protocol 'https' -IPAddress $script:ipAddress -Port $script:port),
+            (New-Binding -Protocol 'https' -Port $script:allPort)
+        )
+        Install-CIisTestWebsite -Name $script:siteName -PhysicalPath $script:testDir -Binding $bindings
         $script:certPath = Join-Path -Path $PSScriptRoot -ChildPath 'CarbonIisTestCertificate.cer' -Resolve
         $script:cert = Install-CCertificate -Path $script:certPath -StoreLocation LocalMachine -StoreName My -PassThru
     }
@@ -80,7 +81,7 @@ Describe 'Set-CIisWebsiteSslCertificate' {
     }
 
     It 'should support website without ssl bindings' {
-        Install-CIisWebsite -Name $script:siteName -Path $script:testDir -Bindings @( 'http/*:80:' )
+        Install-CIisTestWebsite -Name $script:siteName -PhysicalPath $script:testDir
         $bindings = @( Get-CSslCertificateBinding )
         Set-CIisWebsiteSslCertificate -SiteName $script:siteName `
                                       -Thumbprint $script:cert.Thumbprint `

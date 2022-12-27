@@ -8,9 +8,7 @@ BeforeAll {
         param(
             [String] $Named
         )
-        Install-CIisWebsite -Name $Named `
-                            -PhysicalPath $script:testDir `
-                            -Binding 'http/*:80:removeconfiglocationone.localhost'
+        Install-CIisTestWebsite -Name $Named -PhysicalPath $script:testDir
         Set-CIisHttpHeader -SiteName $Named -Name 'X-Carbon.IIS-RemoveConfigLocation' -Value $Named
         Get-CIisConfigurationLocationPath -LocationPath $Named | Should -Not -BeNullOrEmpty
     }

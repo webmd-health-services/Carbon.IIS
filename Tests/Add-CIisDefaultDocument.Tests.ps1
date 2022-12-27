@@ -15,12 +15,12 @@ BeforeAll {
     & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-CarbonTest.ps1' -Resolve)
 
     $script:siteName = 'DefaultDocument'
-    $script:sitePort = 4387
+    $script:siteUrl = ''
     $script:webConfigPath = $null
 
     function Assert-DefaultDocumentReturned
     {
-        ThenUrlContent "http://localhost:$($script:sitePort)/" -Is $PSCommandPath
+        ThenUrlContent $script:siteUrl -Is $PSCommandPath
     }
 }
 
@@ -41,9 +41,11 @@ Describe 'Add-CIisDefaultDocument' {
         Write-Debug 'BeforeEach'
         $script:testDir = New-TestDirectory
         Uninstall-CIisWebsite $script:siteName
+        $port = New-Port
+        $script:siteUrl = "http://localhost:$($port)"
         Install-CIisWebsite -Name $script:siteName `
                             -Path $script:testDir `
-                            -Bindings "http://*:$($script:sitePort)" `
+                            -Bindings (New-Binding -Port $port) `
                             -AppPoolName $script:siteName
         $PSCommandPath | Set-Content -Path (Join-Path -Path $script:testDir -ChildPath 'newdefault.html') -NoNewLine
 

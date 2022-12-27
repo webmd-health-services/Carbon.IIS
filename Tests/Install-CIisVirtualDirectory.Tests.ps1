@@ -11,11 +11,12 @@
 # limitations under the License.
 
 BeforeAll {
-    $script:port = 9878
-    $script:siteName = 'TestVirtualDirectory'
+    $script:siteName = ''
     $script:vDirName = 'VDir'
     $script:webConfig = $null
     $script:output = $null
+    $script:siteUrl = ''
+    $script:testNum = 0
 
     & (Join-Path -Path $PSScriptRoot 'Initialize-CarbonTest.ps1' -Resolve)
 
@@ -27,10 +28,16 @@ BeforeAll {
             [String] $ServedFrom
         )
 
+        $appPoolName =
+            Get-CIisWebsite -Name $script:siteName |
+            Select-Object -ExpandProperty 'Applications' |
+            Where-Object 'Path' -EQ '/' |
+            Select-Object -ExpandProperty 'ApplicationPoolName'
+
         Install-CIisApplication -SiteName $script:siteName `
                                 -VirtualPath $Named `
                                 -PhysicalPath (Join-Path -Path $script:vDirsRoot -ChildPath $ServedFrom) `
-                                -AppPoolName $script:siteName
+                                -AppPoolName $appPoolName
     }
 
     function GivenDirectory
@@ -84,7 +91,7 @@ BeforeAll {
         $vDirPhysicalPath = Join-Path -Path $script:vDirsRoot -ChildPath $From
 
         $urlPath = Join-CIisVirtualPath -Path $UnderApplication -ChildPath $VirtualPath
-        ThenUrlContent "http://localhost:$($script:port)/$($urlPath)/" -Is $vDirPhysicalPath
+        ThenUrlContent "$($script:siteUrl)/$($urlPath)/" -Is $vDirPhysicalPath
 
         $website = Get-CIisWebsite -Name $script:siteName
         $website.Applications |
@@ -99,23 +106,23 @@ BeforeAll {
 Describe 'Install-CIisVirtualDirectory' {
     BeforeAll {
         Start-W3ServiceTestFixture
-        Install-CIisAppPool -Name $script:siteName
         # We create the directory outside the webroot to ensure vdir actually gets created. If we create under the
         # website root, there's no difference between a vdir and a regular directory.
         $script:vDirsRoot = New-TestDirectory
     }
 
     AfterAll {
-        Uninstall-CIisAppPool -Name $script:siteName
         Complete-W3ServiceTestFixture
     }
 
     BeforeEach {
         $script:testDir = New-TestDirectory
-        Install-CIisWebsite -Name $script:siteName `
-                            -Path $script:testDir `
-                            -Bindings "http://*:$($script:port)" `
-                            -AppPoolName $script:siteName
+        $port = New-Port
+        $binding = New-Binding -Port $port
+        $script:siteUrl = "http://localhost:$($port)"
+        $script:siteName = "Install-CIisVirtualDirectory$($script:testNum)"
+        $script:testNum += 1
+        Install-CIisTestWebsite -Name $script:siteName -PhysicalPath $script:testDir -Binding $binding
         $script:webConfig = Join-Path -Path $script:testDir -ChildPath 'web.config'
         if( Test-Path -Path $script:webConfig )
         {
@@ -186,6 +193,6 @@ Describe 'Install-CIisVirtualDirectory' {
             'VirtualPath' = 'VSeven';
             'PhysicalPath' = 'Seven'
         }
-        ThenRunning -UnderApplication '/ASix' 'VSeven' -From 'Seven'
+        ThenRunning -UnderApplication '/ASix' -VirtualPath 'VSeven' -From 'Seven'
     }
 }

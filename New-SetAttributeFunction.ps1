@@ -399,7 +399,7 @@ Describe '$($Name)' {
 
     BeforeEach {
         `$script:testWebRoot = New-TestDirectory
-        Install-CIisWebsite -Name `$script:siteName -Path `$script:testWebRoot -Bindings "http://*:`$(`$script:port)"
+        Install-CIisTestWebsite -Name `$script:siteName -PhysicalPath `$script:testWebRoot
         `$script:webConfigPath = Join-Path -Path `$script:testWebRoot -ChildPath 'web.config'
         if( Test-Path `$script:webConfigPath )
         {
@@ -472,6 +472,8 @@ Set-StrictMode -Version 'Latest'
 BeforeAll {
     & (Join-Path -Path `$PSScriptRoot 'Initialize-CarbonTest.ps1' -Resolve)
 
+    Start-W3ServiceTestFixture
+
     `$script:testNum = 0
 
     # All non-default values.
@@ -541,6 +543,10 @@ BeforeAll {
     }
 }
 
+AfterAll {
+    Complete-W3ServiceTestFixture
+}
+
 Describe '$($Name)' {
 
 "@)
@@ -548,20 +554,11 @@ Describe '$($Name)' {
     if( $ConfigurationElementType -eq 'Site')
     {
         [void]$content.Append(@"
-    BeforeAll {
-        Start-W3ServiceTestFixture
-        Install-CIisAppPool -Name '$($Name)'
-    }
-
-    AfterAll {
-        Uninstall-CIisAppPool -Name '$($Name)'
-        Complete-W3ServiceTestFixture
-    }
 
     BeforeEach {
         `$script:$($targetVarName)Name = "$($Name)`$(`$script:testNum++)"
         `$webroot = New-TestDirectory
-        Install-CIisWebsite -Name `$script:$($targetVarName)Name -PhysicalPath `$webroot -AppPoolName '$($Name)')
+        Install-CIisTestWebsite -Name `$script:$($targetVarName)Name -PhysicalPath `$webroot
     }
 
     AfterEach {
@@ -572,14 +569,6 @@ Describe '$($Name)' {
     else
     {
         [void]$content.Append(@"
-    BeforeAll {
-        Start-W3ServiceTestFixture
-    }
-
-    AfterAll {
-        Complete-W3ServiceTestFixture
-    }
-
     BeforeEach {
         `$script:$($targetVarName)Name = "$($Name)`$(`$script:testNum++)"
         Install-CIisAppPool -Name `$script:$($targetVarName)Name

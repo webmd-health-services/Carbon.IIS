@@ -14,7 +14,6 @@ Set-StrictMode -Version 'Latest'
 
 BeforeAll {
     $script:siteName = 'Anonymous Authentication'
-    $script:sitePort = 4387
     $script:webConfigPath = ''
 
     & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-CarbonTest.ps1' -Resolve)
@@ -32,7 +31,7 @@ Describe 'Enable-CIisSecurityAuthentication' {
     BeforeEach {
         $script:testWebRoot = New-TestDirectory
         Uninstall-CIisWebsite $script:siteName
-        Install-CIisWebsite -Name $script:siteName -Path $script:testWebRoot -Bindings "http://*:$script:sitePort"
+        Install-CIisTestWebsite -Name $script:siteName -PhysicalPath $script:testWebRoot
         $script:webConfigPath = Join-Path -Path $script:testWebRoot -ChildPath 'web.config'
         if( Test-Path -Path $script:webConfigPath  )
         {

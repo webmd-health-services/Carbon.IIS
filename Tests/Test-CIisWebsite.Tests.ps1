@@ -32,7 +32,7 @@ Describe 'Test-CIisWebsite' {
     }
 
     It 'should find existent website' {
-        Install-CIisWebsite -Name 'Test Website Exists' -Path $script:testDir
+        Install-CIisTestWebsite -Name 'Test Website Exists' -PhysicalPath $script:testDir
         try
         {
             Test-CIisWebsite 'Test Website Exists' | Should -BeTrue

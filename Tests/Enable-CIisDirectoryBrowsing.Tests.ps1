@@ -15,7 +15,6 @@ Set-StrictMode -Version 'Latest'
 BeforeAll {
     & (Join-Path -Path $PSScriptRoot 'Initialize-CarbonTest.ps1' -Resolve)
 
-    $script:port = 9879
     $script:siteName = 'TestEnableIisDirectoryBrowsing'
     $script:vDirName = 'VDir'
 
@@ -25,11 +24,11 @@ BeforeAll {
             [String] $UnderVirtualPath
         )
 
-        $url = "http://localhost:$($script:port)/"
+        $url = $script:siteUrl
         $expectedContent = $script:testDir
         if( $UnderVirtualPath )
         {
-            $url = '{0}{1}' -f $url,$UnderVirtualPath
+            $url = '{0}/{1}' -f $url,$UnderVirtualPath
             $expectedContent = Join-Path -Path $TestDrive -ChildPath $UnderVirtualPath
         }
 
@@ -55,9 +54,11 @@ Describe 'Enable-CIisDirectoryBrowsing' {
 
     BeforeEach {
         $script:testDir = New-TestDirectory
+        $port = New-Port
+        $script:siteUrl = "http://localhost:$($port)"
         Install-CIisWebsite -Name $script:siteName `
                             -Path $script:testDir `
-                            -Bindings "http://*:$script:port" `
+                            -Bindings (New-Binding -Port $port) `
                             -AppPoolName $script:siteName
         $script:testDir | Set-Content -Path (Join-Path -Path $script:testDir -ChildPath 'index.html') -NoNewLine
         $script:webConfigPath = Join-Path -Path $script:testDir -ChildPath 'web.config'

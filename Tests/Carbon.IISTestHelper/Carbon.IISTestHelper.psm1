@@ -154,7 +154,30 @@ Set-Alias -Name 'ThenUrlContent' -Value 'Assert-UrlContent'
 
 function Get-Port
 {
-    return (New-Port)
+    return $script:portNum
+}
+
+function Install-CIisTestWebsite
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [String] $Name,
+
+        [Parameter(Mandatory)]
+        [Alias('Path')]
+        [String] $PhysicalPath,
+
+        [String[]] $Binding
+    )
+
+    Install-CIisAppPool -Name 'Carbon.IIS'
+
+    if (-not $Binding)
+    {
+        $Binding = New-Binding
+    }
+    Install-CIisWebsite -Name $Name -Path $PhysicalPath -Binding $Binding -AppPoolName 'Carbon.IIS'
 }
 
 function New-Binding

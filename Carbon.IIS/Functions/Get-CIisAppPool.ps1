@@ -59,7 +59,7 @@ function Get-CIisAppPool
 
     $WhatIfPreference = $false
 
-    $mgr = Get-CIisServerManager -Reset
+    $mgr = Get-CIisServerManager
 
     if( $Defaults )
     {

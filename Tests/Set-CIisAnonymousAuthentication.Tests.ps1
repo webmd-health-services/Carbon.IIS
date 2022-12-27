@@ -3,12 +3,14 @@
 Set-StrictMode -Version 'Latest'
 
 BeforeAll {
-    $script:port = 9877
     $script:webConfigPath = ''
-    $script:siteName = $PSCommandPath | Split-Path -Leaf
+    $script:siteName = $null
+    $script:testNum = 0
     $script:testWebRoot = ''
 
     & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-CarbonTest.ps1' -Resolve)
+
+    Start-W3ServiceTestFixture
 
     function GivenVirtualPath
     {
@@ -79,18 +81,16 @@ BeforeAll {
     }
 }
 
+AfterAll {
+    Complete-W3ServiceTestFixture
+}
+
 Describe 'Set-CIisAnonymousAuthentication' {
-    BeforeAll {
-        Start-W3ServiceTestFixture
-    }
-
-    AfterAll {
-        Complete-W3ServiceTestFixture
-    }
-
     BeforeEach {
         $script:testWebRoot = New-TestDirectory
-        Install-CIisWebsite -Name $script:siteName -Path $script:testWebRoot -Bindings "http://*:$($script:port)"
+        $script:siteName = "Set-CIisAnonymousAuthentication$($script:testNum)"
+        $script:testNum += 1
+        Install-CIisTestWebsite -Name $script:siteName -PhysicalPath $script:testWebRoot
         $script:webConfigPath = Join-Path -Path $script:testWebRoot -ChildPath 'web.config'
         if( Test-Path $script:webConfigPath )
         {

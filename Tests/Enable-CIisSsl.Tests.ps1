@@ -16,7 +16,6 @@ BeforeAll {
     & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-CarbonTest.ps1' -Resolve)
 
     $script:siteName = 'SslFlags'
-    $script:sitePort = 4389
 
     function Assert-SslFlags($ExpectedValue, $VirtualPath)
     {
@@ -44,7 +43,7 @@ Describe 'Enable-CIisSsl' {
     BeforeEach {
         $script:testDir = New-TestDirectory
         Uninstall-CIisWebsite $script:siteName
-        Install-CIisWebsite -Name $script:siteName -Path $script:testDir -Bindings "http://*:$script:sitePort"
+        Install-CIisTestWebsite -Name $script:siteName -PhysicalPath $script:testDir
         $webConfigPath = Join-Path $script:testDir web.config
         if( Test-Path $webConfigPath -PathType Leaf )
         {

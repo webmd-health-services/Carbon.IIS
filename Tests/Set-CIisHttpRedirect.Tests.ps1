@@ -34,12 +34,12 @@ Describe 'Set-CIisHttpRedirect' {
 
     BeforeEach {
         $script:testWebRoot = New-TestDirectory
-        $script:port = Get-Port
+        $script:port = New-Port
         $script:siteName = "$($script:appPoolName)$($script:testNum)"
         $script:testNum++
         Install-CIisWebsite -Name $script:siteName `
                             -Path $script:testWebRoot `
-                            -Bindings "http://*:$($script:port)" `
+                            -Bindings (New-Binding -Port $script:port) `
                             -AppPoolName $script:appPoolName
         $script:webConfigPath = Join-Path -Path $script:testWebRoot -ChildPath 'web.config'
         if( Test-Path $script:webConfigPath )
