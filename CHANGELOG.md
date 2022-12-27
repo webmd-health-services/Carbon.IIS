@@ -118,6 +118,9 @@ application pool recycling settings.
 
 #### Parameters
 
+* `Get-CIisApplication`: parameter `Defaults` for getting application default settings.
+* `Get-CIisAppPool`: parameter `Defaults` for getting application pool default settings.
+* `Get-CIisWebsite`: parameter `Defaults` for getting website default settings.
 * `Install-CIisWebsite`: parameter `ServerAutoStart`, which configures a website's `serverAutoStart` setting.
 * `Install-CIIsAppPool`: `Credential`, which replaces the `UserName`/`Password` parameters.
 * `Set-CIisWindowsAuthentication`: parameter `UseKernelMode` for configuring the Windows authentication "useKernelMode"

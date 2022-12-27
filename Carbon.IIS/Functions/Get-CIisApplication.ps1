@@ -31,21 +31,30 @@ function Get-CIisApplication
 
     Demonstrates how to get a nested application, i.e. gets the application at `/MainPort/ExhaustPort` under the `DeathStar` website.
     #>
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName='AllApplications')]
     [OutputType([Microsoft.Web.Administration.Application])]
     param(
         # The site where the application is running.
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory, ParameterSetName='SpecificApplication')]
         [String] $SiteName,
 
         # The path/name of the application. Default is to return all applications running under the website given by
         # the `SiteName` parameter. Wildcards supported.
+        [Parameter(ParameterSetName='SpecificApplication')]
         [Alias('Name')]
-        [String] $VirtualPath
+        [String] $VirtualPath,
+
+        [Parameter(Mandatory, ParameterSetName='Defaults')]
+        [switch] $Defaults
     )
 
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
+
+    if ($PSCmdlet.ParameterSetName -eq 'Defaults')
+    {
+        return (Get-CIisServerManager).ApplicationDefaults
+    }
 
     $site = Get-CIisWebsite -Name $SiteName
     if( -not $site )
