@@ -74,6 +74,18 @@ function ConvertTo-CIisVirtualPath
         Write-Debug "$($Path)  -->"
 
         $prevPath = $Path
+        $Path = $Path.Trim('/', '\')
+        if( $Path -ne $prevPath )
+        {
+            Write-Debug "$($indent)   |-  $($Path)"
+        }
+
+        if (-not $Path)
+        {
+            return $leadingSlash
+        }
+
+        $prevPath = $Path
         $Path = $Path | Split-Path -NoQualifier
         if( $Path -ne $prevPath )
         {

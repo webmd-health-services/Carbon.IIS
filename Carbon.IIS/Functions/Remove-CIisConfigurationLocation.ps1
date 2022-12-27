@@ -46,7 +46,7 @@ function Remove-CIisConfigurationLocation
 
     if ($VirtualPath)
     {
-        $LocationPath = Join-CIisVirtualPath -Path $LocationPath -ChildPath $VirtualPath
+        $LocationPath = Join-CIisPath -Path $LocationPath, $VirtualPath
     }
 
     if (-not (Get-CIisConfigurationLocationPath -LocationPath $LocationPath))

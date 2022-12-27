@@ -33,7 +33,7 @@ BeforeAll {
             $expectedContent = Join-Path -Path $TestDrive -ChildPath $UnderVirtualPath
         }
 
-        $locationPath = Join-CIisVirtualPath $script:siteName, $UnderVirtualPath
+        $locationPath = Join-CIisPath $script:siteName, $UnderVirtualPath
         $section = Get-CIisConfigurationSection -LocationPath $locationPath `
                                                 -SectionPath 'system.webServer/directoryBrowse'
         $section['enabled'] | Should -BeTrue
@@ -82,7 +82,7 @@ Describe 'Enable-CIisDirectoryBrowsing' {
         (Join-Path -Path $TestDrive -ChildPath $script:vDirName) |
             Set-Content -Path (Join-Path -Path $vdirRoot -ChildPath 'index.html') -NoNewline
         Install-CIisVirtualDirectory -SiteName $script:siteName -VirtualPath $script:vDirName -PhysicalPath $vdirRoot
-        Enable-CIisDirectoryBrowsing -LocationPath ($script:siteName, $script:vDirName | Join-CIisVirtualPath)
+        Enable-CIisDirectoryBrowsing -LocationPath ($script:siteName, $script:vDirName | Join-CIisPath)
 
         $script:webConfigPath | Should -Not -Exist
         ThenDirectoryBrowsingEnabled -UnderVirtualPath $script:vDirName

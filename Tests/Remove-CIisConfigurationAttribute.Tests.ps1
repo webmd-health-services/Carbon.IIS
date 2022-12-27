@@ -29,7 +29,7 @@ BeforeAll {
             }
         }
 
-        Set-CIisAnonymousAuthentication ($script:siteName,$ForVirtualPath | Join-CIisVirtualPath) @Values
+        Set-CIisAnonymousAuthentication ($script:siteName,$ForVirtualPath | Join-CIisPath) @Values
     }
 
     function GivenVirtualPath
@@ -91,7 +91,7 @@ BeforeAll {
             [switch] $ByPiping
         )
 
-        $locationPath = Join-CIisVirtualPath -Path $script:siteName, $ForVirtualPath
+        $locationPath = Join-CIisPath -Path $script:siteName, $ForVirtualPath
         $Global:Error.Clear()
         if( $ByPiping )
         {

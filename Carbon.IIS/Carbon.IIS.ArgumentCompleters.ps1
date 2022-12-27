@@ -201,7 +201,7 @@ $appCompleter = {
 
     $completions = @()
 
-    Get-CIisApplication -LocationPath (Join-CIisVirtualPath $FakeBoundParameters['SiteName'], "$($WordToComplete)*") |
+    Get-CIisApplication -LocationPath (Join-CIisPath $FakeBoundParameters['SiteName'], "$($WordToComplete)*") |
         Select-Object -ExpandProperty 'Path' |
         Tee-Object -Variable 'completions' |
         Format-Argument |
@@ -269,7 +269,7 @@ $locationCompleter = {
     # block.
     $PSDefaultParameterValues = @{
         'ConvertTo-CIisVirtualPath:Debug' = $false;
-        'Join-CIisVirtualPath:Debug' = $false;
+        'Join-CIisPath:Debug' = $false;
         'Get-CIisWebsite:Debug' = $false;
     }
 
@@ -307,7 +307,7 @@ $locationCompleter = {
                 $appLocationPath = $siteLocationPath
                 if ($app.Path -ne '/')
                 {
-                    $appLocationPath = Join-CIisVirtualPath -Path $appLocationPath, $app.Path
+                    $appLocationPath = Join-CIisPath -Path $appLocationPath, $app.Path
                 }
 
                 foreach ($vdir in $app.VirtualDirectories)
@@ -315,7 +315,7 @@ $locationCompleter = {
                     $vdirLocationPath = $appLocationPath
                     if ($vdir.Path -ne '/')
                     {
-                        $vdirLocationPath = Join-CIisVirtualPath -Path $vdirLocationPath, $vdir.Path
+                        $vdirLocationPath = Join-CIisPath -Path $vdirLocationPath, $vdir.Path
                     }
 
                     $physicalPathsByVirtualPath[$vdirLocationPath] = $vdir.PhysicalPath
@@ -351,7 +351,7 @@ $locationCompleter = {
                     {
                         foreach ($dir in (Get-ChildItem -Path $physicalPath -Directory))
                         {
-                            Join-CIisVirtualPath -Path $locationPath, $needle, $dir.Name | Write-Output
+                            Join-CIisPath -Path $locationPath, $needle, $dir.Name | Write-Output
                         }
                     }
                 }
@@ -362,7 +362,7 @@ $locationCompleter = {
                 }
 
                 $rootSegment, $needle = $needle.Split('/', 2)
-                $locationPath = Join-CIisVirtualPath $locationPath, $rootSegment
+                $locationPath = Join-CIisPath $locationPath, $rootSegment
             }
             while ($true)
         } |

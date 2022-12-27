@@ -3,85 +3,34 @@ function Join-CIisVirtualPath
 {
     <#
     .SYNOPSIS
-    Combines paths into an IIS virtual path.
+    OBSOLETE. Use `Join-CIisPath` instead.
 
     .DESCRIPTION
-    The `Join-CIisVirtualPath` function takes path segments and combines them into a single virtual path. You can pass
-    the path segments as a list to the `Path` parameter, as multipe unnamed parameters, or piped in.
-
-    Removes extra slashes and relative path signifiers (e.g. `.` and `..`).  Converts backward slashes to forward
-    slashes.
-
-    .EXAMPLE
-    Join-CIisVirtualPath -Path 'SiteName', 'Virtual', 'Path'
-
-    Demonstrates how to join paths together by passing an array of paths to the `Path` parameter.
-
-    .EXAMPLE
-    Join-CIisVirtualPath -Path 'SiteName' 'Virtual' 'Path'
-
-    Demonstrates how to join paths together by passing each path as unnamed parameters.
-
-    .EXAMPLE
-    'SiteName', 'Virtual', 'Path' | Join-CIisVirtualPath
-
-    Demonstrates how to join paths together by piping each path into the function.
+    OBSOLETE. Use `Join-CIisPath` instead.
     #>
     [CmdletBinding()]
     param(
         # The parent path.
-        [Parameter(Mandatory, Position=0, ValueFromPipeline)]
+        [Parameter(Mandatory, Position=0)]
         [AllowEmptyString()]
         [AllowNull()]
-        [String[]]$Path,
+        [String]$Path,
 
         #
-        [Parameter(Position=1, ValueFromRemainingArguments)]
+        [Parameter(Position=1)]
         [String[]] $ChildPath
     )
 
-    begin
+    Set-StrictMode -Version 'Latest'
+    Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
+
+    $msg = 'The "Join-CIisVirtualPath" function is OBSOLETE and will be removed in the next major version of ' +
+           'Carbon.IIS. Please use the `Join-CIisPath` function instead.'
+    Write-CIisWarningOnce -Message $msg
+
+    if( $ChildPath )
     {
-        $segments = [Collections.Generic.List[String]]::New()
+        $Path = Join-Path -Path $Path -ChildPath $ChildPath
     }
-
-    process
-    {
-        Set-StrictMode -Version 'Latest'
-        Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
-
-        if (-not $Path)
-        {
-            return
-        }
-
-        foreach ($pathItem in $Path)
-        {
-            if (-not $pathItem)
-            {
-                continue
-            }
-
-            $segments.Add($pathItem)
-        }
-    }
-
-    end
-    {
-        (& {
-                if ($segments.Count)
-                {
-                    $segments | Write-Output
-                }
-
-                if ($ChildPath)
-                {
-                    $ChildPath | Where-Object { $_ } | Write-Output
-                }
-        } |
-        ConvertTo-CIisVirtualPath -NoLeadingSlash) -join '/'
-
-    }
+    $Path.Replace('\', '/').Trim('/')
 }
-
-Set-Alias -Name 'Join-CIisLocationPath' -Value 'Join-CIisVirtualPath'

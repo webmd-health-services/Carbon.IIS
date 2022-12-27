@@ -64,7 +64,7 @@ function Install-CIisApplication
         return
     }
 
-    $iisAppPath = Join-CIisVirtualPath -Path $SiteName -ChildPath $VirtualPath
+    $iisAppPath = Join-CIisPath -Path $SiteName, $VirtualPath
 
     $PhysicalPath = Resolve-CFullPath -Path $PhysicalPath
     if( -not (Test-Path $PhysicalPath -PathType Container) )

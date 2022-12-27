@@ -266,7 +266,7 @@ function Set-CIisConfigurationAttribute
             "``$($functionName) -LocationPath '$($LocationPath)/$($VirtualPath)'``." |
                 Write-CIisWarningOnce
 
-            $LocationPath = Join-CIisLocationPath -Path $LocationPath -ChildPath $VirtualPath
+            $LocationPath = Join-CIisPath -Path $LocationPath, $VirtualPath
         }
 
         $ConfigurationElement = Get-CIisConfigurationSection -LocationPath $LocationPath -SectionPath $SectionPath

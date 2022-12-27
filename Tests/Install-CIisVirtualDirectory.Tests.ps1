@@ -11,11 +11,13 @@
 # limitations under the License.
 
 BeforeAll {
-    $script:port = 9878
-    $script:siteName = 'TestVirtualDirectory'
+    $script:port = 0
+    $script:appPoolName = $PSCommandPath | Split-Path -Leaf
+    $script:siteName = ''
     $script:vDirName = 'VDir'
     $script:webConfig = $null
     $script:output = $null
+    $script:testNum = 0
 
     & (Join-Path -Path $PSScriptRoot 'Initialize-CarbonTest.ps1' -Resolve)
 
@@ -30,7 +32,7 @@ BeforeAll {
         Install-CIisApplication -SiteName $script:siteName `
                                 -VirtualPath $Named `
                                 -PhysicalPath (Join-Path -Path $script:vDirsRoot -ChildPath $ServedFrom) `
-                                -AppPoolName $script:siteName
+                                -AppPoolName $script:appPoolName
     }
 
     function GivenDirectory
@@ -83,7 +85,7 @@ BeforeAll {
 
         $vDirPhysicalPath = Join-Path -Path $script:vDirsRoot -ChildPath $From
 
-        $urlPath = Join-CIisVirtualPath -Path $UnderApplication -ChildPath $VirtualPath
+        $urlPath = Join-CIisPath -Path $UnderApplication, $VirtualPath
         ThenUrlContent "http://localhost:$($script:port)/$($urlPath)/" -Is $vDirPhysicalPath
 
         $website = Get-CIisWebsite -Name $script:siteName
@@ -99,23 +101,26 @@ BeforeAll {
 Describe 'Install-CIisVirtualDirectory' {
     BeforeAll {
         Start-W3ServiceTestFixture
-        Install-CIisAppPool -Name $script:siteName
+        Install-CIisAppPool -Name $script:appPoolName
         # We create the directory outside the webroot to ensure vdir actually gets created. If we create under the
         # website root, there's no difference between a vdir and a regular directory.
         $script:vDirsRoot = New-TestDirectory
     }
 
     AfterAll {
-        Uninstall-CIisAppPool -Name $script:siteName
+        Uninstall-CIisAppPool -Name $script:appPoolName
         Complete-W3ServiceTestFixture
     }
 
     BeforeEach {
         $script:testDir = New-TestDirectory
+        $script:port = New-Port
+        $script:siteName = "$($PSCommandPath | Split-Path -Leaf)$($script:testNum)"
+        $script:testNum += 1
         Install-CIisWebsite -Name $script:siteName `
                             -Path $script:testDir `
                             -Bindings "http://*:$($script:port)" `
-                            -AppPoolName $script:siteName
+                            -AppPoolName $script:appPoolName
         $script:webConfig = Join-Path -Path $script:testDir -ChildPath 'web.config'
         if( Test-Path -Path $script:webConfig )
         {

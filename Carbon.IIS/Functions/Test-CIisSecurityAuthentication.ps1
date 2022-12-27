@@ -56,7 +56,7 @@ function Test-CIisSecurityAuthentication
 
     $getConfigArgs = @{ $PSCmdlet.ParameterSetName = $true }
     $authSettings =
-        Get-CIisSecurityAuthentication -LocationPath (Join-CIisVirtualPath -Path $LocationPath, $VirtualPath) `
+        Get-CIisSecurityAuthentication -LocationPath (Join-CIisPath -Path $LocationPath, $VirtualPath) `
                                        @getConfigArgs
     return ($authSettings.GetAttributeValue('enabled') -eq 'true')
 }

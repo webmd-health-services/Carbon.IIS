@@ -46,7 +46,7 @@ Import-Module -Name '.\Carbon.IIS'
 * Install-CIisAppPool
 * Install-CIisVirtualDirectory
 * Install-CIisWebsite
-* Join-CIisVirtualPath
+* Join-CIisPath
 * Lock-CIisConfigurationSection
 * Remove-CIisMimeMap
 * Set-CIisHttpHeader
