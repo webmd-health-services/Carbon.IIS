@@ -2,7 +2,21 @@
 Set-StrictMode -Version 'Latest'
 
 $script:testNum = 0
-$script:portNum = 9800
+[UInt16] $script:portNum =
+    Get-CIisWebsite |
+    Select-Object -ExpandProperty 'Bindings' |
+    Select-Object -ExpandProperty 'Endpoint' |
+    Select-Object -ExpandProperty 'Port' |
+    Sort-Object |
+    Select-Object -Last 1
+if (-not $script:portNum)
+{
+    $script:portNum = 60000
+}
+else
+{
+    $script:portNum += 1
+}
 
 function Complete-W3ServiceTestFixture
 {
@@ -139,6 +153,58 @@ function Assert-UrlContent
 Set-Alias -Name 'ThenUrlContent' -Value 'Assert-UrlContent'
 
 function Get-Port
+{
+    return (New-Port)
+}
+
+function New-Binding
+{
+    param(
+        [String[]] $Protocol,
+
+        [String[]] $IPAddress,
+
+        [UInt16[]] $Port,
+
+        [String[]] $HostName
+    )
+
+    if (-not $Protocol)
+    {
+        $Protocol = 'http'
+    }
+
+    if (-not $IPAddress)
+    {
+        $IPAddress = '*'
+    }
+
+    if (-not $Port)
+    {
+        $Port = New-Port
+    }
+
+    if (-not $HostName)
+    {
+        $HostName = ''
+    }
+
+    foreach ($protocolItem in $Protocol)
+    {
+        foreach ($ipAddressItem in $IPAddress)
+        {
+            foreach ($portItem in $Port)
+            {
+                foreach ($hostNameItem in $HostName)
+                {
+                    "$($protocolItem)/$($ipAddressItem):$($portItem):$($hostNameItem)" | Write-Output
+                }
+            }
+        }
+    }
+}
+
+function New-Port
 {
     try
     {

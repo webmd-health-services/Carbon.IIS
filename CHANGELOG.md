@@ -93,6 +93,7 @@ separators are `/`, etc.).
 * `Remove-CIisConfigurationLocation` for removing a website's or website/virtual path's custom configuration (i.e.
 removes its `<location>` element from applicationHost.config).
 * `Restart-CIisAppPool` for stopping and starting an application pool.
+* `Restart-CIisWebsite` for stopping and starting a website.
 * `Save-CIisConfiguration` for saving configuration changes to IIS. Only needed if you make changes to any of the
 objects returned by the Carbon.IIS module.
 * `Set-CIisAnonymousAuthentication` for configuring anonymous authentication.
@@ -111,7 +112,9 @@ application pool recycling settings.
 * `Set-CIisWebsiteLogFile` for configuring a website's log file settings and the default website log file settings.
 * Many functions now write messages to PowerShell's information stream when they make configuration changes.
 * `Start-CIisAppPool` for starting an application pool.
+* `Start-CIisWebsite` for starting a website.
 * `Stop-CIisAppPool` for stopping an application pool.
+* `Stop-CIisWebsite` for stopping a website.
 
 #### Parameters
 
