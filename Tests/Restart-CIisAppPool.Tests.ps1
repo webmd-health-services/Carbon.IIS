@@ -9,6 +9,8 @@ BeforeAll {
     $script:appPoolName = ''
     $script:testNum = 0
     $script:testStartedAt = [DateTime]::MaxValue
+    $script:port = 6166
+    $script:siteUrl = "http://localhost:$($script:port)"
 
     function GivenAppPool
     {
@@ -31,14 +33,14 @@ BeforeAll {
         Install-CIIsWebsite -Name $script:appPoolName `
                             -PhysicalPath 'C:\inetpub\wwwroot' `
                             -AppPoolName $Named `
-                            -Binding 'http/*:6166' `
+                            -Binding "http/*:$($script:port)" `
                             -ServerAutoStart $true
         $appPool = Get-CIisAppPool -Name $Named
         if ($IsStarted)
         {
             $state = $appPool.Start()
             $state | Should -Be 'Started'
-            Invoke-WebRequest 'http://localhost:6166' | Out-Null
+            Invoke-WebRequest $script:siteUrl | Out-Null
             $appPool.WorkerProcesses | Should -Not -BeNullOrEmpty
         }
         elseif ($IsStopped)
@@ -63,15 +65,13 @@ BeforeAll {
             [switch] $Restarted
         )
 
-        Invoke-WebRequest 'http://localhost:6166' | Out-Null
+        Invoke-WebRequest $script:siteUrl | Out-Null
 
         $appPool = Get-CIisAppPool -Name $Named
         $appPool | Should -Not -BeNullOrEmpty
-
         $appPool.State | Should -Be 'Started'
         $appPool.WorkerProcesses |
-            Add-Member -Name 'Id' -MemberType AliasProperty -Value 'ProcessId' -PassThru |
-            Get-Process |
+            ForEach-Object { Get-Process -Id $_.ProcessId } |
             Select-Object -ExpandProperty 'StartTime' |
             Should -BeGreaterThan $script:testStartedAt
     }
@@ -125,14 +125,14 @@ Describe 'Restart-CIisAppPool' {
         Uninstall-CIisAppPool -Name $script:appPoolName
     }
 
-    It 'should restart started app pool' {
+    It 'should restart started application pool' {
         GivenAppPool $script:appPoolName -IsStarted
         WhenRestarting $script:appPoolName
         ThenAppPool $script:appPoolName -Restarted
         $Global:Error | Should -BeNullOrEmpty
     }
 
-    It 'should start a stopped app pool' {
+    It 'should start a stopped application pool' {
         GivenAppPool $script:appPoolName -IsStopped
         WhenRestarting $script:appPoolName
         ThenAppPool $script:appPoolName -Restarted
