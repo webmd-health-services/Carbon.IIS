@@ -153,7 +153,9 @@ function Install-CIisWebsite
     {
         $firstBinding = $Binding | Select-Object -First 1 | ConvertTo-Binding
         $mgr = Get-CIisServerManager
-        Write-Information "Creating IIS website ""$($Name)""."
+        $msg = "Creating IIS website ""$($Name)"" bound to " +
+               "$($firstBinding.Protocol)/$($firstBinding.BindingInformation)."
+        Write-Information $msg
         $site = $mgr.Sites.Add( $Name, $firstBinding.Protocol, $firstBinding.BindingInformation, $PhysicalPath )
         Save-CIisConfiguration
     }
