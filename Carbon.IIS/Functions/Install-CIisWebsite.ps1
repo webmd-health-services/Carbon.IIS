@@ -98,7 +98,9 @@ function Install-CIisWebsite
         [bool] $ServerAutoStart,
 
         # Return a `Microsoft.Web.Administration.Site` object for the website.
-        [switch] $PassThru
+        [switch] $PassThru,
+
+        [TimeSpan] $Timeout = [TimeSpan]::New(0, 0, 30)
     )
 
     Set-StrictMode -Version 'Latest'
@@ -253,23 +255,21 @@ function Install-CIisWebsite
     }
     Set-CIisWebsite @setArgs -Reset
 
-    # Now, wait until site is actually running
-    $tries = 0
+    # Now, wait until site is actually running. Do *not* use Start-CIisWebsite. If there are any HTTPS bindings that
+    # don't have an assigned HTTPS certificate the start will fail.
+    $timer = [Diagnostics.Stopwatch]::StartNew()
     $website = $null
     do
     {
         $website = Get-CIisWebsite -Name $Name
-        $tries += 1
         if($website.State -ne 'Unknown')
         {
             break
         }
-        else
-        {
-            Start-Sleep -Milliseconds 100
-        }
+
+        Start-Sleep -Milliseconds 100
     }
-    while( $tries -lt 100 )
+    while ($timer.Elapsed -lt $Timeout)
 
     if( $PassThru )
     {
