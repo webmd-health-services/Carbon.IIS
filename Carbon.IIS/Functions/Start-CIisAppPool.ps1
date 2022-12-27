@@ -7,7 +7,7 @@ function Start-CIisAppPool
 
     .DESCRIPTION
     The `Start-CIisAppPool` starts IIS application pools. Pass the names of the application pools to the `Name`
-    parameter, or pipe application pool objects or application pool names to `Start-CIisAppPool`. The funciton then
+    parameter, or pipe application pool objects or application pool names to `Start-CIisAppPool`. The function then
     starts the application pool and waits 30 seconds for the application pool to report that it has started. You can
     change the amount of time it waits with the `Timeout` parameter. If the application pool doesn't start before the
     timeout expires, the function writes an error.
@@ -90,7 +90,7 @@ function Start-CIisAppPool
 
             if ($null -eq $state)
             {
-                $msg = "Failed to start IIS application pool ""$($appPool.Name)"": $($lastError)"
+                $msg = "Starting IIS application pool ""$($appPool.Name)"" threw an exception: $($lastError)."
                 Write-Error -Message $msg -ErrorAction $ErrorActionPreference
                 continue
             }
@@ -104,7 +104,7 @@ function Start-CIisAppPool
             {
                 if ($timer.Elapsed -gt $Timeout)
                 {
-                    $msg = "IIS application pool ""$($appPool.Name)"" failed to start in ""$($Timeout)""."
+                    $msg = "IIS application pool ""$($appPool.Name)"" failed to start in less than $($Timeout)."
                     Write-Error -Message $msg -ErrorAction $ErrorActionPreference
                     break
                 }
