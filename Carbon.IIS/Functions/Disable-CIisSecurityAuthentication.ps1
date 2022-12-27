@@ -59,9 +59,13 @@ function Disable-CIisSecurityAuthentication
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
+    if ($VirtualPath)
+    {
+        Write-CIisWarningOnce -ForObsoleteSiteNameAndVirtualPathParameter
+    }
+
     $sectionPath = "system.webServer/security/authentication/$($PSCmdlet.ParameterSetName)"
-    Set-CIisConfigurationAttribute -LocationPath $LocationPath `
-                                   -VirtualPath $VirtualPath `
+    Set-CIisConfigurationAttribute -LocationPath ($LocationPath, $VirtualPath | Join-CIisPath) `
                                    -SectionPath $sectionPath `
                                    -Name 'enabled' `
                                    -Value $false

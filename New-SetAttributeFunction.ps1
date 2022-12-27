@@ -114,12 +114,9 @@ function $($Name)
 if( $SectionPath )
 {
     [void]$content.Append(@"
-        # The IIS website whose settings to configure.
+        # The virtual path to the website, application, virtual directory, or directory to configure.
         [Parameter(Mandatory)]
-        [String] `$SiteName,
-
-        # The virtual path under the website whose settings to configure.
-        [String] `$VirtualPath = ''
+        [String] `$LocationPath
 "@)
 }
 else
@@ -193,7 +190,7 @@ else
 
     `$PSBoundParameters.GetEnumerator() |
         Where-Object 'Key' -In `$paramNames |
-        Set-CIisConfigurationAttribute -LocationPath (Join-CIisPath -Path `$SiteName, `$VirtualPath) -SectionPath `$sectionPath
+        Set-CIisConfigurationAttribute -LocationPath `$LocationPath -SectionPath `$sectionPath
 "@)
     }
     else

@@ -66,8 +66,12 @@ function Set-CIisHttpRedirect
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
-    Set-CIisConfigurationAttribute -LocationPath $LocationPath `
-                                   -VirtualPath $VirtualPath `
+    if ($VirtualPath)
+    {
+        Write-CIisWarningOnce -ForObsoleteSiteNameAndVirtualPathParameter
+    }
+
+    Set-CIisConfigurationAttribute -LocationPath ($LocationPath, $VirtualPath | Join-CIisPath) `
                                    -SectionPath 'system.webServer/httpRedirect' `
                                    -Attribute @{
                                         'enabled' = $true;
