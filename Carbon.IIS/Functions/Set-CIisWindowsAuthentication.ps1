@@ -76,9 +76,13 @@ function Set-CIisWindowsAuthentication
         }
     }
 
+    if ($VirtualPath)
+    {
+        Write-CIisWarningOnce -ForObsoleteSiteNameAndVirtualPathParameter
+    }
+
     $sectionPath = 'system.webServer/security/authentication/windowsAuthentication'
-    Set-CIisConfigurationAttribute -LocationPath $LocationPath `
-                                   -VirtualPath $VirtualPath `
+    Set-CIisConfigurationAttribute -LocationPath ($LocationPath, $VirtualPath | Join-CIisPath) `
                                    -SectionPath $sectionPath `
                                    -Attribute $attrs
 }

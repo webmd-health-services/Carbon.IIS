@@ -16,7 +16,8 @@ function Set-CIisConfigurationAttribute
     attributes will be reset to their default values.
 
     To set an attribute on a configuration section under a specific directory, application, or virtual path in a
-    website, pass the virtual path to the directory, application, or virtual path to the `VirtualPath` parameter.
+    website, pass the virtual path to the website, directory, application, or virtual path to the `LocationPath`
+    parameter.
 
     `Set-CIisConfigurationAttribute` writes messages to PowerShell's information stream for each attribute whose value
     is changing, showing the current value and the new value. If an attribute's value is sensitive, use the `Sensitive`
@@ -40,7 +41,7 @@ function Set-CIisConfigurationAttribute
     .EXAMPLE
     Set-CIisConfigurationAttribute -LocationPath 'SiteOne/old_app' -SectionPath 'system.webServer/httpRedirect' -Name 'destination' -Value 'http://example.com'
 
-    Demonstrates how to set attribute values on a sub-path in a website by passing the path to the `VirtualPath`
+    Demonstrates how to set attribute values on a sub-path in a website by passing the path to the `LocationPath`
     parameter.
 
     .EXAMPLE
@@ -56,11 +57,6 @@ function Set-CIisConfigurationAttribute
         [Parameter(Mandatory, ParameterSetName='AllByConfigPath', Position=0)]
         [Parameter(Mandatory, ParameterSetName='SingleByConfigPath', Position=0)]
         [String] $LocationPath,
-
-        # OBSOLETE. Use the `LocationPath` parameter instead.
-        [Parameter(ParameterSetName='AllByConfigPath')]
-        [Parameter(ParameterSetName='SingleByConfigPath')]
-        [String] $VirtualPath = '',
 
         # The configuration section path to configure, e.g.
         # `system.webServer/security/authentication/basicAuthentication`. The path should *not* start with a forward
@@ -250,25 +246,6 @@ function Set-CIisConfigurationAttribute
 
     if (-not $ConfigurationElement)
     {
-        if ($VirtualPath)
-        {
-            $functionName = $PSCmdlet.MyInvocation.MyCommand.Name
-            $caller = Get-PSCallStack | Select-Object -Skip 1 | Select-Object -First 1
-            if ($caller.FunctionName -like '*-CIis*')
-            {
-                $functionName = $caller.FunctionName
-            }
-
-            $functionName = $PSCmdlet.MyInvocation.MyCommand.Name
-            "The $($functionName) function''s ""SiteName"" and ""VirtualPath"" parameters are obsolete and have " +
-            'been replaced with a single "LocationPath" parameter, which should be the combined path of the ' +
-            'location/object to configure, e.g. ' +
-            "``$($functionName) -LocationPath '$($LocationPath)/$($VirtualPath)'``." |
-                Write-CIisWarningOnce
-
-            $LocationPath = Join-CIisPath -Path $LocationPath, $VirtualPath
-        }
-
         $ConfigurationElement = Get-CIisConfigurationSection -LocationPath $LocationPath -SectionPath $SectionPath
         if( -not $ConfigurationElement )
         {
