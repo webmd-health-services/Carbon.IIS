@@ -71,7 +71,7 @@ Describe 'Set-CIisHttpHeader' {
         Set-CIisHttpHeader -SiteName $script:siteName -Name $name -Value $value
 
         $subValue = 'Child'
-        Set-CIisHttpHeader -LocationPath ($script:siteName, 'SubFolder' | Join-CIisVirtualPath) `
+        Set-CIisHttpHeader -LocationPath ($script:siteName, 'SubFolder' | Join-CIisPath) `
                            -Name $name `
                            -Value $subValue
 
@@ -80,7 +80,7 @@ Describe 'Set-CIisHttpHeader' {
         $header.Name | Should -Be $name
         $header.Value | Should -Be $value
 
-        $header = Get-CIisHttpHeader -LocationPath ($script:siteName, 'SubFolder' | Join-CIisVirtualPath) -Name $name
+        $header = Get-CIisHttpHeader -LocationPath ($script:siteName, 'SubFolder' | Join-CIisPath) -Name $name
         $header | Should -Not -BeNullOrEmpty
         $header.Name | Should -Be $name
         $header.Value | Should -Be $subValue

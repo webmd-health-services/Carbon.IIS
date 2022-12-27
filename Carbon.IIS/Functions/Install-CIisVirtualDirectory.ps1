@@ -75,7 +75,7 @@ function Install-CIisVirtualDirectory
     $PhysicalPath = Resolve-CFullPath -Path $PhysicalPath
     $VirtualPath = $VirtualPath | ConvertTo-CIisVirtualPath
 
-    $vPathMsg = Join-CIisVirtualPath -Path $ApplicationPath -ChildPath $VirtualPath
+    $vPathMsg = Join-CIisPath -Path $ApplicationPath, $VirtualPath
 
     $vdir = $destinationApp.VirtualDirectories | Where-Object 'Path' -EQ $VirtualPath
     if( $Force -and $vdir )

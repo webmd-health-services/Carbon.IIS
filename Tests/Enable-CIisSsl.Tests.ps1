@@ -20,11 +20,11 @@ BeforeAll {
 
     function Assert-SslFlags($ExpectedValue, $VirtualPath)
     {
-        $Path = Join-CIisVirtualPath $script:SiteName $VirtualPath
+        $Path = Join-CIisPath $script:SiteName $VirtualPath
         $authSettings = [xml] (& (Join-Path -Path $env:SystemRoot -ChildPath 'system32\inetsrv\appcmd.exe' -Resolve) list config $Path '-section:system.webServer/security/access')
         $sslFlags = $authSettings['system.webServer'].security.access.sslFlags
         $section =
-            Get-CIisConfigurationSection -LocationPath (Join-CIisVirtualPath -Path $script:SiteName, $VirtualPath) `
+            Get-CIisConfigurationSection -LocationPath (Join-CIisPath -Path $script:SiteName, $VirtualPath) `
                                          -SectionPath 'system.webServer/security/access'
         $sslIntFlags = $section['sslFlags']
         Write-Verbose ('{0} ({1})' -f $sslIntFlags,$sslFlags)
@@ -94,7 +94,7 @@ Describe 'Enable-CIisSsl' {
     }
 
     It 'should set flags on sub folder' {
-        Enable-CIisSsl -LocationPath (Join-CIisVirtualPath $script:siteName, 'SubFolder') -RequireSsl
+        Enable-CIisSsl -LocationPath (Join-CIisPath $script:siteName, 'SubFolder') -RequireSsl
         Assert-SslFlags -ExpectedValue 'Ssl' -VirtualPath "SubFolder"
         Assert-SslFlags -ExpectedValue 'None'
     }

@@ -47,7 +47,7 @@ BeforeAll {
         }
 
         $section =
-            Get-CIisConfigurationSection -LocationPath (Join-CIisVirtualPath -Path $script:siteName, $ForVirtualPath) `
+            Get-CIisConfigurationSection -LocationPath (Join-CIisPath -Path $script:siteName, $ForVirtualPath) `
                                          -SectionPath $sectionPath
         foreach( $attrName in $ExpectedValues.Keys )
         {
@@ -74,7 +74,7 @@ BeforeAll {
         )
 
         $Global:Error.Clear()
-        $locationPath = $script:siteName, $ForVirtualPath | Join-CIisVirtualPath
+        $locationPath = $script:siteName, $ForVirtualPath | Join-CIisPath
         Set-CIisAnonymousAuthentication -LocationPath $locationPath @WithArgument
     }
 }

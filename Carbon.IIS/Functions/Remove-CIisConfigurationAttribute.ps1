@@ -80,7 +80,7 @@ function Remove-CIisConfigurationAttribute
         $locationPathMsg = $LocationPath
         if ($VirtualPath)
         {
-            $locationPathMsg = Join-CIisVirtualPath -Path $LocationPath -ChildPath $VirtualPath
+            $locationPathMsg = Join-CIisPath -Path $LocationPath, $VirtualPath
         }
         $basePrefix = "[IIS:/Sites/$($locationPathMsg):$($SectionPath)"
     }

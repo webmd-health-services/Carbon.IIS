@@ -65,7 +65,7 @@ function Get-CIisConfigurationSection
                 "``$($functionName) -LocationPath '$($LocationPath)/$($VirtualPath)'``." |
                     Write-CIisWarningOnce
 
-                $LocationPath = Join-CIisVirtualPath -Path $LocationPath -ChildPath $VirtualPath
+                $LocationPath = Join-CIisPath -Path $LocationPath, $VirtualPath
             }
 
             $LocationPath = $LocationPath | ConvertTo-CIisVirtualPath

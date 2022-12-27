@@ -100,7 +100,7 @@ Describe 'Set-CIisHttpRedirect' {
 
         New-Item -Path (Join-Path -Path $script:testWebRoot -ChildPath 'SubFolder') -ItemType 'Directory'
 
-        $locationPath = $script:siteName, 'SubFolder' | Join-CIisVirtualPath
+        $locationPath = $script:siteName, 'SubFolder' | Join-CIisPath
 
         Set-CIisHttpRedirect -LocationPath $locationPath -Destination 'http://www.example.com'
         ThenUrlContent "http://localhost:$($script:port)/SubFolder" -Match 'Example Domain'

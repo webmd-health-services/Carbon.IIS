@@ -51,7 +51,7 @@ Describe 'Disable-CIisSecurityAuthentication' {
     }
 
     It 'should disable anonymous authentication on vdir' {
-        $locationPath = $script:siteName, 'SubFolder' | Join-CIisVirtualPath
+        $locationPath = $script:siteName, 'SubFolder' | Join-CIisPath
         Disable-CIisSecurityAuthentication -LocationPath $locationPath -Anonymous
         Test-CIisSecurityAuthentication -LocationPath $locationPath -Anonymous | Should -BeFalse
     }

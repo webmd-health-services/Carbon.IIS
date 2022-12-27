@@ -73,10 +73,6 @@ paths.
 pool's `add` element in IIS' applicationHost.config file). Added parameters `QueueLength`, `AutoStart`,
 `Enable32BitAppOnWin64`, `ManagedRuntimeLoader`, `EnableConfigurationOverride`, `ManagedPipelineMode`, `CLRConfigFile`,
 `PassAnonymousToken`, and `StartMode` to `Install-CIisAppPool`.
-* The `Join-CIisVirtualPath` function's `Path` parameter now accepts an array of paths that will be joined together.
-* The `Join-CIisVirtualPath` function now accepts paths as pipeline input. All pats are joined together.
-* The `Join-CIisVirtualPath` function now accepts and joins multiple paths as unnamed parameters. For example,
-`Join-CIisVirtualPath 'a' 'b' 'c' 'd' 'e'` would return `a/b/c/d/e`.
 * `WhatIf` support to the following functions:
   * `Enable-CIisDirectoryBrowsing`
   * `Remove-CIisMimeMap`
@@ -89,6 +85,7 @@ separators are `/`, etc.).
 (i.e. there's a `<location>` element for it in the applicationHost.config).
 * `Install-CIisVirtualDirectory` can now install virtual directories under applications, not just website root. Pass the
  application name to the `ApplicationPath` parameter.
+* `Join-CIisPath` function for joining virtual and location path segments into a single path.
 * `Remove-CIisConfigurationAttribute` for removing attributes from configuration sections.
 * `Remove-CIisConfigurationLocation` for removing a website's or website/virtual path's custom configuration (i.e.
 removes its `<location>` element from applicationHost.config).
@@ -203,6 +200,7 @@ e.g. `SiteName/VirtualPath`.
 * The `Install-CIisVirtualDirectory` function's `Name` parameter. Use the `VirtualPath` parameter instead.
 * The `Install-CIisVirtualDirectory` function's `Path` parameter. Use the `PhysicalPath` parameter instead.
 * The `Install-CIisWebsite` function's `SiteID` parameter. Use the `ID` parameter instead.
+* The `Join-CIisVirtualPath` function. Use the `Join-CIisPath` function instead.
 * The `Set-CIisWebsiteID` function. Use `Set-CIisWebsite` instead.
 * The `Set-CIisWindowsAuthentication` function's `DisableKernelMode` switch. Use the new `UseKernelMode` parameter
 instead.

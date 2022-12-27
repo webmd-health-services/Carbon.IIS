@@ -193,7 +193,7 @@ else
 
     `$PSBoundParameters.GetEnumerator() |
         Where-Object 'Key' -In `$paramNames |
-        Set-CIisConfigurationAttribute -LocationPath (Join-CIisVirtualPath -Path `$SiteName, `$VirtualPath) -SectionPath `$sectionPath
+        Set-CIisConfigurationAttribute -LocationPath (Join-CIisPath -Path `$SiteName, `$VirtualPath) -SectionPath `$sectionPath
 "@)
     }
     else
@@ -358,7 +358,7 @@ BeforeAll {
             }
         }
 
-        `$locationPath = Join-CIisLocationPath -Path `$script:siteName -ChildPath `$ForVirtualPath
+        `$locationPath = Join-CIisPath -Path `$script:siteName, `$ForVirtualPath
         `$section = Get-CIisConfigurationSection -LocationPath `$locationPath ``
                                                 -SectionPath `$sectionPath
         foreach( `$attrName in `$ExpectedValues.Keys )

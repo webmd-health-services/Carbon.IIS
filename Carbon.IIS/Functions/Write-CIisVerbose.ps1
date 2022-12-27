@@ -31,7 +31,7 @@ function Write-IisVerbose
 
     if( $VirtualPath )
     {
-        $SiteName = Join-CIisVirtualPath -Path $SiteName -ChildPath $VirtualPath
+        $SiteName = Join-CIisPath -Path $SiteName, $VirtualPath
     }
 
     Write-Verbose -Message ('[IIS Website] [{0}] {1,-34} {2} -> {3}' -f $SiteName,$Name,$OldValue,$NewValue)

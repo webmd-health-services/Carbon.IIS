@@ -23,7 +23,7 @@ BeforeAll {
 
             [String] $UnderSite
         )
-        Set-CIisHttpHeader -LocationPath ($UnderSite, $VirtualPath | Join-CIisVirtualPath) `
+        Set-CIisHttpHeader -LocationPath ($UnderSite, $VirtualPath | Join-CIisPath) `
                            -Name 'X-Carbon.IIS-RemoveConfigLocation-VirtualPath' `
                            -Value "$($UnderSite)/$($VirtualPath)"
         Get-CIisConfigurationLocationPath -LocationPath "$($UnderSite)/$($VirtualPath)" | Should -Not -BeNullOrEmpty

@@ -97,7 +97,7 @@
         'Install-CIisAppPool',
         'Install-CIisVirtualDirectory',
         'Install-CIisWebsite',
-        'Join-CIisVirtualPath',
+        'Join-CIisPath',
         'Lock-CIisConfigurationSection',
         'Remove-CIisConfigurationAttribute',
         'Remove-CIisConfigurationLocation',

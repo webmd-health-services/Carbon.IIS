@@ -63,7 +63,7 @@ Describe 'Enable-CIisSecurityAuthentication' {
     }
 
     It 'should enable anonymous authentication on sub folders' {
-        $locationPath = $script:siteName,'SubFolder' | Join-CIisVirtualPath
+        $locationPath = $script:siteName,'SubFolder' | Join-CIisPath
         Enable-CIisSecurityAuthentication -LocationPath $locationPath  -Anonymous
         (Test-CIisSecurityAuthentication -LocationPath $locationPath -Anonymous) | Should -BeTrue
     }

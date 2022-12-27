@@ -76,7 +76,7 @@ function Test-CIisConfigurationSection
     {
         if ($VirtualPath)
         {
-            $LocationPath = Join-CIisVirtualPath -Path $LocationPath -ChildPath $VirtualPath
+            $LocationPath = Join-CIisPath -Path $LocationPath, $VirtualPath
         }
         Write-Error "IIS:$($LocationPath): section $($SectionPath) not found." -ErrorAction $ErrorActionPreference
         return

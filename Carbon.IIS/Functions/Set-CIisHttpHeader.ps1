@@ -70,7 +70,7 @@ function Set-CIisHttpHeader
 
     if ($VirtualPath)
     {
-        $LocationPath = Join-CIisVirtualPath -Path $LocationPath -ChildPath $VirtualPath
+        $LocationPath = Join-CIisPath -Path $LocationPath, $VirtualPath
     }
     Save-CIisConfiguration -Target "IIS Website '$($LocationPath)'" -Action "$($action) $($Name) HTTP Header"
 }
