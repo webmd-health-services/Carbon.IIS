@@ -24,7 +24,6 @@ function Test-CIisAppPool
     )
 
     Set-StrictMode -Version 'Latest'
-
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
     $appPool = Get-CIisAppPool -Name $Name -ErrorAction Ignore
