@@ -125,7 +125,7 @@ BeforeAll {
     }
 }
 
-Describe 'Stop-CIisWebsite' {
+Describe 'Stop-CIisWebsite' -Skip {
     BeforeEach {
         $Global:Error.Clear()
         $script:websiteName = "Stop-CIisWebsite$($script:testNum)"
