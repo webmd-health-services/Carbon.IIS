@@ -73,6 +73,7 @@ function Stop-CIisWebsite
             $state = $null
             $lastError = $null
             $timer.Restart()
+            $numErrorsAtStart = $Global:Error.Count
             while ($null -eq $state -and $timer.Elapsed -lt $Timeout)
             {
                 try
@@ -92,6 +93,15 @@ function Stop-CIisWebsite
                 $msg = "Failed to stop IIS website ""$($website.Name)"": $($lastError)"
                 Write-Error -Message $msg -ErrorAction $ErrorActionPreference
                 continue
+            }
+            else
+            {
+                # Site stopped successfully, so remove the errors.
+                $numErrorsToRemove = $Global:Error.Count - $numErrorsAtStart
+                for ($idx = 0; $idx -lt $numErrorsToRemove; ++$idx)
+                {
+                    $Global:Error.RemoveAt(0)
+                }
             }
 
             if ($state -eq [ObjectState]::Stopped)

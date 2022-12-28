@@ -74,6 +74,7 @@ function Start-CIisAppPool
             $state = $null
             $timer.Restart()
             $lastError = $null
+            $numErrorsAtStart = $Global:Error.Count
             while ($null -eq $state -and $timer.Elapsed -lt $Timeout)
             {
                 try
@@ -93,6 +94,15 @@ function Start-CIisAppPool
                 $msg = "Starting IIS application pool ""$($appPool.Name)"" threw an exception: $($lastError)."
                 Write-Error -Message $msg -ErrorAction $ErrorActionPreference
                 continue
+            }
+            else
+            {
+                # Application pool started successfully, so remove the errors.
+                $numErrorsToRemove = $Global:Error.Count - $numErrorsAtStart
+                for ($idx = 0; $idx -lt $numErrorsToRemove; ++$idx)
+                {
+                    $Global:Error.RemoveAt(0)
+                }
             }
 
             if ($state -eq [ObjectState]::Started)

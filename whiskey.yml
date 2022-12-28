@@ -91,3 +91,5 @@ Build:
             Enabled: true
             OutputPath: .output\pester.xml
             TestSuiteName: Carbon.IIS
+        Output:
+            Verbosity: Detailed

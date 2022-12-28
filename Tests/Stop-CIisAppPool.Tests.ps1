@@ -91,6 +91,7 @@ BeforeAll {
             [String] $MatchesRegex
         )
 
+        $Global:Error | Format-List * -Force | Out-String | Write-Debug
         $Global:Error | Should -Match $MatchesRegex
     }
 
@@ -179,7 +180,7 @@ BeforeAll {
     }
 }
 
-Describe 'Stop-CIisAppPool' -Skip {
+Describe 'Stop-CIisAppPool' {
     BeforeEach {
         $Global:Error.Clear()
         $script:appPoolName = "Stop-CIisAppPool$($script:testNum)"
@@ -220,6 +221,7 @@ Describe 'Stop-CIisAppPool' -Skip {
         WhenStarting $script:appPoolName -WithArgs @{ Force = $true }
         ThenAppPool $script:appPoolName -IsStarted
         ThenWorkerProcess -617 -Stopped
+        $Global:Error | Format-List * -Force | Out-String | Write-Debug
         $Global:Error | Should -BeNullOrEmpty
     }
 

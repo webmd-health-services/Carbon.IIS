@@ -83,6 +83,7 @@ BeforeAll {
             [String] $MatchesRegex
         )
 
+        $Global:Error | Format-List * -Force | Out-String | Write-Debug
         $Global:Error | Should -Match $MatchesRegex
     }
 
@@ -113,7 +114,7 @@ BeforeAll {
     }
 }
 
-Describe 'Restart-CIisAppPool' -Skip {
+Describe 'Restart-CIisAppPool' {
     BeforeEach {
         $Global:Error.Clear()
         $script:appPoolName = "Restart-CIisAppPool$($script:testNum)"
@@ -130,6 +131,7 @@ Describe 'Restart-CIisAppPool' -Skip {
         GivenAppPool $script:appPoolName -IsStarted
         WhenRestarting $script:appPoolName
         ThenAppPool $script:appPoolName -Restarted
+        $Global:Error | Format-List * -Force | Out-String | Write-Debug
         $Global:Error | Should -BeNullOrEmpty
     }
 
@@ -137,6 +139,7 @@ Describe 'Restart-CIisAppPool' -Skip {
         GivenAppPool $script:appPoolName -IsStopped
         WhenRestarting $script:appPoolName
         ThenAppPool $script:appPoolName -Restarted
+        $Global:Error | Format-List * -Force | Out-String | Write-Debug
         $Global:Error | Should -BeNullOrEmpty
     }
 
