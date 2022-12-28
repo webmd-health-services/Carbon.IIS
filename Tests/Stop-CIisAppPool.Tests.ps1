@@ -37,7 +37,7 @@ BeforeAll {
             Stop-CIisAppPool -Name $Named
             $expectedState = [ObjectState]::Stopped
         }
-        Get-CIisAppPool -Name $Named | ForEach-Object -MemberName 'State' | Should -Be $expectedState
+        Get-CIisAppPool -Name $Named | Select-Object -ExpandProperty 'State' | Should -Be $expectedState
     }
 
     function GivenAppPoolTimesOutStopping

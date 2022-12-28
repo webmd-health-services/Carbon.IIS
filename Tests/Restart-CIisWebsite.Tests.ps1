@@ -48,7 +48,7 @@ BeforeAll {
             $expectedState = 'Stopped'
             $websiteShouldRespond = $false
         }
-        Get-CIisWebsite -Name $Named | ForEach-Object -MemberName 'State' | Should -Be $expectedState
+        Get-CIisWebsite -Name $Named | Select-Object -ExpandProperty 'State' | Should -Be $expectedState
         { Invoke-WebRequest $script:siteUrl | Out-Null } | Should -Not:$websiteShouldRespond -Throw
         $Global:Error.Clear()
     }

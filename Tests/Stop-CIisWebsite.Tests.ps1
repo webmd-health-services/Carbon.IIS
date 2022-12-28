@@ -41,7 +41,7 @@ BeforeAll {
             Stop-CIisWebsite -Name $Named
             $expectedState = 'Stopped'
         }
-        Get-CIisWebsite -Name $Named | ForEach-Object -MemberName 'State' | Should -Be $expectedState
+        Get-CIisWebsite -Name $Named | Select-Object -ExpandProperty 'State' | Should -Be $expectedState
     }
 
     function GivenWebsiteTimesOutStopping
