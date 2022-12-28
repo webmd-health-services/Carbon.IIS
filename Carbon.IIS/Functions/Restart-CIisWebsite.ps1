@@ -16,12 +16,12 @@ function Restart-CIisWebsite
     writes an error if the website doesn't stop or start.
 
     .EXAMPLE
-    Restart-CIisWebsite -Name 'Defaul Website'
+    Restart-CIisWebsite -Name 'Default Website'
 
     Demonstrates how to restart an website by passing its name to the `Name` parameter.
 
     .EXAMPLE
-    Restart-CIisWebsite -Name 'Defaul Website', 'Non-default Website'
+    Restart-CIisWebsite -Name 'Default Website', 'Non-default Website'
 
     Demonstrates how to restart multiple websites by passing their names to the `Name` parameter.
 
@@ -31,12 +31,12 @@ function Restart-CIisWebsite
     Demonstrates how to restart an website by piping it to `Restart-CIisWebsite`.
 
     .EXAMPLE
-    'Defaul Website', 'Non-default Website' | Restart-CIisWebsite
+    'Default Website', 'Non-default Website' | Restart-CIisWebsite
 
     Demonstrates how to restart one or more websites by piping their names to `Restart-CIisWebsite`.
 
     .EXAMPLE
-    Restart-CIisWebsite -Name 'Defaul Website' -Timeout '00:00:10'
+    Restart-CIisWebsite -Name 'Default Website' -Timeout '00:00:10'
 
     Demonstrates how to change the amount of time `Restart-CIisWebsite` waits for the website to stop. In this
     example, it will wait 10 seconds.
