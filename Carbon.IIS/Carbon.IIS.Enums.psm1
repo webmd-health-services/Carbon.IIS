@@ -16,3 +16,11 @@ enum CIisProcessModelLogonType
     Batch = 0
     Service = 1
 }
+
+enum CIisHttpRedirectResponseStatus
+{
+    Permanent = 301
+    Found = 302
+    Temporary = 307
+    PermRedirect = 308
+}

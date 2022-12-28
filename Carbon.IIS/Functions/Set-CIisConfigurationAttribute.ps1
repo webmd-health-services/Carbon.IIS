@@ -190,25 +190,31 @@ function Set-CIisConfigurationAttribute
             $Value = $Value.IsPresent
         }
 
-        $currentValueMsg = ''
-        if ($null -ne $currentValue)
+        $currentValueMsg = "[$($currentAttr.Schema.DefaultValue)]"
+        $currentValueIsDefault = $true
+        if ($null -ne $currentValue -and -not $currentAttr.IsInheritedFromDefaultValue)
         {
             $currentValueMsg = $currentValue.ToString()
+            $currentValueIsDefault = $false
         }
 
-        $valueMsg = ''
+        $valueMsg = "[$($currentAttr.Schema.DefaultValue)]"
         if ($null -ne $Value)
         {
             $valueMsg = $Value.ToString()
         }
-        else
-        {
-            $valueMsg = "[$($currentAttr.Schema.DefaultValue)]" # '[default value]'
-        }
 
-        if( $Value -is [Enum] )
+        if ($Value -is [Enum])
         {
-            $currentValueMsg = [Enum]::GetName($Value.GetType().FullName, $currentValue)
+            $currentValueAsEnum = [Enum]::Parse($Value.GetType().FullName, $currentValue, $true)
+            $currentValueMsg = "$($currentValueAsEnum) ($($currentValueAsEnum.ToString('D')))"
+
+            if ($currentValueIsDefault)
+            {
+                $currentValueMsg = "[$($currentValueMsg)]"
+            }
+
+            $valueMsg = "$($Value) ($($Value.ToString('D')))"
         }
         elseif( $currentAttr.Schema.Type -eq 'timeSpan' -and $Value -is [UInt64] )
         {
