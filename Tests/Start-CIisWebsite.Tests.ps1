@@ -129,7 +129,7 @@ BeforeAll {
 AfterAll {
 }
 
-Describe 'Start-CIisWebsite' {
+Describe 'Start-CIisWebsite' -Skip {
     BeforeEach {
         $Global:Error.Clear()
         $script:websiteName = "Start-CIisWebsite$($script:testNum)"

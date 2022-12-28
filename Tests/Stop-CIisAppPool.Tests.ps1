@@ -179,7 +179,7 @@ BeforeAll {
     }
 }
 
-Describe 'Stop-CIisAppPool' {
+Describe 'Stop-CIisAppPool' -Skip {
     BeforeEach {
         $Global:Error.Clear()
         $script:appPoolName = "Stop-CIisAppPool$($script:testNum)"
