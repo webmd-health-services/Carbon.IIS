@@ -79,6 +79,7 @@ BeforeAll {
             [String] $MatchesRegex
         )
 
+        $Global:Error | Format-List * -Force | Out-String | Write-Debug
         $Global:Error | Should -Match $MatchesRegex
     }
 
@@ -129,7 +130,7 @@ BeforeAll {
 AfterAll {
 }
 
-Describe 'Start-CIisWebsite' -Skip {
+Describe 'Start-CIisWebsite' {
     BeforeEach {
         $Global:Error.Clear()
         $script:websiteName = "Start-CIisWebsite$($script:testNum)"

@@ -76,6 +76,7 @@ BeforeAll {
             [String] $MatchesRegex
         )
 
+        $Global:Error | Format-List * -Force | Out-String | Write-Debug
         $Global:Error | Should -Match $MatchesRegex
     }
 
@@ -106,7 +107,7 @@ BeforeAll {
     }
 }
 
-Describe 'Restart-CIisWebsite' -Skip {
+Describe 'Restart-CIisWebsite' {
     BeforeEach {
         $Global:Error.Clear()
         $script:websiteName = "Restart-CIisWebsite$($script:testNum)"
@@ -125,6 +126,7 @@ Describe 'Restart-CIisWebsite' -Skip {
         GivenWebsite $script:websiteName -IsStarted
         WhenRestarting $script:websiteName
         ThenWebsite $script:websiteName -Restarted
+        $Global:Error | Format-List * -Force | Out-String | Write-Debug
         $Global:Error | Should -BeNullOrEmpty
     }
 
@@ -132,6 +134,7 @@ Describe 'Restart-CIisWebsite' -Skip {
         GivenWebsite $script:websiteName -IsStopped
         WhenRestarting $script:websiteName
         ThenWebsite $script:websiteName -Restarted
+        $Global:Error | Format-List * -Force | Out-String | Write-Debug
         $Global:Error | Should -BeNullOrEmpty
     }
 

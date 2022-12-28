@@ -73,6 +73,7 @@ BeforeAll {
             [String] $MatchesRegex
         )
 
+        $Global:Error | Format-List * -Force | Out-String | Write-Debug
         $Global:Error | Should -Match $MatchesRegex
     }
 
@@ -119,7 +120,7 @@ BeforeAll {
 AfterAll {
 }
 
-Describe 'Start-CIisAppPool' -Skip {
+Describe 'Start-CIisAppPool' {
     BeforeEach {
         $Global:Error.Clear()
         $script:appPoolName = "Start-CIisAppPool$($script:testNum)"
