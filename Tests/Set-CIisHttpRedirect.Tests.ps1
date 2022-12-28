@@ -53,7 +53,7 @@ Describe 'Set-CIisHttpRedirect' {
     }
 
     It 'should redirect site' {
-        Set-CIisHttpRedirect -SiteName $script:siteName -Destination 'http://www.example.com'
+        Set-CIisHttpRedirect -SiteName $script:siteName -Destination 'http://www.example.com' -Enabled $true
         ThenUrlContent "http://localhost:$($script:port)" -Match 'Example Domain'
         $script:webConfigPath | Should -Not -Exist # make sure committed to applicationHost.config
         $settings = Get-CIisHttpRedirect -SiteName $script:siteName
@@ -66,8 +66,9 @@ Describe 'Set-CIisHttpRedirect' {
 
     It 'should set redirect customizations' {
         Set-CIisHttpRedirect -SiteName $script:siteName `
+                             -Enabled $true `
                              -Destination 'http://www.example.com' `
-                             -HttpResponseStatus 301 `
+                             -HttpResponseStatus Permanent `
                              -ExactDestination $true `
                              -ChildOnly $true
         ThenUrlContent "http://localhost:$($script:port)" -Match 'Example Domain'
@@ -80,15 +81,16 @@ Describe 'Set-CIisHttpRedirect' {
 
     It 'should set to default values' {
         Set-CIisHttpRedirect -SiteName $script:siteName `
+                             -Enabled $true `
                              -Destination 'http://www.example.com' `
-                             -HttpResponseStatus 302 `
-                             -ExactDestination $false `
-                             -ChildOnly $false
+                             -HttpResponseStatus 301 `
+                             -ExactDestination $true `
+                             -ChildOnly $true
         ThenUrlContent "http://localhost:$($script:port)" -Match 'Example Domain'
-        Set-CIisHttpRedirect -SiteName $script:siteName -Destination 'http://www.example.com'
-        ThenUrlContent "http://localhost:$($script:port)" -Match 'Example Domain'
+        Set-CIisHttpRedirect -SiteName $script:siteName -Destination 'http://www.example.com' -Reset
 
         $settings = Get-CIisHttpRedirect -SiteName $script:siteName
+        $settings.GetAttributeValue('enabled') | Should -BeFalse
         $settings.GetAttributeValue('destination') | Should -Be 'http://www.example.com'
         $settings.GetAttributeValue('httpResponseStatus') | Should -Be 302
         $settings.GetAttributeValue('exactDestination') | Should -BeFalse
@@ -102,7 +104,7 @@ Describe 'Set-CIisHttpRedirect' {
 
         $locationPath = $script:siteName, 'SubFolder' | Join-CIisPath
 
-        Set-CIisHttpRedirect -LocationPath $locationPath -Destination 'http://www.example.com'
+        Set-CIisHttpRedirect -LocationPath $locationPath -Enabled $true -Destination 'http://www.example.com'
         ThenUrlContent "http://localhost:$($script:port)/SubFolder" -Match 'Example Domain'
         ThenUrlContent "http://localhost:$($script:port)/" -Is $PSCommandPath
 

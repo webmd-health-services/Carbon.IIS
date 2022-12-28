@@ -54,6 +54,8 @@ installing it.
 * Update usages of the `Set-CIisAnonymousAuthentication` function's `Enabled` switch to take in a `$true` or `$false`
 value. The `Enabled` switch is now a boolean parameter. Change usages of `-Enabled` to `-Enabled $true` and
 usages of `-Enabled:$false` to `-Enabled $false`.
+* Update usages of the `Set-CIisHttpRedirect` function to add `-Enabled $true`. The `Set-CIisHttpRedirect` function no
+longer enables HTTP redirection by default.
 * Update usages of the `Set-CIisHttpRedirect` function's `ExactDestination` switch to take in a `$true` or `$false`
 value. The `ExactDestination` switch is now a boolean parameter. Change usages of `-ExactDestination` to
 `-ExactDestination $true` and usages of `-ExactDestination:$false` to `-ExactDestination $false`.
@@ -73,6 +75,7 @@ paths.
 pool's `add` element in IIS' applicationHost.config file). Added parameters `QueueLength`, `AutoStart`,
 `Enable32BitAppOnWin64`, `ManagedRuntimeLoader`, `EnableConfigurationOverride`, `ManagedPipelineMode`, `CLRConfigFile`,
 `PassAnonymousToken`, and `StartMode` to `Install-CIisAppPool`.
+* Added support for a `308` (`PermRedirect`) response code to `Set-CIisHttpRedirect`.
 * `WhatIf` support to the following functions:
   * `Enable-CIisDirectoryBrowsing`
   * `Remove-CIisMimeMap`
@@ -122,11 +125,13 @@ application pool recycling settings.
 * `Install-CIisWebsite`: parameter `Timeout`, which controls how long `Install-CIisWebsite` waits for a website to be
 available before returning. The default value is 30 seconds.
 * `Install-CIIsAppPool`: `Credential`, which replaces the `UserName`/`Password` parameters.
+* `Set-CIisHttpRedirect`: `Enabled` to control if HTTP redirect is enabled or not.
 * `Set-CIisWindowsAuthentication`: parameter `UseKernelMode` for configuring the Windows authentication "useKernelMode"
 setting.
 * `Reset` switch on the following function. When set, the `Reset` switch will delete the IIS setting of each parameter
 *not* passed to the functions, which resets the IIS setting to its default value. Useful for ensuring that an object
 is configured *exactly* as specified in code.
+  * `Set-CIisHttpRedirect`
 
 ### Changed
 
@@ -159,6 +164,8 @@ to their default values.
 authentication or `$false` to disable it.
 * The `Set-CIisHttpRedirect` function's `ExactDestination` and `ChildOnly` switches are now boolean parameters. Pass
 `$true` to enable or `$false` to disable.
+* The `Set-CIisHttpRedirect` function's `HttpResponseStatus` parameter is now an enumeration value so you don't have to
+remember redirect code numbers.
 
 ### Deprecated
 
