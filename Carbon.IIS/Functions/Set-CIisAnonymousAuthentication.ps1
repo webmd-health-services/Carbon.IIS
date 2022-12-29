@@ -38,18 +38,23 @@ function Set-CIisAnonymousAuthentication
         # OBSOLETE. Use the `LocationPath` parameter instead.
         [String] $VirtualPath,
 
-        # Enable anonymous authentication. To disable anonymous authentication you must explicitly set `Enabled to
-        # `$false`, e.g. `-Enabled:$false`.
+        # Enable anonymous authentication. To disable anonymous authentication you must explicitly set `Enabled` to
+        # `$false`, e.g. `-Enabled $false`.
         [bool] $Enabled,
 
-        # The username of the identity to use to run anonymous requests.
-        [String] $UserName,
+        # The logon method to use for anonymous access.
+        [AuthenticationLogonMethod] $LogonMethod,
 
         # The password username of the identity to use to run anonymous requests. Not needed if using system accounts.
         [SecureString] $Password,
 
-        # The logon method to use for anonymous access.
-        [Microsoft.Web.Administration.AuthenticationLogonMethod] $LogonMethod
+        # The username of the identity to use to run anonymous requests.
+        [String] $UserName,
+
+        # If set, the anonymous authentication setting for each parameter *not* passed is deleted, which resets it to
+        # its default value. Otherwise, anonymous authentication settings whose parameters are not passed are left in
+        # place and not modified.
+        [switch] $Reset
     )
 
     Set-StrictMode -Version 'Latest'
@@ -64,5 +69,6 @@ function Set-CIisAnonymousAuthentication
 
     Set-CIisConfigurationAttribute -LocationPath ($LocationPath, $VirtualPath | Join-CIisPath) `
                                    -SectionPath 'system.webServer/security/authentication/anonymousAuthentication' `
-                                   -Attribute $attributes
+                                   -Attribute $attributes `
+                                   -Reset:$Reset
 }

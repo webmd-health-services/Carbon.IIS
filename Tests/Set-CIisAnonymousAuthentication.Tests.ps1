@@ -1,4 +1,6 @@
 
+using namespace Microsoft.Web.Administration
+
 #Requires -Version 5.1
 Set-StrictMode -Version 'Latest'
 
@@ -159,5 +161,24 @@ Describe 'Set-CIisAnonymousAuthentication' {
         Get-Item -Path $appHostConfigPath |
             Select-Object -ExpandProperty 'LastWriteTimeUtc' |
             Should -Be $appHostUpdatedAt.LastWriteTimeUtc
+    }
+
+    It 'should reset values to defaults' {
+        $setArgs = @{
+            Enabled = $false;
+            LogonMethod = [Microsoft.Web.Administration.AuthenticationLogonMethod]::Interactive;
+            Password = (ConvertTo-SecureString -String 'vmklfromlsfd' -AsPlainText -Force);
+            UserName = 'jfsakldlkfm';
+        }
+        WhenSetting -WithArgument $setArgs
+        ThenCommittedToAppHost
+        ThenAttributesSetTo $setArgs
+        WhenSetting -WithArgument @{ Reset = $true }
+        ThenAttributesSetTo @{
+            Enabled = $true;
+            LogonMethod = [Microsoft.Web.Administration.AuthenticationLogonMethod]::ClearText;
+            Password = ''
+            UserName = 'IUSR';
+        }
     }
 }
