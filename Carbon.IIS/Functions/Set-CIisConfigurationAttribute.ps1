@@ -177,6 +177,22 @@ function Set-CIisConfigurationAttribute
             return
         }
 
+        $parentAttr = $null
+        if ($parentConfigElement)
+        {
+            $parentAttr = $parentConfigElement.Attributes[$Name]
+        }
+
+        $defaultValue = $currentAttr.Schema.DefaultValue
+        if ($parentAttr)
+        {
+            $defaultValue = $parentAttr.Value
+            if ($parentAttr.IsInheritedFromDefaultValue)
+            {
+                $defaultValue = $parentAttr.Schema.DefaultValue
+            }
+        }
+
         $currentValue = $currentAttr.Value
 
         $protectValue = $Sensitive -or $currentAttr.Name -eq 'password'
@@ -190,15 +206,17 @@ function Set-CIisConfigurationAttribute
             $Value = $Value.IsPresent
         }
 
-        $currentValueMsg = "[$($currentAttr.Schema.DefaultValue)]"
+        $appHostAttrExists = ($configElementAppHostNode -and $configElementAppHostNode.HasAttribute($Name))
+
+        $currentValueMsg = "[$($defaultValue)]"
         $currentValueIsDefault = $true
-        if ($null -ne $currentValue -and -not $currentAttr.IsInheritedFromDefaultValue)
+        if ($null -ne $currentValue -and -not $currentAttr.IsInheritedFromDefaultValue -and $appHostAttrExists)
         {
             $currentValueMsg = $currentValue.ToString()
             $currentValueIsDefault = $false
         }
 
-        $valueMsg = "[$($currentAttr.Schema.DefaultValue)]"
+        $valueMsg = "[$($defaultValue)]"
         if ($null -ne $Value)
         {
             $valueMsg = $Value.ToString()
@@ -231,7 +249,7 @@ function Set-CIisConfigurationAttribute
         $noChangeMsg = "$($msgPrefix)$($currentValueMsg) == $($valueMsg)"
         $changedMsg =  "$($msgPrefix)$($currentValueMsg) -> $($valueMsg)"
 
-        if( $null -eq $Value )
+        if ($null -eq $Value)
         {
             if ($currentAttr.IsInheritedFromDefaultValue)
             {
@@ -283,10 +301,13 @@ function Set-CIisConfigurationAttribute
             return
         }
 
-        if( $currentValue -eq $Value )
+        if ($currentValue -eq $Value)
         {
-            Write-Debug $noChangeMsg
-            return
+            if (-not $isConfigSection -or ($isConfigSection -and $appHostAttrExists))
+            {
+                Write-Debug $noChangeMsg
+                return
+            }
         }
 
         [void]$infoMessages.Add($changedMsg)
@@ -316,6 +337,39 @@ function Set-CIisConfigurationAttribute
         }
     }
 
+    $parentConfigElement = $null
+    if ($LocationPath)
+    {
+        $parentConfigElement = Get-CIisConfigurationSection -SectionPath $SectionPath
+    }
+
+    $isConfigSection = $null -ne ($ConfigurationElement | Get-Member -Name 'SectionPath')
+    if( -not $SectionPath -and $isConfigSection )
+    {
+        $SectionPath = $ConfigurationElement.SectionPath
+    }
+
+    $parentAppHostNode = $null
+    $locationAppHostNode = $null
+    $configElementAppHostNode = $null
+    if ($isConfigSection)
+    {
+        $appHostPath = Join-Path -Path ([Environment]::GetFolderPath('System')) `
+                                -ChildPath 'inetsrv\config\applicationHost.config' `
+                                -Resolve
+        [xml] $appHostConfigXml = Get-Content -Path $appHostPath
+
+        $xpath = "/configuration/$($SectionPath)"
+        $parentAppHostNode = $appHostConfigXml.SelectSingleNode($xpath)
+        $configElementAppHostNode = $parentAppHostNode
+        if ($LocationPath)
+        {
+            $xpath = "/configuration/location[@path = '$($LocationPath)']/$($SectionPath)"
+            $locationAppHostNode = $appHostConfigXml.SelectSingleNode($xpath)
+            $configElementAppHostNode = $locationAppHostNode
+        }
+    }
+
     $attrNameFieldLength =
         $ConfigurationElement.Attributes |
         Select-Object -ExpandProperty 'Name' |
@@ -329,11 +383,6 @@ function Set-CIisConfigurationAttribute
     $removedNames = [Collections.ArrayList]::New()
 
     $infoMessages = [Collections.Generic.List[String]]::New()
-
-    if( -not $SectionPath -and ($ConfigurationElement | Get-Member -Name 'SectionPath') )
-    {
-        $SectionPath = $ConfigurationElement.SectionPath
-    }
 
     if( -not $Target )
     {

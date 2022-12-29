@@ -126,12 +126,19 @@ application pool recycling settings.
 available before returning. The default value is 30 seconds.
 * `Install-CIIsAppPool`: `Credential`, which replaces the `UserName`/`Password` parameters.
 * `Set-CIisHttpRedirect`: `Enabled` to control if HTTP redirect is enabled or not.
-* `Set-CIisWindowsAuthentication`: parameter `UseKernelMode` for configuring the Windows authentication "useKernelMode"
-setting.
+* `Set-CIisWindowsAuthentication`:
+  * `AuthPersistNonNtlm`, which sets the value of the `authPersistNonNtlm` setting.
+  * `AuthPersistSingleRequest`, which sets the value of the `authPersistSingleRequest` setting.
+  * `Enabled`, which sets the value of the `enabled` setting.
+  * `UseAppPoolCredentials`, which sets the value for the `useAppPoolCredentials` setting.
+  * `UseKernelMode`, which sets the value for the `useKernelMode` setting. (This replaces the now-obsolete
+  `DisableKernelMode` parameter.)
 * `Reset` switch on the following function. When set, the `Reset` switch will delete the IIS setting of each parameter
 *not* passed to the functions, which resets the IIS setting to its default value. Useful for ensuring that an object
 is configured *exactly* as specified in code.
+  * `Set-CIisAnonymousAuthentication`
   * `Set-CIisHttpRedirect`
+  * `Set-CIisWindowsAuthentication`
 
 ### Changed
 

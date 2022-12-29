@@ -45,14 +45,31 @@ function Set-CIisWindowsAuthentication
         [Alias('Path')]
         [String] $VirtualPath = '',
 
-        # Turn on kernel mode.  Default is false.
-        # [More information about Kernel Mode authentication.](http://blogs.msdn.com/b/webtopics/archive/2009/01/19/service-principal-name-spn-checklist-for-kerberos-authentication-with-iis-7-0.aspx)
+        # The value for the `authPersistNonNtlm` setting.
+        [bool] $AuthPersistNonNtlm,
+
+        # The value for the `authPersistSingleRequest` setting.
+        [bool] $AuthPersistSingleRequest,
+
+        # Enable Windows authentication. To disable Windows authentication you must explicitly set `Enabled` to
+        # `$false`, e.g. `-Enabled $false`.
+        [bool] $Enabled,
+
+        # The value for the `useAppPoolCredentials` setting.
+        [bool] $UseAppPoolCredentials,
+
+        # The value for the `useKernelMode` setting.
         [Parameter(ParameterSetName='New')]
         [bool] $UseKernelMode,
 
-        # Disable kernel mode. Default is false.
+        # OBSOLETE. Use the `UseKernelMode` parameter instead.
         [Parameter(ParameterSetName='Deprecated')]
-        [switch] $DisableKernelMode
+        [switch] $DisableKernelMode,
+
+        # If set, the anonymous authentication setting for each parameter *not* passed is deleted, which resets it to
+        # its default value. Otherwise, anonymous authentication settings whose parameters are not passed are left in
+        # place and not modified.
+        [switch] $Reset
     )
 
     Set-StrictMode -Version 'Latest'
@@ -60,20 +77,22 @@ function Set-CIisWindowsAuthentication
 
     $attrs = @{}
 
+    $settingNames = @(
+        'authPersistNonNtlm',
+        'authPersistSingleRequest',
+        'enabled',
+        'useAppPoolCredentials',
+        'useKernelMode'
+    )
+    $attrs = $PSBoundParameters | Copy-Hashtable -Key $settingNames
+
     if ($PSCmdlet.ParameterSetName -eq 'Deprecated')
     {
         "The $($PSCmdlet.MyInvocation.MyCommand.Name) function's ""DisableKernelMode"" switch is obsolete and will " +
-        'be removed in the next major version of Carbon.IIS. Use the new `UserKernelMode` parameter instead.' |
+        'be removed in the next major version of Carbon.IIS. Use the new `UseKernelMode` parameter instead.' |
             Write-CIisWarningOnce
 
         $attrs['useKernelMode'] = -not $DisableKernelMode.IsPresent
-    }
-    else
-    {
-        if ($PSBoundParameters.ContainsKey('UseKernelMode'))
-        {
-            $attrs['useKernelMode'] = $UseKernelMode
-        }
     }
 
     if ($VirtualPath)
@@ -84,7 +103,6 @@ function Set-CIisWindowsAuthentication
     $sectionPath = 'system.webServer/security/authentication/windowsAuthentication'
     Set-CIisConfigurationAttribute -LocationPath ($LocationPath, $VirtualPath | Join-CIisPath) `
                                    -SectionPath $sectionPath `
-                                   -Attribute $attrs
+                                   -Attribute $attrs `
+                                   -Reset:$Reset
 }
-
-
