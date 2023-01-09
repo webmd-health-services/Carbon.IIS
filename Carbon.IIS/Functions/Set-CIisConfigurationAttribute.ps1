@@ -264,11 +264,6 @@ function Set-CIisConfigurationAttribute
                 # element and the element attribute values are the same value as the default value. So, the only way to
                 # know if the location we're working on doesn't have the attribute is to load the applicationHost.config
                 # and look for the attribute. :(
-                $appHostPath = Join-Path -Path ([Environment]::GetFolderPath('System')) `
-                                         -ChildPath 'inetsrv\config\applicationHost.config' `
-                                         -Resolve
-                [xml] $appHostConfigXml = Get-Content -Path $appHostPath
-
                 $xpath = "/configuration/location[@path = '$($LocationPath)']/$($Element.SectionPath)/@$($Name)"
                 if (-not $appHostConfigXml.SelectSingleNode($xpath))
                 {
@@ -349,16 +344,13 @@ function Set-CIisConfigurationAttribute
         $SectionPath = $ConfigurationElement.SectionPath
     }
 
+    [xml] $appHostConfigXml = Get-Content -Path $script:applicationHostPath
+
     $parentAppHostNode = $null
     $locationAppHostNode = $null
     $configElementAppHostNode = $null
     if ($isConfigSection)
     {
-        $appHostPath = Join-Path -Path ([Environment]::GetFolderPath('System')) `
-                                -ChildPath 'inetsrv\config\applicationHost.config' `
-                                -Resolve
-        [xml] $appHostConfigXml = Get-Content -Path $appHostPath
-
         $xpath = "/configuration/$($SectionPath)"
         $parentAppHostNode = $appHostConfigXml.SelectSingleNode($xpath)
         $configElementAppHostNode = $parentAppHostNode

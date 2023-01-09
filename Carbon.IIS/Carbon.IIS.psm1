@@ -20,13 +20,15 @@ using namespace Microsoft.Web.Administration
 Set-StrictMode -Version 'Latest'
 $InformationPreference = 'Continue'
 
-# Functions should use $moduleRoot as the relative root from which to find
+# Functions should use $script:moduleRoot as the relative root from which to find
 # things. A published module has its function appended to this file, while a
 # module in development has its functions in the Functions directory.
-$moduleRoot = $PSScriptRoot
-$warningMessages = @{}
+$script:moduleRoot = $PSScriptRoot
+$script:warningMessages = @{}
+$script:applicationHostPath =
+    Join-Path -Path ([Environment]::SystemDirectory) -ChildPath 'inetsrv\config\applicationHost.config'
 
-Import-Module -Name (Join-Path -Path $moduleRoot -ChildPath 'PSModules\Carbon.Core' -Resolve) `
+Import-Module -Name (Join-Path -Path $script:moduleRoot -ChildPath 'PSModules\Carbon.Core' -Resolve) `
               -Function @('Add-CTypeData')
 
 function Test-MSWebAdministrationLoaded
@@ -97,6 +99,7 @@ if( -not (Test-MSWebAdministrationLoaded) )
 }
 
 $script:serverMgr = [Microsoft.Web.Administration.ServerManager]::New()
+$script:serverMgrCreatedAt = [DateTime]::UtcNow
 if( -not $script:serverMgr -or $null -eq $script:serverMgr.ApplicationPoolDefaults )
 {
     Write-Error -Message "Carbon.IIS is not supported on this version of PowerShell." -ErrorAction Stop
@@ -135,8 +138,8 @@ Add-CTypeData -TypeName 'Microsoft.Web.Administration.Application' `
 # developers to work on a module without having to build it first. Grab all the
 # functions that are in their own files.
 $functionsPath = & {
-    Join-Path -Path $moduleRoot -ChildPath 'Functions\*.ps1'
-    Join-Path -Path $moduleRoot -ChildPath 'Carbon.IIS.ArgumentCompleters.ps1'
+    Join-Path -Path $script:moduleRoot -ChildPath 'Functions\*.ps1'
+    Join-Path -Path $script:moduleRoot -ChildPath 'Carbon.IIS.ArgumentCompleters.ps1'
 }
 foreach ($importPath in $functionsPath)
 {
