@@ -42,7 +42,7 @@ function Set-CIisAppPoolPeriodicRestart
     Demonstrates how to configure the IIS application pool defaults periodic restart settings by using the `AsDefaults`
     switch and not passing the application pool name.
     #>
-    [CmdletBinding(DefaultParameterSetName='SetIntance', SupportsShouldProcess)]
+    [CmdletBinding(DefaultParameterSetName='SetInstance', SupportsShouldProcess)]
     param(
         # The name of the IIS application pool whose periodic restart settings to configure.
         [Parameter(Mandatory, ParameterSetName='SetInstance', Position=0)]
