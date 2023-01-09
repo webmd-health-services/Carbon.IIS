@@ -163,6 +163,10 @@ function Install-CIisWebsite
     }
 
     $site = Get-CIisWebsite -Name $Name
+    if (-not $site)
+    {
+        return
+    }
 
     $expectedBindings = [Collections.Generic.Hashset[String]]::New()
     $Binding |
