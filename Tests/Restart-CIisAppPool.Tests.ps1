@@ -71,6 +71,10 @@ BeforeAll {
         $appPool = Get-CIisAppPool -Name $Named
         $appPool | Should -Not -BeNullOrEmpty
         $appPool.State | Should -Be 'Started'
+
+        Wait-CIisAppPoolWorkerProcess -AppPoolName $appPool.Name
+
+        $appPool = Get-CIisAppPool -Name $appPool.Name
         $appPool.WorkerProcesses |
             ForEach-Object { Get-Process -Id $_.ProcessId } |
             Select-Object -ExpandProperty 'StartTime' |
