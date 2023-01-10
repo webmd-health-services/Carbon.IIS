@@ -131,7 +131,8 @@
         'Test-CIisWebsite',
         'Uninstall-CIisAppPool',
         'Uninstall-CIisWebsite',
-        'Unlock-CIisConfigurationSection'
+        'Unlock-CIisConfigurationSection',
+        'Wait-CIisAppPoolWorkerProcess'
     )
 
     # Cmdlets to export from this module. By default, you get a script module, so there are no cmdlets.

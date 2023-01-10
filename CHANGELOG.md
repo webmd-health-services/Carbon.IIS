@@ -115,6 +115,7 @@ application pool recycling settings.
 * `Start-CIisWebsite` for starting a website.
 * `Stop-CIisAppPool` for stopping an application pool.
 * `Stop-CIisWebsite` for stopping a website.
+* `Wait-CIisAppPoolWorkerProcess` for waiting for an application pool to have a running worker process.
 
 #### Parameters
 
