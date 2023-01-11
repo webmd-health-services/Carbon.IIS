@@ -79,6 +79,8 @@ pool's `add` element in IIS' applicationHost.config file). Added parameters `Que
 * `WhatIf` support to the following functions:
   * `Enable-CIisDirectoryBrowsing`
   * `Remove-CIisMimeMap`
+* `Uninstall-CIisAppPool` now stops the application pool before deleting. Sometimes, the application pool remains
+running even after `Uninstall-CIisAppPool` returns.
 
 #### Functions
 
