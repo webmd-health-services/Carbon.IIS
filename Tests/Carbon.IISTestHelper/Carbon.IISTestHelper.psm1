@@ -1,4 +1,8 @@
 
+Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath '..\..\PSModules\Carbon' -Resolve) `
+              -Function @('Grant-CPermission') `
+              -Prefix 'T'
+
 Set-StrictMode -Version 'Latest'
 
 $script:testNum = 0
@@ -36,7 +40,7 @@ function New-TestDirectory
 {
     $testDir = Join-Path -Path $TestDrive -ChildPath ($script:testNum++)
     New-Item -Path $testDir -ItemType 'Directory' | Out-Null
-    Grant-CPermission -Path $TestDrive -Identity 'Everyone' -Permission 'FullControl'
+    Grant-TCPermission -Path $TestDrive -Identity 'Everyone' -Permission 'FullControl'
     return $testDir
 }
 

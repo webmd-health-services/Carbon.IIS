@@ -37,11 +37,11 @@ Describe 'Set-CIisWebsiteSslCertificate' {
                             -Path $script:testDir `
                             -Bindings @( "https/$($script:ipAddress):$($script:port):", "https/*:$($script:allPort):" )
         $script:certPath = Join-Path -Path $PSScriptRoot -ChildPath 'CarbonIisTestCertificate.cer' -Resolve
-        $script:cert = Install-CCertificate -Path $script:certPath -StoreLocation LocalMachine -StoreName My -PassThru
+        $script:cert = Install-TCCertificate -Path $script:certPath -StoreLocation LocalMachine -StoreName My -PassThru
     }
 
     AfterEach {
-        Uninstall-CCertificate -Certificate $script:cert -StoreLocation LocalMachine -StoreName My
+        Uninstall-TCCertificate -Certificate $script:cert -StoreLocation LocalMachine -StoreName My
         Uninstall-CIisWebsite -Name $script:siteName
     }
 
@@ -51,12 +51,12 @@ Describe 'Set-CIisWebsiteSslCertificate' {
                                       -ApplicationID $script:appID
         try
         {
-            $binding = Get-CSslCertificateBinding -IPAddress $script:ipAddress -Port $script:port
+            $binding = Get-TCSslCertificateBinding -IPAddress $script:ipAddress -Port $script:port
             $binding | Should -Not -BeNullOrEmpty
             $binding.CertificateHash | Should -Be $script:cert.Thumbprint
             $binding.ApplicationID | Should -Be $script:appID
 
-            $binding = Get-CSslCertificateBinding -Port $script:allPort
+            $binding = Get-TCSslCertificateBinding -Port $script:allPort
             $binding | Should -Not -BeNullOrEmpty
             $binding.CertificateHash | Should -Be $script:cert.Thumbprint
             $binding.ApplicationID | Should -Be $script:appID
@@ -64,28 +64,28 @@ Describe 'Set-CIisWebsiteSslCertificate' {
         }
         finally
         {
-            Remove-CSslCertificateBinding -IPAddress $script:ipAddress -Port $script:port
-            Remove-CSslCertificateBinding -Port $script:allPort
+            Remove-TCSslCertificateBinding -IPAddress $script:ipAddress -Port $script:port
+            Remove-TCSslCertificateBinding -Port $script:allPort
         }
     }
 
     It 'should support what if' {
-        $bindings = @( Get-CSslCertificateBinding )
+        $bindings = @( Get-TCSslCertificateBinding )
         Set-CIisWebsiteSslCertificate -SiteName $script:siteName `
                                       -Thumbprint $script:cert.Thumbprint `
                                       -ApplicationID $script:appID `
                                       -WhatIf
-        $newBindings = @( Get-CSslCertificateBinding )
+        $newBindings = @( Get-TCSslCertificateBinding )
         $newBindings | Should -HaveCount $bindings.Length
     }
 
     It 'should support website without ssl bindings' {
         Install-CIisWebsite -Name $script:siteName -Path $script:testDir -Bindings @( 'http/*:80:' )
-        $bindings = @( Get-CSslCertificateBinding )
+        $bindings = @( Get-TCSslCertificateBinding )
         Set-CIisWebsiteSslCertificate -SiteName $script:siteName `
                                       -Thumbprint $script:cert.Thumbprint `
                                       -ApplicationID $script:appID
-        $newBindings = @( Get-CSslCertificateBinding )
+        $newBindings = @( Get-TCSslCertificateBinding )
         $newBindings | Should -HaveCount $bindings.Length
     }
 

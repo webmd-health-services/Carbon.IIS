@@ -2,7 +2,12 @@
   "PSModules": [
     {
       "name": "Carbon.Core",
-      "version": "1.1.0",
+      "version": "1.2.0-alpha1",
+      "repositorySourceLocation": "https://www.powershellgallery.com/api/v2"
+    },
+    {
+      "name": "Carbon.Windows.HttpServer",
+      "version": "1.0.0-alpha5",
       "repositorySourceLocation": "https://www.powershellgallery.com/api/v2"
     }
   ]
