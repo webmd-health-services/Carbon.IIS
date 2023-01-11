@@ -31,9 +31,15 @@ function Uninstall-CIisAppPool
         return
     }
 
-    $target = $Name
-    $action = "Remove IIS Application Pool"
-    if( $pscmdlet.ShouldProcess( $target, $action ) )
+    $target = "IIS Application Pool $($Name)"
+    if ($PSCmdlet.ShouldProcess($target, 'Stop'))
+    {
+        # Stop the app pool first, otherwise it can sometimes still be running after this function returns.
+        Stop-CIisAppPool -Name $Name
+    }
+
+    $appPool = Get-CIisAppPool -Name $Name
+    if ($PSCmdlet.ShouldProcess($target, 'Remove'))
     {
         Write-Information -Message "Removing IIS application pool ""$($Name)""."
         $appPool.Delete()
