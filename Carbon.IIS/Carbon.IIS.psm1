@@ -29,7 +29,10 @@ $script:applicationHostPath =
     Join-Path -Path ([Environment]::SystemDirectory) -ChildPath 'inetsrv\config\applicationHost.config'
 
 Import-Module -Name (Join-Path -Path $script:moduleRoot -ChildPath 'PSModules\Carbon.Core' -Resolve) `
-              -Function @('Add-CTypeData')
+              -Function @('Add-CTypeData', 'Resolve-CFullPath')
+
+Import-Module -Name (Join-Path -Path $script:moduleRoot -ChildPath 'PSModules\Carbon.Windows.HttpServer' -Resolve) `
+              -Function @('Set-CSslCertificateBinding')
 
 function Test-MSWebAdministrationLoaded
 {

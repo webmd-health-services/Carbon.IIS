@@ -34,7 +34,6 @@ function Set-CIisWebsiteSslCertificate
     )
 
     Set-StrictMode -Version 'Latest'
-
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
     $site = Get-CIisWebsite -Name $SiteName
