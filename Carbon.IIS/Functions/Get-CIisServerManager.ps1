@@ -44,22 +44,25 @@ function Get-CIisServerManager
         return "$(([DateTime]::UtcNow.ToString('O')))  ServerManager  #$('{0,-10}  ' -f $script:serverMgr.GetHashCode())"
     }
 
-    $lastWriteTimeUtc = Get-Item -Path $script:applicationHostPath | Select-Object -ExpandProperty 'LastWriteTimeUtc'
-
-    $msgPrefix = New-MessagePrefix
-
-    if ($lastWriteTimeUtc -gt $script:serverMgrCreatedAt)
+    foreach ($config in ($script:iisConfigs | Get-Item))
     {
-        $msg = "$($msgPrefix)Stale  $($lastWriteTimeUtc.ToString('O')) > $($script:serverMgrCreatedAt.ToString('O'))"
-        Write-Debug $msg
-        $Reset = $true
+        if ($script:serverMgrCreatedAt -lt $config.LastWriteTimeUtc)
+        {
+            $Reset = $true
+            "$(New-MessagePrefix)Stale      $($script:serverMgrCreatedAt.ToString('O')) < " +
+                "$($config.LastWriteTimeUtc.ToSTring('O')) $($config.FullName)" | Write-Debug
+            break
+        }
     }
 
     if ($Commit)
     {
         try
         {
-            Write-Debug "$($msgPrefix)CommitChanges()"
+            $appHostLastWriteTimeUtc =
+                Get-Item -Path $script:applicationHostPath | Select-Object -ExpandProperty 'LastWriteTimeUtc'
+
+            Write-Debug "$(New-MessagePrefix)CommitChanges()"
             $serverMgr.CommitChanges()
 
             $startedWaitingAt = [Diagnostics.Stopwatch]::StartNew()
@@ -74,7 +77,7 @@ function Get-CIisServerManager
                 }
 
                 $appHostInfo = Get-Item -Path $script:applicationHostPath -ErrorAction Ignore
-                if( $appHostInfo -and $lastWriteTimeUtc -lt $appHostInfo.LastWriteTimeUtc )
+                if( $appHostInfo -and $appHostLastWriteTimeUtc -lt $appHostInfo.LastWriteTimeUtc )
                 {
                     Write-Debug "    $($startedWaitingAt.Elapsed.TotalSeconds.ToString('0.000'))s  Changes committed."
                     $Reset = $true
@@ -94,7 +97,7 @@ function Get-CIisServerManager
 
     if ($Reset)
     {
-        Write-Debug "$($msgPrefix)Dispose()"
+        Write-Debug "$(New-MessagePrefix)Dispose()"
         $script:serverMgr.Dispose()
     }
 
@@ -103,10 +106,9 @@ function Get-CIisServerManager
     {
         $script:serverMgr = [Microsoft.Web.Administration.ServerManager]::New()
         $script:serverMgrCreatedAt = [DateTime]::UtcNow
-        $msgPrefix = New-MessagePrefix
-        Write-Debug "$($msgPrefix)New()"
+        Write-Debug "$(New-MessagePrefix)New()"
     }
 
-    Write-Debug "$($msgPrefix)"
+    Write-Debug "$(New-MessagePrefix)"
     return $script:serverMgr
 }
