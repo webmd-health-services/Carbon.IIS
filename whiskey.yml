@@ -3,8 +3,8 @@ Build:
 - Version:
     Path: Carbon.IIS\Carbon.IIS.psd1
     Prerelease:
-    - "release/*": ""
-    - "*/*": rc1
+    - main: ""
+    - "*": rc1
 
 # Update the AppVeyor build/version number.
 - Exec:
