@@ -88,6 +88,7 @@ running even after `Uninstall-CIisAppPool` returns.
 separators are `/`, etc.).
 * `Get-CIisConfigurationLocationPath` for determining if a website or website/virtual path has custom configuration
 (i.e. there's a `<location>` element for it in the applicationHost.config).
+* `Get-CIisVirtualDirectory` for getting virtual directories.
 * `Install-CIisVirtualDirectory` can now install virtual directories under applications, not just website root. Pass the
  application name to the `ApplicationPath` parameter.
 * `Join-CIisPath` function for joining virtual and location path segments into a single path.

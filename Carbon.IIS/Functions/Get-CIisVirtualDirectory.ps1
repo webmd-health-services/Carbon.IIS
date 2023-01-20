@@ -50,15 +50,19 @@ function Get-CIisVirtualDirectory
         return
     }
 
-    # Argh. Hard. Should handle /path/APP/path/VDIR.
-    $site.Applications |
-        Select-Object -ExpandProperty 'VirtualDirectories' |
-        Where-Object {
-            if ($PSBoundParameters.ContainsKey('VirtualPath'))
+    $virtualPath = $virtualPath | ConvertTo-CIisVirtualPath
+
+    foreach ($app in $site.Applications)
+    {
+        foreach ($vdir in $app.VirtualDirectories)
+        {
+            $fullVirtualPath = Join-CIisPath $app.Path, $vdir.Path -LeadingSlash
+
+            if ($fullVirtualPath -like $virtualPath)
             {
-                return ($_.Path -like $VirtualPath)
+                $vdir | Write-Output
             }
-            return $true
         }
+    }
 }
 
