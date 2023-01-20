@@ -3,34 +3,37 @@ function Set-CIisWebsiteSslCertificate
 {
     <#
     .SYNOPSIS
-    Sets a website's SSL certificate.
+    Sets a website's HTTPS certificate.
 
     .DESCRIPTION
-    SSL won't work on a website if an SSL certificate hasn't been bound to all the IP addresses it's listening on.  This function binds a certificate to all a website's IP addresses.  Make sure you call this method *after* you create a website's bindings.  Any previous SSL bindings on those IP addresses are deleted.
+    The `Set-CiisWebsiteSslCertificate` sets the HTTPS certificate for all of a website's HTTPS bindings. Pass the
+    website name to the SiteName parameter, the certificate thumbprint to the `Thumbprint` parameter (the certificate
+    should be in the LocalMachine's My store), and the website's application ID (a GUID that uniquely identifies the
+    website) to the `ApplicationID` parameter. The function gets all the unique IP address/port HTTPS bindings and
+    creates a binding for that address/port to the given certificate. Any  HTTPS bindings on that address/port that
+    don't use this thumbprint and application ID are removed.
 
-    Beginning with Carbon 2.0.1, this function is available only if IIS is installed.
+    Make sure you call this method *after* you create a website's bindings.
 
     .EXAMPLE
     Set-CIisWebsiteSslCertificate -SiteName Peanuts -Thumbprint 'a909502dd82ae41433e6f83886b00d4277a32a7b' -ApplicationID $PeanutsAppID
 
-    Binds the certificate whose thumbprint is `a909502dd82ae41433e6f83886b00d4277a32a7b` to the `Peanuts` website.  It's a good idea to re-use the same GUID for each distinct application.
+    Binds the certificate whose thumbprint is `a909502dd82ae41433e6f83886b00d4277a32a7b` to the `Peanuts` website.
     #>
-    [CmdletBinding(SupportsShouldProcess=$true)]
+    [Diagnostics.CodeAnalysis.SuppressMessage('PSShouldProcess', '')]
+    [CmdletBinding(SupportsShouldProcess)]
     param(
-        [Parameter(Mandatory=$true)]
-        [string]
         # The name of the website whose SSL certificate is being set.
-        $SiteName,
+        [Parameter(Mandatory)]
+        [string] $SiteName,
 
-        [Parameter(Mandatory=$true)]
-        [string]
         # The thumbprint of the SSL certificate to use.
-        $Thumbprint,
+        [Parameter(Mandatory)]
+        [string] $Thumbprint,
 
-        [Parameter(Mandatory=$true)]
-        [Guid]
         # A GUID that uniquely identifies this website.  Create your own.
-        $ApplicationID
+        [Parameter(Mandatory)]
+        [Guid] $ApplicationID
     )
 
     Set-StrictMode -Version 'Latest'
@@ -42,17 +45,22 @@ function Set-CIisWebsiteSslCertificate
         return
     }
 
-    $site.Bindings | Where-Object { $_.Protocol -eq 'https' } | ForEach-Object {
-        $installArgs = @{ }
-        if( $_.Endpoint.Address -ne '0.0.0.0' )
-        {
-            $installArgs.IPAddress = $_.Endpoint.Address.ToString()
+    foreach ($binding in ($site.Bindings | Where-Object 'Protocol' -EQ 'https'))
+    {
+        $endpoint = $binding.Endpoint
+
+        $portArg = @{
+            Port = $endpoint.Port;
         }
-        if( $_.Endpoint.Port -ne '*' )
+        if ($endpoint.Port -eq '*')
         {
-            $installArgs.Port = $_.Endpoint.Port
+            $portArg['Port'] = 443
         }
-        Set-CSslCertificateBinding @installArgs -ApplicationID $ApplicationID -Thumbprint $Thumbprint
+
+        Set-CSslCertificateBinding -IPAddress $binding.Endpoint.Address `
+                                    @portArg `
+                                    -Thumbprint $Thumbprint `
+                                    -ApplicationID $ApplicationID
     }
 }
 
