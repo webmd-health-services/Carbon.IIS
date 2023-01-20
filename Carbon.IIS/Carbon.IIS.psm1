@@ -27,6 +27,11 @@ $script:moduleRoot = $PSScriptRoot
 $script:warningMessages = @{}
 $script:applicationHostPath =
     Join-Path -Path ([Environment]::SystemDirectory) -ChildPath 'inetsrv\config\applicationHost.config'
+# These are all the files that could cause the current server manager object to become stale.
+$script:iisConfigs = & {
+    Join-Path -Path ([Environment]::SystemDirectory) -ChildPath 'inetsrv\config\*.config'
+    Join-Path -Path ([Environment]::GetFolderPath('Windows')) -ChildPath 'Microsoft.NET\Framework*\v*\config\*.config'
+}
 
 Import-Module -Name (Join-Path -Path $script:moduleRoot -ChildPath 'PSModules\Carbon.Core' -Resolve) `
               -Function @('Add-CTypeData', 'Resolve-CFullPath')
