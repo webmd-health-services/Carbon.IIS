@@ -1,12 +1,12 @@
 
-function Set-CIisWebsiteSslCertificate
+function Set-CIisWebsiteHttpsCertificate
 {
     <#
     .SYNOPSIS
     Sets a website's HTTPS certificate.
 
     .DESCRIPTION
-    The `Set-CiisWebsiteSslCertificate` sets the HTTPS certificate for all of a website's HTTPS bindings. Pass the
+    The `Set-CIisWebsiteHttpsCertificate` sets the HTTPS certificate for all of a website's HTTPS bindings. Pass the
     website name to the SiteName parameter, the certificate thumbprint to the `Thumbprint` parameter (the certificate
     should be in the LocalMachine's My store), and the website's application ID (a GUID that uniquely identifies the
     website) to the `ApplicationID` parameter. The function gets all the unique IP address/port HTTPS bindings and
@@ -16,18 +16,18 @@ function Set-CIisWebsiteSslCertificate
     Make sure you call this method *after* you create a website's bindings.
 
     .EXAMPLE
-    Set-CIisWebsiteSslCertificate -SiteName Peanuts -Thumbprint 'a909502dd82ae41433e6f83886b00d4277a32a7b' -ApplicationID $PeanutsAppID
+    Set-CIisWebsiteHttpsCertificate -SiteName Peanuts -Thumbprint 'a909502dd82ae41433e6f83886b00d4277a32a7b' -ApplicationID $PeanutsAppID
 
     Binds the certificate whose thumbprint is `a909502dd82ae41433e6f83886b00d4277a32a7b` to the `Peanuts` website.
     #>
     [Diagnostics.CodeAnalysis.SuppressMessage('PSShouldProcess', '')]
     [CmdletBinding(SupportsShouldProcess)]
     param(
-        # The name of the website whose SSL certificate is being set.
+        # The name of the website whose HTTPS certificate is being set.
         [Parameter(Mandatory)]
         [string] $SiteName,
 
-        # The thumbprint of the SSL certificate to use.
+        # The thumbprint of the HTTPS certificate to use.
         [Parameter(Mandatory)]
         [string] $Thumbprint,
 
@@ -57,7 +57,7 @@ function Set-CIisWebsiteSslCertificate
             $portArg['Port'] = 443
         }
 
-        Set-CSslCertificateBinding -IPAddress $binding.Endpoint.Address `
+        Set-CHttpsCertificateBinding -IPAddress $binding.Endpoint.Address `
                                     @portArg `
                                     -Thumbprint $Thumbprint `
                                     -ApplicationID $ApplicationID

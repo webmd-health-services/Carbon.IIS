@@ -13,7 +13,7 @@
 BeforeAll {
     & (Join-Path -Path $PSScriptRoot 'Initialize-CarbonTest.ps1' -Resolve)
 
-    $script:siteName = 'Carbon-Set-CIisWebsiteSslCertificate'
+    $script:siteName = 'Carbon-Set-CIisWebsiteHttpsCertificate'
     $script:cert = $null
     $script:appID = '990ae75d-b1c3-4c4e-93f2-9b22dfbfe0ca'
     $script:ipAddress = '43.27.98.0'
@@ -22,7 +22,7 @@ BeforeAll {
 }
 
 
-Describe 'Set-CIisWebsiteSslCertificate' {
+Describe 'Set-CIisWebsiteHttpsCertificate' {
     BeforeAll {
         Start-W3ServiceTestFixture
     }
@@ -45,18 +45,18 @@ Describe 'Set-CIisWebsiteSslCertificate' {
         Uninstall-CIisWebsite -Name $script:siteName
     }
 
-    It 'should set website ssl certificate' {
-        Set-CIisWebsiteSslCertificate -SiteName $script:siteName `
+    It 'should set website HTTPS certificate' {
+        Set-CIisWebsiteHttpsCertificate -SiteName $script:siteName `
                                       -Thumbprint $script:cert.Thumbprint `
                                       -ApplicationID $script:appID
         try
         {
-            $binding = Get-TCSslCertificateBinding -IPAddress $script:ipAddress -Port $script:port
+            $binding = Get-TCHttpsCertificateBinding -IPAddress $script:ipAddress -Port $script:port
             $binding | Should -Not -BeNullOrEmpty
             $binding.CertificateHash | Should -Be $script:cert.Thumbprint
             $binding.ApplicationID | Should -Be $script:appID
 
-            $binding = Get-TCSslCertificateBinding -Port $script:allPort
+            $binding = Get-TCHttpsCertificateBinding -Port $script:allPort
             $binding | Should -Not -BeNullOrEmpty
             $binding.CertificateHash | Should -Be $script:cert.Thumbprint
             $binding.ApplicationID | Should -Be $script:appID
@@ -64,28 +64,28 @@ Describe 'Set-CIisWebsiteSslCertificate' {
         }
         finally
         {
-            Remove-TCSslCertificateBinding -IPAddress $script:ipAddress -Port $script:port
-            Remove-TCSslCertificateBinding -Port $script:allPort
+            Remove-TCHttpsCertificateBinding -IPAddress $script:ipAddress -Port $script:port
+            Remove-TCHttpsCertificateBinding -Port $script:allPort
         }
     }
 
     It 'should support what if' {
-        $bindings = @( Get-TCSslCertificateBinding )
-        Set-CIisWebsiteSslCertificate -SiteName $script:siteName `
+        $bindings = @( Get-TCHttpsCertificateBinding )
+        Set-CIisWebsiteHttpsCertificate -SiteName $script:siteName `
                                       -Thumbprint $script:cert.Thumbprint `
                                       -ApplicationID $script:appID `
                                       -WhatIf
-        $newBindings = @( Get-TCSslCertificateBinding )
+        $newBindings = @( Get-TCHttpsCertificateBinding )
         $newBindings | Should -HaveCount $bindings.Length
     }
 
-    It 'should support website without ssl bindings' {
+    It 'should support website without HTTPS bindings' {
         Install-CIisWebsite -Name $script:siteName -Path $script:testDir -Bindings @( 'http/*:80:' )
-        $bindings = @( Get-TCSslCertificateBinding )
-        Set-CIisWebsiteSslCertificate -SiteName $script:siteName `
+        $bindings = @( Get-TCHttpsCertificateBinding )
+        Set-CIisWebsiteHttpsCertificate -SiteName $script:siteName `
                                       -Thumbprint $script:cert.Thumbprint `
                                       -ApplicationID $script:appID
-        $newBindings = @( Get-TCSslCertificateBinding )
+        $newBindings = @( Get-TCHttpsCertificateBinding )
         $newBindings | Should -HaveCount $bindings.Length
     }
 

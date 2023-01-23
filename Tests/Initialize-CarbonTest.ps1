@@ -29,7 +29,7 @@ Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath '..\PSModules\Carb
               -Prefix 'T'
 
 Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath '..\Carbon.IIS\PSModules\Carbon.Windows.HttpServer' -Resolve) `
-              -Function @('Get-CSslCertificateBinding', 'Remove-CSslCertificateBinding') `
+              -Function @('Get-CHttpsCertificateBinding', 'Remove-CHttpsCertificateBinding') `
               -Prefix 'T'
 
 # We have to *only* import the Carbon functions we need so we don't end up using and testing the original Carbon's IIS

@@ -18,21 +18,21 @@ BeforeAll {
     $script:siteName = 'SslFlags'
     $script:sitePort = 4389
 
-    function Assert-SslFlags($ExpectedValue, $VirtualPath)
+    function ThenHttpFlags($ExpectedValue, $VirtualPath)
     {
         $Path = Join-CIisPath $script:SiteName $VirtualPath
         $authSettings = [xml] (& (Join-Path -Path $env:SystemRoot -ChildPath 'system32\inetsrv\appcmd.exe' -Resolve) list config $Path '-section:system.webServer/security/access')
-        $sslFlags = $authSettings['system.webServer'].security.access.sslFlags
+        $httpsFlags = $authSettings['system.webServer'].security.access.sslFlags
         $section =
             Get-CIisConfigurationSection -LocationPath (Join-CIisPath -Path $script:SiteName, $VirtualPath) `
                                          -SectionPath 'system.webServer/security/access'
-        $sslIntFlags = $section['sslFlags']
-        Write-Verbose ('{0} ({1})' -f $sslIntFlags,$sslFlags)
-        $sslFlags | Should -Be $ExpectedValue
+        $httpsIntFlags = $section['sslFlags']
+        Write-Verbose ('{0} ({1})' -f $httpsIntFlags,$httpsFlags)
+        $httpsFlags | Should -Be $ExpectedValue
     }
 }
 
-Describe 'Enable-CIisSsl' {
+Describe 'Enable-CIisHttps' {
     BeforeAll {
         Start-W3ServiceTestFixture
     }
@@ -56,47 +56,47 @@ Describe 'Enable-CIisSsl' {
         Uninstall-CIisWebsite $script:siteName
     }
 
-    It 'should reset ssl flags' {
-        Enable-CIisSsl -LocationPath $script:siteName
-        Assert-SslFlags -ExpectedValue 'None'
+    It 'should reset HTTPS flags' {
+        Enable-CIisHttps -LocationPath $script:siteName
+        ThenHttpFlags -ExpectedValue 'None'
     }
 
-    It 'should require ssl' {
-        Enable-CIisSsl -SiteName $script:siteName -RequireSSL
-        Assert-SSLFlags -ExpectedValue 'Ssl'
+    It 'should require HTTPS' {
+        Enable-CIisHttps -SiteName $script:siteName -RequireHttps
+        ThenHttpFlags -ExpectedValue 'Ssl'
     }
 
     It 'should accept client certificates' {
-        Enable-CIisSsl -LocationPath $script:siteName -AcceptClientCertificates
-        Assert-SSLFlags -ExpectedValue 'SslNegotiateCert'
+        Enable-CIisHttps -LocationPath $script:siteName -AcceptClientCertificates
+        ThenHttpFlags -ExpectedValue 'SslNegotiateCert'
     }
 
     It 'should require client certificates' {
-        Enable-CIisSsl -LocationPath $script:siteName -RequireSsl -RequireClientCertificates
-        Assert-SSLFlags -ExpectedValue 'Ssl, SslNegotiateCert, SslRequireCert'
+        Enable-CIisHttps -LocationPath $script:siteName -RequireHttps -RequireClientCertificates
+        ThenHttpFlags -ExpectedValue 'Ssl, SslNegotiateCert, SslRequireCert'
     }
 
-    It 'should allow128 bit ssl' {
-        Enable-CIisSsl -LocationPath $script:siteName -Require128BitSsl
-        Assert-SSLFlags -ExpectedValue 'Ssl128'
+    It 'should allow 128 bit HTTPS' {
+        Enable-CIisHttps -LocationPath $script:siteName -Require128BitHttps
+        ThenHttpFlags -ExpectedValue 'Ssl128'
     }
 
     It 'should set all flags' {
-        Enable-CIisSsl -LocationPath $script:siteName -RequireSsl -AcceptClientCertificates -Require128BitSsl
-        Assert-SslFlags -ExpectedValue 'Ssl, SslNegotiatecert, Ssl128'
+        Enable-CIisHttps -LocationPath $script:siteName -RequireHttps -AcceptClientCertificates -Require128BitHttps
+        ThenHttpFlags -ExpectedValue 'Ssl, SslNegotiatecert, Ssl128'
     }
 
     It 'should support what if' {
-        Enable-CIisSsl -LocationPath $script:siteName -RequireSsl
-        Assert-SslFlags -ExpectedValue 'Ssl'
-        Enable-CIisSsl -LocationPath $script:siteName -AcceptClientCertificates -WhatIf
-        Assert-SslFlags -ExpectedValue 'Ssl'
+        Enable-CIisHttps -LocationPath $script:siteName -RequireHttps
+        ThenHttpFlags -ExpectedValue 'Ssl'
+        Enable-CIisHttps -LocationPath $script:siteName -AcceptClientCertificates -WhatIf
+        ThenHttpFlags -ExpectedValue 'Ssl'
     }
 
     It 'should set flags on sub folder' {
-        Enable-CIisSsl -LocationPath (Join-CIisPath $script:siteName, 'SubFolder') -RequireSsl
-        Assert-SslFlags -ExpectedValue 'Ssl' -VirtualPath "SubFolder"
-        Assert-SslFlags -ExpectedValue 'None'
+        Enable-CIisHttps -LocationPath (Join-CIisPath $script:siteName, 'SubFolder') -RequireHttps
+        ThenHttpFlags -ExpectedValue 'Ssl' -VirtualPath "SubFolder"
+        ThenHttpFlags -ExpectedValue 'None'
     }
 
 }
