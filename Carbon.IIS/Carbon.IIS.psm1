@@ -37,7 +37,7 @@ Import-Module -Name (Join-Path -Path $script:moduleRoot -ChildPath 'PSModules\Ca
               -Function @('Add-CTypeData', 'Resolve-CFullPath')
 
 Import-Module -Name (Join-Path -Path $script:moduleRoot -ChildPath 'PSModules\Carbon.Windows.HttpServer' -Resolve) `
-              -Function @('Set-CSslCertificateBinding')
+              -Function @('Set-CHttpsCertificateBinding')
 
 function Test-MSWebAdministrationLoaded
 {

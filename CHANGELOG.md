@@ -19,9 +19,11 @@ Windows 2008 is no longer supported. Minimum operating system is Windows 8.1 and
 
 Rename usages of:
 
+* `Enable-CIisSsl` to `Enable-CIisHttps`
+* `Remove-CIisWebsite` to `Uninstall-CIisWebsite`
+* `Set-CIisWebsiteSslCertificate` to `Set-CIisWebsiteHttpsCertificate`
 * `Test-IisAppPoolExists` to `Test-CIisAppPool`
 * `Test-IisWebsiteExists` to `Test-CIisWebsite`
-* `Remove-CIisWebsite` to `Uninstall-CIisWebsite`
 
 #### Removals
 
@@ -156,7 +158,7 @@ functions. The value of the `LocationPath` parameter should be the website name 
   * `Disable-CIisSecurityAuthentication`
   * `Enable-CIisDirectoryBrowsing`
   * `Enable-CIisSecurityAuthentication`
-  * `Enable-CIIsSsl`
+  * `Enable-CIisHttps` (née `Enable-CIisSsl`)
 * `Get-CIisAppPool` now writes an error when an application pool does not exist. Add `-ErrorAction Ignore` or
 `-ErrorAction SilentlyContinue` to hide the error.
 * `Get-CIisAppPool` now supports wildcards in values of its `Name` parameter.
@@ -187,7 +189,7 @@ e.g. `SiteName/VirtualPath`.
   * `Disable-CIisSecurityAuthentication`
   * `Enable-CIisDirectoryBrowsing`
   * `Enable-CIisSecurityAuthentication`
-  * `Enable-CIisSsl`
+  * `Enable-CIisHttps` (née `Enable-CIisSSl`)
   * `Get-CIisConfigurationSection`
   * `Get-CIisHttpHeader`
   * `Get-CIisHttpRedirect`
@@ -226,7 +228,14 @@ instead.
 ### Fixed
 
 * `Install-CIisWebsite` wouldn't save changes when an existing website doesn't define its default application.
-* `Set-CIisWebsiteSslCertificate` would fail if passed `Ignore` as an error action.
+* `Set-CIisWebsiteHttpsCertificate` (née `Set-CIisWebsiteSslCertificate`) would fail if passed `Ignore` as an error
+action.
+
+### Renamed
+
+* `Enable-CIisSsl` to `Enable-CIisHttps`
+* `Remove-CIisWebsite` to `Uninstall-CIisWebsite`
+* `Set-CIisWebsiteSslCertificate` to `Set-CIisWebsiteHttpsCertificate`
 
 ### Removed
 
