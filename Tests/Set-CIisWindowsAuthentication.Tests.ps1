@@ -92,28 +92,26 @@ Describe 'Set-CIisWindowsAuthentication' {
     }
 
     It 'should reset values to defaults' {
-        $defaults =
-            Get-CIisConfigurationSection -SectionPath 'system.webServer/security/authentication/windowsAuthentication'
+        $sectionPath = 'system.webServer/security/authentication/windowsAuthentication'
+        $initialAttrValues = @{}
+        $attrs =
+            Get-CIisConfigurationSection -LocationPath $script:siteName -SectionPath $sectionPath |
+            Select-Object -ExpandProperty 'Attributes'
+        foreach ($attr in $attrs)
+        {
+            $initialAttrValues[$attr.Name] = $attr.Value
+        }
 
         $setArgs = @{
-            AuthPersistNonNTLM = (-not $defaults.GetAttributeValue('authPersistNonNtlm'));
-            AuthPersistSingleRequest = (-not $defaults.GetAttributeValue('authPersistSingleRequest'));
-            Enabled = (-not $defaults.GetAttributeValue('enabled'));
-            UseAppPoolCredentials = (-not $defaults.GetAttributeValue('useAppPoolCredentials'));
-            UseKernelMode = (-not $defaults.GetAttributeValue('useKernelMode'));
+            AuthPersistSingleRequest = (-not $initialAttrValues['authPersistSingleRequest']);
+            Enabled = (-not $initialAttrValues['enabled']);
+            UseAppPoolCredentials = (-not $initialAttrValues['useAppPoolCredentials']);
+            UseKernelMode = (-not $initialAttrValues['useKernelMode']);
         }
         Set-CIisWindowsAuthentication -LocationPath $script:siteName @setArgs
         Assert-WindowsAuthentication @setArgs
 
         Set-CIisWindowsAuthentication -LocationPath $script:siteName -Reset
-
-        $setArgs = @{
-            AuthPersistNonNTLM = -not $setArgs['authPersistNonNtlm'];
-            AuthPersistSingleRequest = -not $setArgs['authPersistSingleRequest'];
-            Enabled = -not $setArgs['enabled'];
-            UseAppPoolCredentials = -not $setArgs['useAppPoolCredentials'];
-            UseKernelMode = -not $setArgs['useKernelMode'];
-        }
-        Assert-WindowsAuthentication @setArgs
+        Assert-WindowsAuthentication @initialAttrValues
     }
 }

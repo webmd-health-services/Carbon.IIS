@@ -150,6 +150,7 @@ Describe 'Set-CIisAppPoolPeriodicRestart' {
         $script:testNum++
         Set-CIisAppPoolPeriodicRestart -AsDefaults @script:defaultDefaults -Reset
         Install-CIisAppPool -Name $script:appPoolName
+        Set-CIisAppPoolPeriodicRestart -AppPoolName $script:appPoolName -Reset
     }
 
     AfterEach {
