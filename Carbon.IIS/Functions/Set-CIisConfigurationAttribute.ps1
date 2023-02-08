@@ -153,7 +153,10 @@ function Set-CIisConfigurationAttribute
         };
         [ApplicationPool] = @{
             'managedRuntimeVersion' = 'v4.0';
-        }
+        };
+        [ApplicationPoolCpu] = @{
+            'resetInterval' = (New-TimeSpan -Minutes 5);
+        };
     }
 
     function Get-TypeName
