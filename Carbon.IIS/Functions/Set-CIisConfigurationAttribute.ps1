@@ -138,6 +138,87 @@ function Set-CIisConfigurationAttribute
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
+    # Attributes whose default value in IIS schema isn't the actual default value. These are the actual default values.
+    $realDefaults = @{
+        [ApplicationPoolProcessModel] = @{
+            'idleTimeout' = [TimeSpan]::Zero;
+            'pingInterval' = (New-TimeSpan -Seconds 30);
+            'pingResponseTime' = (New-TimeSpan -Minutes 1 -Seconds 30);
+            'shutdownTimeLimit' = (New-TimeSpan -Minutes 1 -Seconds 30);
+            'startupTimeLimit' = (New-TimeSpan -Minutes 1 -Seconds 30);
+        };
+        [ApplicationPoolPeriodicRestart] = @{
+            'privateMemory' = [UInt32]2097152;
+            'time' = [TimeSpan]::Zero;
+        };
+        [ApplicationPool] = @{
+            'managedRuntimeVersion' = 'v4.0';
+        }
+    }
+
+    function Get-TypeName
+    {
+        [CmdletBinding()]
+        param(
+            [Parameter(Mandatory, ValueFromPipeline)]
+            [AllowNull()]
+            [AllowEmptyString()]
+            [Object] $InputObject
+        )
+
+        process
+        {
+            if ($null -eq $InputObject)
+            {
+                return ''
+            }
+
+            return "[$($InputObject.GetType().FullName -replace 'System\.', '')]"
+        }
+    }
+
+    function Get-DisplayValue
+    {
+        [CmdletBinding()]
+        param(
+            [Parameter(Mandatory, ValueFromPipeline)]
+            [AllowNull()]
+            [AllowEmptyString()]
+            [Object] $InputObject
+        )
+
+        process
+        {
+            if ($null -eq $InputObject)
+            {
+                return " (null)"
+            }
+
+            if ($InputObject -is [String] -and [String]::IsNullOrEmpty($InputObject))
+            {
+                return " (empty)"
+            }
+
+            if ($Sensitive -or $InputObject -is [securestring])
+            {
+                return "********"
+            }
+
+            if ($InputObject -is [Enum])
+            {
+                $valueAsEnum = [Enum]::Parse($InputObject.GetType().Name, $InputObject, $true)
+                return "$($InputObject.ToString()) ($($valueAsEnum.ToString('D')))"
+            }
+
+            if ($Value -is [switch])
+            {
+                return "$($Value.IsPresent)"
+            }
+
+            return "$($InputObject.ToString())"
+        }
+    }
+
     function Set-AttributeValue
     {
         [CmdletBinding()]
@@ -170,115 +251,62 @@ function Set-CIisConfigurationAttribute
             {
                 $locationPathMsg = " at location ""$($Element.LocationPath)"""
             }
-            $msg = "Unable to set attribute ""$($Name)"" on configuration element ""$($Element.SectionPath)""" +
-                   "$($locationPathMsg) because that attribute doesn't exist on that element. Valid attributes are: " +
-                   "$(($Element.Attributes | Select-Object -ExpandProperty 'Name') -join ', ')."
-            Write-Error -Message $msg -ErrorAction $ErrorActionPreference
+            "Unable to set attribute ""$($Name)"" on configuration element ""$($Element.SectionPath)""" +
+                "$($locationPathMsg) because that attribute doesn't exist on that element. Valid attributes are: " +
+                "$(($Element.Attributes | Select-Object -ExpandProperty 'Name') -join ', ')." |
+                Write-Error -ErrorAction $ErrorActionPreference
             return
         }
 
-        $parentAttr = $null
-        if ($parentConfigElement)
-        {
-            $parentAttr = $parentConfigElement.Attributes[$Name]
-        }
+        $currentValue = $currentAttr.Value
+        $noCurrentValue = $null -eq $currentValue
+        $hasCurrentValue = -not $noCurrentValue
+        $currentValueMsg = $currentValue | Get-DisplayValue
 
         $defaultValue = $currentAttr.Schema.DefaultValue
-        if ($parentAttr)
+        $configElementType = $ConfigurationElement.GetType()
+        if ($realDefaults.ContainsKey($configElementType) -and $realDefaults[$configElementType].ContainsKey($Name))
         {
-            $defaultValue = $parentAttr.Value
-            if ($parentAttr.IsInheritedFromDefaultValue)
-            {
-                $defaultValue = $parentAttr.Schema.DefaultValue
-            }
+            $defaultValue = $realDefaults[$configElementType][$Name]
+        }
+        $defaultValueMsg = $defaultValue | Get-DisplayValue
+        $currentValueIsDefault = $currentValue -eq $defaultValue
+
+        $valueMsg = $Value | Get-DisplayValue
+
+        $newValue = $Value
+        if ($newValue -is [securestring])
+        {
+            $newValue = [pscredential]::New('i', $newValue).GetNetworkCredential().Password
+            $currentValueMsg = '********'
         }
 
-        $currentValue = $currentAttr.Value
-
-        $protectValue = $Sensitive -or $currentAttr.Name -eq 'password'
-        if( $Value -is [SecureString] )
+        if ($Sensitive -or $currentAttr.Name -eq 'password')
         {
-            $Value = [pscredential]::New('i', $Value).GetNetworkCredential().Password
-            $protectValue = $true
-        }
-        elseif( $Value -is [switch] )
-        {
-            $Value = $Value.IsPresent
-        }
-
-        $appHostAttrExists = ($configElementAppHostNode -and $configElementAppHostNode.HasAttribute($Name))
-
-        $currentValueMsg = "[$($defaultValue)]"
-        $currentValueIsDefault = $true
-        if ($null -ne $currentValue -and -not $currentAttr.IsInheritedFromDefaultValue -and $appHostAttrExists)
-        {
-            $currentValueMsg = $currentValue.ToString()
-            $currentValueIsDefault = $false
-        }
-
-        $valueMsg = "[$($defaultValue)]"
-        if ($null -ne $Value)
-        {
-            $valueMsg = $Value.ToString()
-        }
-
-        if ($Value -is [Enum])
-        {
-            $currentValueAsEnum = [Enum]::Parse($Value.GetType().FullName, $currentValue, $true)
-            $currentValueMsg = "$($currentValueAsEnum) ($($currentValueAsEnum.ToString('D')))"
-
-            if ($currentValueIsDefault)
-            {
-                $currentValueMsg = "[$($currentValueMsg)]"
-            }
-
-            $valueMsg = "$($Value) ($($Value.ToString('D')))"
-        }
-        elseif( $currentAttr.Schema.Type -eq 'timeSpan' -and $Value -is [UInt64] )
-        {
-            $valueMsg = [TimeSpan]::New($Value)
-        }
-
-        if( $protectValue )
-        {
-            $currentValueMsg = '*' * 8
-            $valueMsg = '*' * 8
+            $valueMsg = '********'
+            $currentValueMsg = '********'
         }
 
         $msgPrefix = "    @$($nameFormat -f $currentAttr.Name)  "
-        $noChangeMsg = "$($msgPrefix)$($currentValueMsg) == $($valueMsg)"
-        $changedMsg =  "$($msgPrefix)$($currentValueMsg) -> $($valueMsg)"
+        $emptyPrefixMsg = ' ' * $msgPrefix.Length
 
-        if ($null -eq $Value)
+        Write-Debug "$($msgPrefix     )  current  $($currentValue | Get-TypeName) $($currentValueMsg)"
+        Write-Debug "$($emptyPrefixMsg)  default  $($defaultValue | Get-TypeName) $($defaultValueMsg)"
+        Write-Debug "$($emptyPrefixMsg)  new      $($newValue | Get-TypeName       ) $($valueMsg)"
+
+        $whatIfTarget = "@$($currentAttr.Name) for $($Target -replace '"', '''')"
+
+        if (-not $PSBoundParameters.ContainsKey('Value') -and $hasCurrentValue)
         {
-            if ($currentAttr.IsInheritedFromDefaultValue)
+            if ($currentValueIsDefault)
             {
-                # do nothing
-                Write-Debug $noChangeMsg
                 return
             }
 
-            if ($LocationPath )
-            {
-                # The `IsInheritedFromDefaultValue` property is `$false` if the applicationHost.config defines the
-                # element and the element attribute values are the same value as the default value. So, the only way to
-                # know if the location we're working on doesn't have the attribute is to load the applicationHost.config
-                # and look for the attribute. :(
-                $xpath = "/configuration/location[@path = '$($LocationPath)']/$($Element.SectionPath)/@$($Name)"
-                if (-not $appHostConfigXml.SelectSingleNode($xpath))
-                {
-                    # do nothing
-                    Write-Debug $noChangeMsg
-                    return
-                }
-            }
-
-            # Attribute was previously supplied but now it isn't, or, attribute value changed manually. Delete
-            # attribute so its value reverts to IIS's default value.
-            $infoMessages.Add($changedMsg)
+            $deletedMsg = "$($msgPrefix)- $($currentValueMsg)"
+            $infoMessages.Add($deletedMsg)
             $action = "Remove Attribute"
-            $whatIf = "$($currentAttr.Name) for $($Target -replace '"', '''')"
-            if( $PSCmdlet.ShouldProcess($whatIf, $action) )
+            if ($PSCmdlet.ShouldProcess($whatIfTarget, $action))
             {
                 try
                 {
@@ -291,31 +319,35 @@ function Set-CIisConfigurationAttribute
                     Write-Error -Message $msg
                     return
                 }
-                [void]$removedNames.Add($currentAttr.Name)
+                [void]$updatedNames.Add($currentAttr.Name)
             }
             return
         }
 
-        if ($currentValue -eq $Value)
+        if ($currentValue -eq $newValue)
         {
-            if (-not $isConfigSection -or ($isConfigSection -and $appHostAttrExists))
-            {
-                Write-Debug $noChangeMsg
-                return
-            }
+            return
         }
 
+        $changedMsg =  "$($msgPrefix)$($currentValueMsg) -> $($valueMsg)"
+        if ($noCurrentValue)
+        {
+            $changedMsg = "$($msgPrefix)+ $($valueMsg)"
+        }
         [void]$infoMessages.Add($changedMsg)
-        try
+        if ($PSCmdlet.ShouldProcess($whatIfTarget, 'Set Attribute'))
         {
-            $ConfigurationElement.SetAttributeValue($currentAttr.Name, $Value)
+            try
+            {
+                $ConfigurationElement.SetAttributeValue($currentAttr.Name, $newValue)
+            }
+            catch
+            {
+                $msg = "Exception setting ""$($currentAttr.Name)"" on $($Target): $($_)"
+                Write-Error -Message $msg -ErrorAction Stop
+            }
+            [void]$updatedNames.Add($currentAttr.Name)
         }
-        catch
-        {
-            $msg = "Exception setting ""$($currentAttr.Name)"" on $($Target): $($_)"
-            Write-Error -Message $msg -ErrorAction Stop
-        }
-        [void]$updatedNames.Add($currentAttr.Name)
     }
 
     if (-not $ConfigurationElement)
@@ -332,34 +364,10 @@ function Set-CIisConfigurationAttribute
         }
     }
 
-    $parentConfigElement = $null
-    if ($LocationPath)
-    {
-        $parentConfigElement = Get-CIisConfigurationSection -SectionPath $SectionPath
-    }
-
     $isConfigSection = $null -ne ($ConfigurationElement | Get-Member -Name 'SectionPath')
     if( -not $SectionPath -and $isConfigSection )
     {
         $SectionPath = $ConfigurationElement.SectionPath
-    }
-
-    [xml] $appHostConfigXml = Get-Content -Path $script:applicationHostPath
-
-    $parentAppHostNode = $null
-    $locationAppHostNode = $null
-    $configElementAppHostNode = $null
-    if ($isConfigSection)
-    {
-        $xpath = "/configuration/$($SectionPath)"
-        $parentAppHostNode = $appHostConfigXml.SelectSingleNode($xpath)
-        $configElementAppHostNode = $parentAppHostNode
-        if ($LocationPath)
-        {
-            $xpath = "/configuration/location[@path = '$($LocationPath)']/$($SectionPath)"
-            $locationAppHostNode = $appHostConfigXml.SelectSingleNode($xpath)
-            $configElementAppHostNode = $locationAppHostNode
-        }
     }
 
     $attrNameFieldLength =
@@ -372,11 +380,10 @@ function Set-CIisConfigurationAttribute
     $nameFormat = "{0,-$($attrNameFieldLength)}"
 
     $updatedNames = [Collections.ArrayList]::New()
-    $removedNames = [Collections.ArrayList]::New()
 
     $infoMessages = [Collections.Generic.List[String]]::New()
 
-    if( -not $Target )
+    if (-not $Target)
     {
         if( $SectionPath )
         {
@@ -389,7 +396,7 @@ function Set-CIisConfigurationAttribute
 
         if ($LocationPath)
         {
-            $Target = "$($Target) at location $($LocationPath)"
+            $Target = "$($Target) at location ""$($LocationPath)"""
         }
     }
 
@@ -399,45 +406,35 @@ function Set-CIisConfigurationAttribute
     }
     else
     {
-        $attrsToUpdate = $Attribute.Keys
-        if ($Reset)
-        {
-            $attrsToUpdate = $ConfigurationElement.Attributes | Select-Object -ExpandProperty 'Name'
-        }
-
-        foreach ($attrName in ($attrsToUpdate | Sort-Object))
+        $attrNames = $Attribute.Keys | Sort-Object
+        foreach ($attrName in $attrNames)
         {
             Set-AttributeValue -Element $ConfigurationElement -Name $attrName -Value $Attribute[$attrName]
         }
-    }
 
-    $pluralSuffix = ''
-    if( $updatedNames.Count -gt 1 )
-    {
-        $pluralSuffix = 's'
-    }
-
-    $whatIfTarget = "$($updatedNames -join ', ') for $($Target -replace '"', '''')"
-    $action = "Set Attribute$($pluralSuffix)"
-    $shouldCommit = $updatedNames -and $PSCmdlet.ShouldProcess($whatIfTarget, $action)
-
-    if( $shouldCommit -or $removedNames )
-    {
-        if( $infoMessages.Count -eq 1 )
+        if ($Reset)
         {
-            $msg = "Configuring $($Target): $($infoMessages.Trim() -replace ' {2,}', ' ')"
-            Write-Information $msg
-        }
-        elseif( $infoMessages.Count -gt 1)
-        {
-            Write-Information "Configuring $($Target)."
-            $infoMessages | ForEach-Object { Write-Information $_ }
+            $attrNamesToDelete =
+                $ConfigurationElement.Attributes |
+                Where-Object 'Name' -NotIn $attrNames |
+                Select-Object -ExpandProperty 'Name' |
+                Sort-Object
+
+            foreach ($attrName in ($attrNamesToDelete))
+            {
+                Set-AttributeValue -Element $ConfigurationElement -Name $attrName
+            }
         }
     }
 
-    # Only save if we made any changes.
-    if( $updatedNames -or $removedNames )
+    if ($updatedNames)
     {
-        Save-CIisConfiguration
+        Write-Information "Configuring $($Target):"
+        $infoMessages | ForEach-Object { Write-Information $_ }
+
+        if (-not $WhatIfPreference)
+        {
+            Save-CIisConfiguration
+        }
     }
 }

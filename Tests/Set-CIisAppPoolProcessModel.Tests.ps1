@@ -10,7 +10,7 @@ BeforeAll {
     $script:testNum = 0
 
     $script:defaultDefaults = @{}
-    (Set-CIisAppPoolProcessModel -AsDefaults) |
+    (Get-CIisAppPool -Defaults) |
         Select-Object -ExpandProperty 'ProcessModel' |  # ProcessModel doesn't exist on some AppVeyor servers
         Select-Object -ExpandProperty 'Attributes' |
         Where-Object 'IsInheritedFromDefaultValue' -EQ $false |
@@ -19,7 +19,7 @@ BeforeAll {
     # All non-default values.
     $script:nonDefaultArgs = @{
         'identityType' = [ProcessModelIdentityType]::ApplicationPoolIdentity;
-        'idleTimeout' = [TimeSpan]'00:00:00';
+        'idleTimeout' = [TimeSpan]'12:34:00';
         'idleTimeoutAction' = [IdleTimeoutAction]::Suspend;
         'loadUserProfile' = $true;
         'logEventOnProcessModel' = [ProcessModelLogEventOnProcessModel]::None;
@@ -41,6 +41,8 @@ BeforeAll {
 
     $script:excludedAttributes = @()
 
+    $script:initialAttrValues = @{}
+
     function ThenDefaultsSetTo
     {
         param(
@@ -55,7 +57,7 @@ BeforeAll {
 
     function ThenHasDefaultValues
     {
-        ThenHasValues @{}
+        ThenHasValues $script:initialAttrValues
     }
 
     function ThenHasValues
@@ -153,6 +155,13 @@ Describe 'Set-CIisAppPoolProcessModel' {
         $script:testNum++
         Set-CIisAppPoolProcessModel -AsDefaults @script:defaultDefaults -Reset
         Install-CIisAppPool -Name $script:appPoolName
+        Set-CIisAppPoolProcessModel -AppPoolName $script:appPoolName -Reset
+        $script:initialAttrValues = @{}
+        $appPoolPM = Get-CIIsAppPool -Name $script:appPoolName | Select-Object -ExpandProperty 'ProcessModel'
+        foreach ($attr in $appPoolPM.Attributes)
+        {
+            $script:initialAttrValues[$attr.Name] = $attr.Value
+        }
     }
 
     AfterEach {

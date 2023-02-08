@@ -48,9 +48,8 @@ BeforeAll {
             }
         }
 
-        $section =
-            Get-CIisConfigurationSection -LocationPath (Join-CIisPath -Path $script:siteName, $ForVirtualPath) `
-                                         -SectionPath $sectionPath
+        $locationPath = Join-CIisPath -Path $script:siteName, $ForVirtualPath
+        $section = Get-CIisConfigurationSection -LocationPath $locationPath -SectionPath $sectionPath
         foreach( $attrName in $ExpectedValues.Keys )
         {
             $expectedValue = $ExpectedValues[$attrName]
@@ -58,7 +57,8 @@ BeforeAll {
             {
                 $expectedValue = [pscredential]::New('i', $expectedValue).GetNetworkCredential().Password
             }
-            $section.GetAttributeValue($attrName) | Should -Be $expectedValue
+            $section.GetAttributeValue($attrName) |
+                Should -Be $expectedValue -Because "should set attribute ""$($attrName)"" at $($locationPath)"
         }
     }
 
@@ -109,7 +109,7 @@ Describe 'Set-CIisAnonymousAuthentication' {
             Enabled = $true;
             LogonMethod = [Microsoft.Web.Administration.AuthenticationLogonMethod]::Interactive;
             Password = (ConvertTo-SecureString -String 'iqhz434wsy3' -AsPlainText -Force);
-            UserName = 'spexf0xiotr';
+            UserName = 'IUSR_spexf0xiotr';
         }
         WhenSetting -WithArgument $setArgs
         ThenCommittedToAppHost
@@ -121,7 +121,7 @@ Describe 'Set-CIisAnonymousAuthentication' {
             Enabled = $false;
             LogonMethod = [Microsoft.Web.Administration.AuthenticationLogonMethod]::Batch;
             Password = (ConvertTo-SecureString -String '2w1epswgv0i' -AsPlainText -Force);
-            UserName = 'qy33lcg23iy';
+            UserName = 'IUSR_qy33lcg23iy';
         }
         GivenVirtualPath 'somepath'
         WhenSetting -WithArgument $setArgs -ForVirtualPath 'somepath'
@@ -136,7 +136,7 @@ Describe 'Set-CIisAnonymousAuthentication' {
             Enabled = $true;
             LogonMethod = [Microsoft.Web.Administration.AuthenticationLogonMethod]::Network;
             Password = (ConvertTo-SecureString -String 'c0i0jga4qzo' -AsPlainText -Force);
-            UserName = 'jpl2djwmzw4';
+            UserName = 'IUSR_jpl2djwmzw4';
             WhatIf = $true;
         }
         WhenSetting -WithArgument $setArgs
@@ -149,7 +149,7 @@ Describe 'Set-CIisAnonymousAuthentication' {
             Enabled = $false;
             LogonMethod = [Microsoft.Web.Administration.AuthenticationLogonMethod]::ClearText;
             Password = (ConvertTo-SecureString -String 'phnqkjngl0e' -AsPlainText -Force);
-            UserName = 'rjgthuat4pm';
+            UserName = 'IUSR_rjgthuat4pm';
         }
         WhenSetting -WithArgument $setArgs
         ThenCommittedToAppHost
@@ -168,7 +168,7 @@ Describe 'Set-CIisAnonymousAuthentication' {
             Enabled = $false;
             LogonMethod = [Microsoft.Web.Administration.AuthenticationLogonMethod]::Interactive;
             Password = (ConvertTo-SecureString -String 'vmklfromlsfd' -AsPlainText -Force);
-            UserName = 'jfsakldlkfm';
+            UserName = 'IUSR_jfsakldlkfm';
         }
         WhenSetting -WithArgument $setArgs
         ThenCommittedToAppHost
