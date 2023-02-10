@@ -140,6 +140,17 @@ function Set-CIisConfigurationAttribute
 
     # Attributes whose default value in IIS schema isn't the actual default value. These are the actual default values.
     $realDefaults = @{
+        [ApplicationPool] = @{
+            'autoStart' = $false;
+            'managedRuntimeVersion' = 'v4.0';
+        };
+        [ApplicationPoolCpu] = @{
+            'resetInterval' = (New-TimeSpan -Minutes 5);
+        };
+        [ApplicationPoolPeriodicRestart] = @{
+            'privateMemory' = [UInt32]2097152;
+            'time' = [TimeSpan]::Zero;
+        };
         [ApplicationPoolProcessModel] = @{
             'idleTimeout' = [TimeSpan]::Zero;
             'pingInterval' = (New-TimeSpan -Seconds 30);
@@ -147,16 +158,9 @@ function Set-CIisConfigurationAttribute
             'shutdownTimeLimit' = (New-TimeSpan -Minutes 1 -Seconds 30);
             'startupTimeLimit' = (New-TimeSpan -Minutes 1 -Seconds 30);
         };
-        [ApplicationPoolPeriodicRestart] = @{
-            'privateMemory' = [UInt32]2097152;
-            'time' = [TimeSpan]::Zero;
-        };
-        [ApplicationPool] = @{
-            'managedRuntimeVersion' = 'v4.0';
-        };
-        [ApplicationPoolCpu] = @{
-            'resetInterval' = (New-TimeSpan -Minutes 5);
-        };
+        [ApplicationPoolRecycling] = @{
+            'logEventOnRecycle' = [RecyclingLogEventOnRecycle]255;
+        }
     }
 
     function Get-TypeName
