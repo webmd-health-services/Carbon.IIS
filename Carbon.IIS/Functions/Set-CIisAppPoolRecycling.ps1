@@ -94,5 +94,6 @@ function Set-CIisAppPoolRecycling
     Invoke-SetConfigurationAttribute -ConfigurationElement $target.recycling `
                                      -PSCmdlet $PSCmdlet `
                                      -Target $targetMsg `
-                                     -Reset:$Reset
+                                     -Reset:$Reset `
+                                     -Defaults (Get-CIIsAppPool -Defaults).Recycling
 }

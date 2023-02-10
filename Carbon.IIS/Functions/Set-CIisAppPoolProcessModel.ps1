@@ -138,5 +138,6 @@ function Set-CIisAppPoolProcessModel
     Invoke-SetConfigurationAttribute -ConfigurationElement $target.ProcessModel `
                                      -PSCmdlet $PSCmdlet `
                                      -Target $targetMsg `
-                                     -Reset:$Reset
+                                     -Reset:$Reset `
+                                     -Defaults (Get-CIIsAppPool -Defaults).ProcessModel
 }

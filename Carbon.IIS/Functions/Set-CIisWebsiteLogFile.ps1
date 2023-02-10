@@ -110,5 +110,6 @@ function Set-CIisWebsiteLogFile
     Invoke-SetConfigurationAttribute -ConfigurationElement $site.LogFile `
                                      -PSCmdlet $PSCmdlet `
                                      -Target $targetMsg `
-                                     -Reset:$Reset
+                                     -Reset:$Reset `
+                                     -Defaults (Get-CIIsWebsite -Defaults).LogFile
 }

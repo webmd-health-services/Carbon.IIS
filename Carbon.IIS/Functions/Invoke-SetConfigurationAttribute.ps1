@@ -18,7 +18,10 @@ function Invoke-SetConfigurationAttribute
 
         [String[]] $Exclude = @(),
 
-        [switch] $Reset
+        [switch] $Reset,
+
+        [Parameter(Mandatory)]
+        [ConfigurationElement] $Defaults
     )
 
     Set-StrictMode -Version 'Latest'
@@ -49,5 +52,6 @@ function Invoke-SetConfigurationAttribute
                                    -Attribute $Attribute `
                                    -Target $Target `
                                    -Exclude $Exclude `
-                                   -Reset:$Reset
+                                   -Reset:$Reset `
+                                   -Defaults $Defaults
 }

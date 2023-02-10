@@ -132,36 +132,13 @@ function Set-CIisConfigurationAttribute
 
         # If the attribute's value is sensitive. If set, the attribute's value will be masked when written to the
         # console.
-        [bool] $Sensitive
+        [bool] $Sensitive,
+
+        [ConfigurationElement] $Defaults
     )
 
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
-
-    # Attributes whose default value in IIS schema isn't the actual default value. These are the actual default values.
-    $realDefaults = @{
-        [ApplicationPool] = @{
-            'autoStart' = $false;
-            'managedRuntimeVersion' = 'v4.0';
-        };
-        [ApplicationPoolCpu] = @{
-            'resetInterval' = (New-TimeSpan -Minutes 5);
-        };
-        [ApplicationPoolPeriodicRestart] = @{
-            'privateMemory' = [UInt32]2097152;
-            'time' = [TimeSpan]::Zero;
-        };
-        [ApplicationPoolProcessModel] = @{
-            'idleTimeout' = [TimeSpan]::Zero;
-            'pingInterval' = (New-TimeSpan -Seconds 30);
-            'pingResponseTime' = (New-TimeSpan -Minutes 1 -Seconds 30);
-            'shutdownTimeLimit' = (New-TimeSpan -Minutes 1 -Seconds 30);
-            'startupTimeLimit' = (New-TimeSpan -Minutes 1 -Seconds 30);
-        };
-        [ApplicationPoolRecycling] = @{
-            'logEventOnRecycle' = [RecyclingLogEventOnRecycle]255;
-        }
-    }
 
     function Get-TypeName
     {
@@ -270,13 +247,17 @@ function Set-CIisConfigurationAttribute
         $hasCurrentValue = -not $noCurrentValue
         $currentValueMsg = $currentValue | Get-DisplayValue
 
-        $defaultValue = $currentAttr.Schema.DefaultValue
-        $configElementType = $ConfigurationElement.GetType()
-        if ($realDefaults.ContainsKey($configElementType) -and $realDefaults[$configElementType].ContainsKey($Name))
+        $defaultValue = $defaultValueSchema = $currentAttr.Schema.DefaultValue
+        if ($Defaults)
         {
-            $defaultValue = $realDefaults[$configElementType][$Name]
+            $defaultAttrSchema = $Defaults.GetAttribute($Name)
+            if ($null -ne $defaultAttrSchema)
+            {
+                $defaultValue = $defaultAttrSchema.Value
+            }
         }
         $defaultValueMsg = $defaultValue | Get-DisplayValue
+        $defaultValueSchemaMsg = $defaultValueSchema | Get-DisplayValue
         $currentValueIsDefault = $currentValue -eq $defaultValue
 
         $valueMsg = $Value | Get-DisplayValue
@@ -297,9 +278,10 @@ function Set-CIisConfigurationAttribute
         $msgPrefix = "    @$($nameFormat -f $currentAttr.Name)  "
         $emptyPrefixMsg = ' ' * $msgPrefix.Length
 
-        Write-Debug "$($msgPrefix     )  current  $($currentValue | Get-TypeName) $($currentValueMsg)"
-        Write-Debug "$($emptyPrefixMsg)  default  $($defaultValue | Get-TypeName) $($defaultValueMsg)"
-        Write-Debug "$($emptyPrefixMsg)  new      $($newValue | Get-TypeName       ) $($valueMsg)"
+        Write-Debug "$($msgPrefix     )current         $($currentValue | Get-TypeName) $($currentValueMsg)"
+        Write-Debug "$($emptyPrefixMsg)schema default  $($defaultValueSchema | Get-TypeName) $($defaultValueSchemaMsg)"
+        Write-Debug "$($emptyPrefixMsg)default         $($defaultValue | Get-TypeName) $($defaultValueMsg)"
+        Write-Debug "$($emptyPrefixMsg)new             $($newValue | Get-TypeName       ) $($valueMsg)"
 
         $whatIfTarget = "@$($currentAttr.Name) for $($Target -replace '"', '''')"
 

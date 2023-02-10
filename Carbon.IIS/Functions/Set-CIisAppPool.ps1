@@ -121,5 +121,6 @@ function Set-CIisAppPool
                                      -Target $targetMsg `
                                      -Attribute @{ 'name' = $Name } `
                                      -Exclude @('applicationPoolSid', 'state') `
-                                     -Reset:$Reset
+                                     -Reset:$Reset `
+                                     -Defaults (Get-CIIsAppPool -Defaults)
 }

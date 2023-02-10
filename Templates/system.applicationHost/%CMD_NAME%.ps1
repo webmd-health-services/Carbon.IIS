@@ -74,5 +74,6 @@ function %CMD_NAME%
     Invoke-SetConfigurationAttribute -ConfigurationElement $target.%PROPERTY_NAME% `
                                      -PSCmdlet $PSCmdlet `
                                      -Target $targetMsg `
-                                     -Reset:$Reset
+                                     -Reset:$Reset `
+                                     -Defaults (%GET_CMD_NAME% -Defaults).%PROPERTY_NAME%
 }
