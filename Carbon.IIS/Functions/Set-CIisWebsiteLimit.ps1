@@ -82,8 +82,9 @@ function Set-CIisWebsiteLimit
         $targetMsg = """$($SiteName)"" IIS website's limits"
     }
 
-    Invoke-SetConfigurationAttribute -ConfigurationElement $target.limits `
+    Invoke-SetConfigurationAttribute -ConfigurationElement $target.Limits `
                                      -PSCmdlet $PSCmdlet `
                                      -Target $targetMsg `
-                                     -Reset:$Reset
+                                     -Reset:$Reset `
+                                     -Defaults (Get-CIIsWebsite -Defaults).Limits
 }

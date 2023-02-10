@@ -112,5 +112,9 @@ function Set-CIisAppPoolCpu
         $target = """$($AppPoolName)"" IIS application pool's CPU"
     }
 
-    Invoke-SetConfigurationAttribute -ConfigurationElement $appPool.Cpu -PSCmdlet $PSCmdlet -Target $target -Reset:$Reset
+    Invoke-SetConfigurationAttribute -ConfigurationElement $appPool.Cpu `
+                                     -PSCmdlet $PSCmdlet `
+                                     -Target $target `
+                                     -Reset:$Reset `
+                                     -Defaults (Get-CIIsAppPool -Defaults).Cpu
 }

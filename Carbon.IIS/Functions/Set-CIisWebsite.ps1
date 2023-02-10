@@ -91,5 +91,6 @@ function Set-CIisWebsite
                                      -Target $targetMsg `
                                      -Exclude @('state') `
                                      -Attribute $attribute `
-                                     -Reset:$Reset
+                                     -Reset:$Reset `
+                                     -Defaults (Get-CIIsWebsite -Defaults)
 }

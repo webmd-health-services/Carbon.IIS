@@ -175,5 +175,6 @@ function Set-CIisAppPoolPeriodicRestart
     Invoke-SetConfigurationAttribute -ConfigurationElement $appPool.Recycling.PeriodicRestart `
                                      -PSCmdlet $PSCmdlet `
                                      -Target $targetMsg `
-                                     -Reset:$Reset
+                                     -Reset:$Reset `
+                                     -Defaults (Get-CIIsAppPool -Defaults).Recycling.PeriodicRestart
 }

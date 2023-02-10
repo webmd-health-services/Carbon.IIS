@@ -29,11 +29,6 @@ BeforeAll {
         TruncateSize = 1048576;
     }
 
-    # Sometimes the default values in the schema aren't quite the default values.
-    $script:notQuiteDefaultValues = @{
-        Directory = '%SystemDrive%\inetpub\logs\LogFiles';
-    }
-
     $script:excludedAttributes = @()
 
     function ThenDefaultsSetTo
@@ -82,22 +77,28 @@ BeforeAll {
                 continue
             }
 
+            Write-Debug $attr.Name
             $expectedValue = $attr.DefaultValue
+            Write-Debug "  schema default      $($expectedValue)"
+            $defaultTarget = Get-CIisWebsite -Defaults | Select-Object -ExpandProperty 'LogFile'
+            if ($null -ne $defaultTarget.GetAttribute($attr.Name))
+            {
+                $expectedValue = $defaultTarget.GetAttributeValue($attr.Name)
+                Write-Debug "  default website     $($expectedValue)"
+            }
             $becauseMsg = 'default'
             $setMsg = 'set'
-            if( $script:notQuiteDefaultValues.ContainsKey($attr.Name))
-            {
-                $expectedValue = $script:notQuiteDefaultValues[$attr.Name]
-            }
 
             if( $Values.ContainsKey($attr.Name) )
             {
                 $expectedValue = $Values[$attr.Name]
+                Write-Debug "  values              $($expectedValue)"
                 $becauseMsg = 'custom'
             }
             elseif( $OrValues.ContainsKey($attr.Name) )
             {
                 $expectedValue = $OrValues[$attr.Name]
+                Write-Debug "  or values           $($expectedValue)"
                 $becauseMsg = 'custom'
                 $setMsg = 'not set'
             }
