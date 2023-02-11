@@ -46,6 +46,7 @@ Describe 'Set-CIisHttpRedirect' {
         {
             Remove-Item $script:webConfigPath
         }
+        Restart-CIisAppPool -Name $script:appPoolName
     }
 
     AfterEach {
