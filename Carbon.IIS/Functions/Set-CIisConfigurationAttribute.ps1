@@ -134,7 +134,9 @@ function Set-CIisConfigurationAttribute
         # console.
         [bool] $Sensitive,
 
-        [ConfigurationElement] $Defaults
+        [ConfigurationElement] $Defaults,
+
+        [switch] $AsDefaults
     )
 
     Set-StrictMode -Version 'Latest'
@@ -248,7 +250,7 @@ function Set-CIisConfigurationAttribute
         $currentValueMsg = $currentValue | Get-DisplayValue
 
         $defaultValue = $defaultValueSchema = $currentAttr.Schema.DefaultValue
-        if ($Defaults)
+        if (-not $AsDefaults -and $Defaults)
         {
             $defaultAttrSchema = $Defaults.GetAttribute($Name)
             if ($null -ne $defaultAttrSchema)
@@ -279,7 +281,11 @@ function Set-CIisConfigurationAttribute
         $emptyPrefixMsg = ' ' * $msgPrefix.Length
 
         Write-Debug "$($msgPrefix     )current         $($currentValue | Get-TypeName) $($currentValueMsg)"
-        Write-Debug "$($emptyPrefixMsg)schema default  $($defaultValueSchema | Get-TypeName) $($defaultValueSchemaMsg)"
+        if (-not $AsDefaults)
+        {
+            "$($emptyPrefixMsg)schema default  $($defaultValueSchema | Get-TypeName) $($defaultValueSchemaMsg)" |
+                Write-Debug
+        }
         Write-Debug "$($emptyPrefixMsg)default         $($defaultValue | Get-TypeName) $($defaultValueMsg)"
         Write-Debug "$($emptyPrefixMsg)new             $($newValue | Get-TypeName       ) $($valueMsg)"
 

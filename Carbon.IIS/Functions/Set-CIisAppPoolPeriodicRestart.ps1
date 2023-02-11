@@ -176,5 +176,6 @@ function Set-CIisAppPoolPeriodicRestart
                                      -PSCmdlet $PSCmdlet `
                                      -Target $targetMsg `
                                      -Reset:$Reset `
-                                     -Defaults (Get-CIIsAppPool -Defaults).Recycling.PeriodicRestart
+                                     -Defaults (Get-CIIsAppPool -Defaults).Recycling.PeriodicRestart `
+                                     -AsDefaults:$AsDefaults
 }

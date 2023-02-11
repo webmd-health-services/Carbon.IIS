@@ -75,5 +75,6 @@ function %CMD_NAME%
                                      -PSCmdlet $PSCmdlet `
                                      -Target $targetMsg `
                                      -Reset:$Reset `
-                                     -Defaults (%GET_CMD_NAME% -Defaults).%PROPERTY_NAME%
+                                     -Defaults (%GET_CMD_NAME% -Defaults).%PROPERTY_NAME% `
+                                     -AsDefaults:$AsDefaults
 }

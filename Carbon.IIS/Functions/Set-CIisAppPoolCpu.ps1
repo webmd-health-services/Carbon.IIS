@@ -116,5 +116,6 @@ function Set-CIisAppPoolCpu
                                      -PSCmdlet $PSCmdlet `
                                      -Target $target `
                                      -Reset:$Reset `
-                                     -Defaults (Get-CIIsAppPool -Defaults).Cpu
+                                     -Defaults (Get-CIIsAppPool -Defaults).Cpu `
+                                     -AsDefaults:$AsDefaults
 }

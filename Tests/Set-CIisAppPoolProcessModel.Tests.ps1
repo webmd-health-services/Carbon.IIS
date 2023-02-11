@@ -9,12 +9,9 @@ BeforeAll {
 
     $script:testNum = 0
 
-    $script:defaultDefaults = @{}
-    (Get-CIisAppPool -Defaults) |
-        Select-Object -ExpandProperty 'ProcessModel' |  # ProcessModel doesn't exist on some AppVeyor servers
-        Select-Object -ExpandProperty 'Attributes' |
-        Where-Object 'IsInheritedFromDefaultValue' -EQ $false |
-        ForEach-Object { $script:defaultDefaults[$_.Name] = $_.Value }
+    $script:defaultDefaults = @{
+        'identityType' = [ProcessModelIdentityType]::ApplicationPoolIdentity;
+    }
 
     # All non-default values.
     $script:nonDefaultArgs = @{

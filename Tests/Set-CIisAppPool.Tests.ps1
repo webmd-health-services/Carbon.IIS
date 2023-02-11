@@ -8,10 +8,9 @@ BeforeAll {
 
     $script:testNum = 0
 
-    $script:defaultDefaults = @{}
-    (Get-CIisAppPool -Defaults).Attributes |
-        Where-Object 'IsInheritedFromDefaultValue' -EQ $false |
-        ForEach-Object { $script:defaultDefaults[$_.Name] = $_.Value }
+    $script:defaultDefaults = @{
+        'managedRuntimeVersion' = 'v4.0';
+    }
 
     # All non-default values.
     $script:nonDefaultArgs = @{
@@ -22,7 +21,6 @@ BeforeAll {
         'managedPipelineMode' = [Microsoft.Web.Administration.ManagedPipelineMode]::Classic;
         'managedRuntimeLoader' = 'myloader.dll';
         'managedRuntimeVersion' = 'v4.0';
-        'passAnonymousToken' = $false;
         'queueLength' = [UInt32]2000;
         'startMode' = [Microsoft.Web.Administration.StartMode]::AlwaysRunning;
     }

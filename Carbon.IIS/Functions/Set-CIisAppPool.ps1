@@ -119,8 +119,8 @@ function Set-CIisAppPool
     Invoke-SetConfigurationAttribute -ConfigurationElement $target `
                                      -PSCmdlet $PSCmdlet `
                                      -Target $targetMsg `
-                                     -Attribute @{ 'name' = $Name } `
                                      -Exclude @('applicationPoolSid', 'state') `
                                      -Reset:$Reset `
-                                     -Defaults (Get-CIIsAppPool -Defaults)
+                                     -Defaults (Get-CIIsAppPool -Defaults) `
+                                     -AsDefaults:$AsDefaults
 }

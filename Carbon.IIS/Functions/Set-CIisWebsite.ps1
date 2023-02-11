@@ -92,5 +92,6 @@ function Set-CIisWebsite
                                      -Exclude @('state') `
                                      -Attribute $attribute `
                                      -Reset:$Reset `
-                                     -Defaults (Get-CIIsWebsite -Defaults)
+                                     -Defaults (Get-CIIsWebsite -Defaults) `
+                                     -AsDefaults:$AsDefaults
 }
