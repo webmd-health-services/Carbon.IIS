@@ -95,5 +95,6 @@ function Set-CIisAppPoolRecycling
                                      -PSCmdlet $PSCmdlet `
                                      -Target $targetMsg `
                                      -Reset:$Reset `
-                                     -Defaults (Get-CIIsAppPool -Defaults).Recycling
+                                     -Defaults (Get-CIIsAppPool -Defaults).Recycling `
+                                     -AsDefaults:$AsDefaults
 }

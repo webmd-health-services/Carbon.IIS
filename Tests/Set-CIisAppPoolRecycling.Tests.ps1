@@ -9,9 +9,6 @@ BeforeAll {
     $script:testNum = 0
 
     $script:defaultDefaults = @{}
-    (Get-CIisAppPool -Defaults).recycling.Attributes |
-        Where-Object 'IsInheritedFromDefaultValue' -EQ $false |
-        ForEach-Object { $script:defaultDefaults[$_.Name] = $_.Value }
 
     # All non-default values.
     $script:nonDefaultArgs = @{

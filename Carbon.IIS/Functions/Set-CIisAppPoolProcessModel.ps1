@@ -139,5 +139,6 @@ function Set-CIisAppPoolProcessModel
                                      -PSCmdlet $PSCmdlet `
                                      -Target $targetMsg `
                                      -Reset:$Reset `
-                                     -Defaults (Get-CIIsAppPool -Defaults).ProcessModel
+                                     -Defaults (Get-CIIsAppPool -Defaults).ProcessModel `
+                                     -AsDefaults:$AsDefaults
 }

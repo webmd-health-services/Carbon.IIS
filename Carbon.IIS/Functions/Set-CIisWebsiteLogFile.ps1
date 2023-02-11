@@ -111,5 +111,6 @@ function Set-CIisWebsiteLogFile
                                      -PSCmdlet $PSCmdlet `
                                      -Target $targetMsg `
                                      -Reset:$Reset `
-                                     -Defaults (Get-CIIsWebsite -Defaults).LogFile
+                                     -Defaults (Get-CIIsWebsite -Defaults).LogFile `
+                                     -AsDefaults:$AsDefaults
 }

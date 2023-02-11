@@ -9,10 +9,6 @@ BeforeAll {
     $script:testNum = 0
 
     $script:defaultDefaults = @{}
-    (Get-CIisAppPool -Defaults).Recycling.PeriodicRestart |
-        Where-Object { $_ | Get-Member -Name 'IsInheritedFromDefaultValue' } |
-        Where-Object 'IsInheritedFromDefaultValue' -EQ $false |
-        ForEach-Object { $script:defaultDefaults[$_.Name] = $_.Value }
 
         # All non-default values.
     $script:nonDefaultArgs = @{

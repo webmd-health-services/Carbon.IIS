@@ -21,14 +21,16 @@ function Invoke-SetConfigurationAttribute
         [switch] $Reset,
 
         [Parameter(Mandatory)]
-        [ConfigurationElement] $Defaults
+        [ConfigurationElement] $Defaults,
+
+        [switch] $AsDefaults
     )
 
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
-    $invokation = $SourceCmdlet.MyInvocation
-    $cmd = $invokation.MyCommand
+    $invocation = $SourceCmdlet.MyInvocation
+    $cmd = $invocation.MyCommand
 
     $parameterSet = $cmd.ParameterSets | Where-Object 'Name' -EQ $SourceCmdlet.ParameterSetName
     if( -not $parameterSet )
@@ -36,7 +38,7 @@ function Invoke-SetConfigurationAttribute
         $parameterSet = $cmd.ParameterSets | Where-Object 'IsDefault' -EQ $true
     }
 
-    $cmdParameters = $invokation.BoundParameters
+    $cmdParameters = $invocation.BoundParameters
 
     foreach( $attrName in ($ConfigurationElement.Attributes | Select-Object -ExpandProperty 'Name') )
     {
@@ -53,5 +55,6 @@ function Invoke-SetConfigurationAttribute
                                    -Target $Target `
                                    -Exclude $Exclude `
                                    -Reset:$Reset `
-                                   -Defaults $Defaults
+                                   -Defaults $Defaults `
+                                   -AsDefaults:$AsDefaults
 }

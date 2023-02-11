@@ -86,5 +86,6 @@ function Set-CIisWebsiteLimit
                                      -PSCmdlet $PSCmdlet `
                                      -Target $targetMsg `
                                      -Reset:$Reset `
-                                     -Defaults (Get-CIIsWebsite -Defaults).Limits
+                                     -Defaults (Get-CIIsWebsite -Defaults).Limits `
+                                     -AsDefaults:$AsDefaults
 }
