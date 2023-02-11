@@ -15,7 +15,7 @@ $script:testNum = 0
     Select-Object -Last 1
 if (-not $script:portNum)
 {
-    $script:portNum = 60000
+    $script:portNum = 8000
 }
 else
 {
