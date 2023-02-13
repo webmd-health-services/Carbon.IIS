@@ -180,7 +180,7 @@ function Set-CIisAppPoolPeriodicRestart
 
                 if (-not $WhatIfPreference)
                 {
-                    $currentSchedule.Add($add)
+                    [void]$currentSchedule.Add($add)
                 }
             }
 
