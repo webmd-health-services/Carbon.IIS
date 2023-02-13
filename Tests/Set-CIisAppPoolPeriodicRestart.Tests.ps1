@@ -130,6 +130,11 @@ BeforeAll {
                 Should -Be $expectedValue -Because "should $($setMsg)$($asDefaultsMsg) $($attr.Name) to $($becauseMsg) value"
         }
     }
+
+    function ThenNoError
+    {
+        $Global:Error | Should -BeNullOrEmpty
+    }
 }
 
 Describe 'Set-CIisAppPoolPeriodicRestart' {
@@ -150,6 +155,7 @@ Describe 'Set-CIisAppPoolPeriodicRestart' {
         Write-Debug 'Reset defalt periodic restart settings'
         Install-CIisAppPool -Name $script:appPoolName
         Write-Debug "Installed $($script:appPoolName) app pool"
+        $Global:Error.Clear()
         # Set-CIisAppPoolPeriodicRestart -AppPoolName $script:appPoolName -Reset
         # Write-Debug "Reset $($script:appPoolName) app pool"
         # Start-Sleep -Seconds 5
@@ -157,6 +163,20 @@ Describe 'Set-CIisAppPoolPeriodicRestart' {
 
     AfterEach {
         Uninstall-CIisAppPool -Name $script:appPoolName
+    }
+
+    It 'should set a single schedule' {
+        Set-CIisAppPoolPeriodicRestart -AppPoolName $script:appPoolName `
+                                       @script:nonDefaultArgs `
+                                       -Schedule '21:43:00' `
+                                       -Reset
+        ThenHasValues $script:nonDefaultArgs -AndSchedule '21:43:00'
+        ThenNoError
+    }
+
+    It 'should set no schedule' {
+        Set-CIisAppPoolPeriodicRestart -AppPoolName $script:appPoolName @script:nonDefaultArgs -Reset
+        ThenHasValues $script:nonDefaultArgs -AndSchedule @()
     }
 
     It 'should set and reset all values' {

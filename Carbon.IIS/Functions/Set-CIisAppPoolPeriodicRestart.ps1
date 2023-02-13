@@ -121,7 +121,13 @@ function Set-CIisAppPoolPeriodicRestart
         $prefixMsg = "IIS ""$($AppPoolName)"" application pool: periodic restart schedule  "
         $clearedPrefix = $false
 
-        foreach( $time in (($currentTimes + $Schedule) | Select-Object -Unique) )
+        $bothSchedules = & {
+                $currentTimes | Write-Output
+                $Schedule | Write-Output
+            } |
+            Where-Object { $_ } |
+            Select-Object -Unique
+        foreach ($time in $bothSchedules)
         {
             $icon = ' '
             $action = ''
