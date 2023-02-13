@@ -279,6 +279,15 @@ function Set-CIisConfigurationAttribute
                 "type ([$($currentValue.GetType().FullName)] $($currentValueMsg))." | Write-Warning
         }
 
+        if ($Value -is [Enum] -and $currentValue -isnot [Enum])
+        {
+            [void][Enum]::TryParse($Value.GetType(), $currentValue.ToString(), [ref]$currentValue)
+            $currentValueMsg = $currentValue | Get-DisplayValue
+        }
+        if ($currentValue -is [Enum] -and $Value -isnot [Enum])
+        {
+            [void][Enum]::TryParse($currentValue.GetType(), $Value.ToString(), [ref]$Value)
+        }
         $valueMsg = $Value | Get-DisplayValue
 
         $newValue = $Value
