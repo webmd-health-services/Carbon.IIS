@@ -261,6 +261,23 @@ function Set-CIisConfigurationAttribute
         $defaultValueMsg = $defaultValue | Get-DisplayValue
         $defaultValueSchemaMsg = $defaultValueSchema | Get-DisplayValue
         $currentValueIsDefault = $currentValue -eq $defaultValue
+        if ($currentValue -is [TimeSpan] -and $defaultValue -isnot [TimeSpan])
+        {
+            $currentValueIsDefault = $currentValue.Ticks -eq $defaultValue
+        }
+        elseif ($null -ne $currentValue -and `
+                $null -ne $defaultValue -and `
+                -not (
+                        [Microsoft.VisualBasic.Information]::IsNumeric($currentValue) -and `
+                        [Microsoft.VisualBasic.Information]::IsNumeric($defaultValue)
+                    ) -and `
+                $currentValue.GetType() -ne $defaultValue.GetType())
+        {
+            "Unable to safely determine the state of attribute ""$($Name)"" on IIS configuration element " +
+                """$($Target)"": the current value's type " +
+                "([$($currentValue.GetType().FullName)] $($currentValueMsg)) is different than the default value's " +
+                "type ([$($currentValue.GetType().FullName)] $($currentValueMsg))." | Write-Warning
+        }
 
         $valueMsg = $Value | Get-DisplayValue
 

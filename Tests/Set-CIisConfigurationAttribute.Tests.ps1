@@ -1,3 +1,4 @@
+using namespace Microsoft.Web.Administration;
 
 #Requires -Version 5.1
 Set-StrictMode -Version 'Latest'
@@ -11,6 +12,11 @@ BeforeAll {
     $script:newKernelCacheValue = $true
     $script:siteName = ''
     $script:testNum = 0
+
+    function GivenAppPool
+    {
+        Install-CIisAppPool -Name $script:appPoolName
+    }
 
     function GivenWebsite
     {
@@ -26,16 +32,26 @@ BeforeAll {
 
             [String[]] $ThatInheritValuesAre = @(),
 
-            [String] $AtLocation
+            [String] $AtLocation,
+
+            [ConfigurationElement] $ForConfigurationElement
         )
 
-        $locationPathArg = @{}
-        if ($AtLocation)
+        if ($ForConfigurationElement)
         {
-            $locationPathArg['LocationPath'] = $AtLocation
+            $updatedSection = $ForConfigurationElement
+        }
+        else
+        {
+            $targetArg = @{}
+            if ($AtLocation)
+            {
+                $targetArg['LocationPath'] = $AtLocation
+            }
+
+            $updatedSection = Get-CIisConfigurationSection -SectionPath 'system.webServer/caching' @targetArg
         }
 
-        $updatedSection = Get-CIisConfigurationSection -SectionPath 'system.webServer/caching' @locationPathArg
         foreach ($name in $SetTo.Keys)
         {
             $updatedSection.GetAttributeValue($name) | Should -Be $SetTo[$name]
@@ -56,6 +72,7 @@ BeforeAll {
 
     function WhenSettingAttribute
     {
+        [CmdletBinding()]
         param(
             [hashtable] $WithArg = @{}
         )
@@ -89,7 +106,7 @@ Describe 'Set-CIisConfigurationAttribute' {
             $script:newKernelCacheValue = $false
         }
 
-        $script:siteName = "Set-CIisConfigurationAttribute$($script:testNum)"
+        $script:appPoolName = $script:siteName = "$($PSCommandPath | Split-Path -Leaf)-$($script:testNum)"
         $script:testNum += 1
 
         $Global:Error.Clear()
@@ -167,5 +184,22 @@ Describe 'Set-CIisConfigurationAttribute' {
         WhenSettingAttribute -WithArg @{ LocationPath = $script:siteName ; Attribute = @{} ; Reset = $true ; }
         WhenSettingAttribute -WithArg @{ LocationPath = $script:siteName ; Attribute = @{} ; Reset = $true ; }
         ThenAttributes -ThatInheritValuesAre @( 'enabled', 'enableKernelCache')
+    }
+
+    It 'should not constantly reset default timespan attributes' {
+        WhenSettingAttribute -WithArg @{
+            'ConfigurationElement' = (Get-CIisAppPool -Defaults).ProcessModel;
+            'Reset' = $true;
+            'AsDefaults' = $true;
+            'Attribute' = @{};
+        }
+        $infos = @()
+        WhenSettingAttribute -WithArg @{
+            'ConfigurationElement' = (Get-CIisAppPool -Defaults).ProcessModel;
+            'Reset' = $true;
+            'AsDefaults' = $true;
+            'Attribute' = @{};
+        } -InformationVariable 'infos'
+        $infos | Should -BeNullOrEmpty
     }
 }
