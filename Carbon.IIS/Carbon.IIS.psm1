@@ -33,6 +33,9 @@ $script:iisConfigs = & {
     Join-Path -Path ([Environment]::GetFolderPath('Windows')) -ChildPath 'Microsoft.NET\Framework*\v*\config\*.config'
 }
 
+# Seriously. It has an `IsNumeric` method that isn't part of .NET.
+Add-Type -AssemblyName 'Microsoft.VisualBasic'
+
 Import-Module -Name (Join-Path -Path $script:moduleRoot -ChildPath 'PSModules\Carbon.Core' -Resolve) `
               -Function @('Add-CTypeData', 'Resolve-CFullPath')
 
