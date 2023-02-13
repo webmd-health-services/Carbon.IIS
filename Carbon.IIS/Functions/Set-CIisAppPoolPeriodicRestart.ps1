@@ -93,6 +93,25 @@ function Set-CIisAppPoolPeriodicRestart
         return
     }
 
+    $targetMsg = 'IIS appliation pool defaults periodic restart'
+    if( $AppPoolName )
+    {
+        $targetMsg = """$($AppPoolName)"" IIS application pool's periodic restart"
+    }
+
+    Invoke-SetConfigurationAttribute -ConfigurationElement $appPool.Recycling.PeriodicRestart `
+                                     -PSCmdlet $PSCmdlet `
+                                     -Target $targetMsg `
+                                     -Reset:$Reset `
+                                     -Defaults (Get-CIIsAppPool -Defaults).Recycling.PeriodicRestart `
+                                     -AsDefaults:$AsDefaults
+
+    $appPool = Get-CIisAppPool @getArgs
+    if( -not $appPool )
+    {
+        return
+    }
+
     $currentSchedule = $appPool.Recycling.PeriodicRestart.Schedule
     $currentTimes = $currentSchedule | Select-Object -ExpandProperty 'Time' | Sort-Object
     $Schedule = $Schedule | Sort-Object
@@ -153,29 +172,16 @@ function Set-CIisAppPoolPeriodicRestart
                     Write-Error -Message $msg -ErrorAction Stop
                 }
 
-                $currentSchedule.Add($add)
+                if (-not $WhatIfPreference)
+                {
+                    $currentSchedule.Add($add)
+                }
             }
 
-            Save-CIisConfiguration
+            if (-not $WhatIfPreference)
+            {
+                Save-CIisConfiguration
+            }
         }
     }
-
-    $appPool = Get-CIisAppPool @getArgs
-    if( -not $appPool )
-    {
-        return
-    }
-
-    $targetMsg = 'IIS appliation pool defaults periodic restart'
-    if( $AppPoolName )
-    {
-        $targetMsg = """$($AppPoolName)"" IIS application pool's periodic restart"
-    }
-
-    Invoke-SetConfigurationAttribute -ConfigurationElement $appPool.Recycling.PeriodicRestart `
-                                     -PSCmdlet $PSCmdlet `
-                                     -Target $targetMsg `
-                                     -Reset:$Reset `
-                                     -Defaults (Get-CIIsAppPool -Defaults).Recycling.PeriodicRestart `
-                                     -AsDefaults:$AsDefaults
 }

@@ -6,7 +6,7 @@ Set-StrictMode -Version 'Latest'
 BeforeAll {
     & (Join-Path -Path $PSScriptRoot 'Initialize-CarbonTest.ps1' -Resolve)
 
-    $script:testNum = 0
+    $script:testNum = 10
 
     $script:defaultDefaults = @{}
 
@@ -134,44 +134,50 @@ BeforeAll {
 
 Describe 'Set-CIisAppPoolPeriodicRestart' {
     BeforeAll {
+        Set-CIisAppPoolPeriodicRestart -AsDefaults @script:defaultDefaults -Reset
         Start-W3ServiceTestFixture
+        Write-Debug 'Started test fixture.'
     }
 
     AfterAll {
+        Set-CIisAppPoolPeriodicRestart -AsDefaults @script:defaultDefaults -Reset
         Complete-W3ServiceTestFixture
     }
 
     BeforeEach {
-        $script:appPoolName = "Set-CIisAppPoolPeriodicRestart$($script:testNum)"
+        $script:appPoolName = "$($PSCommandPath | Split-Path -Leaf)-$($script:testNum)"
         $script:testNum++
-        Set-CIisAppPoolPeriodicRestart -AsDefaults @script:defaultDefaults -Reset
+        Write-Debug 'Reset defalt periodic restart settings'
         Install-CIisAppPool -Name $script:appPoolName
-        Set-CIisAppPoolPeriodicRestart -AppPoolName $script:appPoolName -Reset
+        Write-Debug "Installed $($script:appPoolName) app pool"
+        # Set-CIisAppPoolPeriodicRestart -AppPoolName $script:appPoolName -Reset
+        # Write-Debug "Reset $($script:appPoolName) app pool"
+        # Start-Sleep -Seconds 5
     }
 
     AfterEach {
         Uninstall-CIisAppPool -Name $script:appPoolName
-        Set-CIisAppPoolPeriodicRestart -AsDefaults @script:defaultDefaults -Reset
     }
 
     It 'should set and reset all values' {
         $infos = @()
         Set-CIisAppPoolPeriodicRestart -AppPoolName $script:appPoolName `
                                        @script:nonDefaultArgs `
-                                       -Schedule '01:00:00', '13:00:00' `
+                                       -Schedule '12:34:00', '23:45:00' `
                                        -Reset `
                                        -InformationVariable 'infos'
+        Write-Debug "Setting $($script:appPoolName) app pool"
         $infos | Should -Not -BeNullOrEmpty
-        ThenHasValues $script:nonDefaultArgs -AndSchedule '01:00:00', '13:00:00'
+        ThenHasValues $script:nonDefaultArgs -AndSchedule '12:34:00', '23:45:00'
 
         # Make sure no information messages get written because no changes are being made.
         Set-CIisAppPoolPeriodicRestart -AppPoolName $script:appPoolName `
                                        @script:nonDefaultArgs `
-                                       -Schedule '01:00:00', '13:00:00' `
+                                       -Schedule '12:34:00', '23:45:00' `
                                        -Reset `
                                        -InformationVariable 'infos'
         $infos | Should -BeNullOrEmpty
-        ThenHasValues $script:nonDefaultArgs -AndSchedule '01:00:00', '13:00:00'
+        ThenHasValues $script:nonDefaultArgs -AndSchedule '12:34:00', '23:45:00'
 
         Set-CIisAppPoolPeriodicRestart -AppPoolName $script:appPoolName -Reset
         ThenHasDefaultValues
