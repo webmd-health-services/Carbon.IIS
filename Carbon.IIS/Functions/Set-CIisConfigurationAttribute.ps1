@@ -265,30 +265,56 @@ function Set-CIisConfigurationAttribute
         {
             $currentValueIsDefault = $currentValue.Ticks -eq $defaultValue
         }
-        elseif ($null -ne $currentValue -and `
-                $null -ne $defaultValue -and `
-                -not (
-                        [Microsoft.VisualBasic.Information]::IsNumeric($currentValue) -and `
-                        [Microsoft.VisualBasic.Information]::IsNumeric($defaultValue)
-                    ) -and `
-                $currentValue.GetType() -ne $defaultValue.GetType())
+        else
         {
-            "Unable to safely determine the state of attribute ""$($Name)"" on IIS configuration element " +
-                """$($Target)"": the current value's type " +
-                "([$($currentValue.GetType().FullName)] $($currentValueMsg)) is different than the default value's " +
-                "type ([$($currentValue.GetType().FullName)] $($currentValueMsg))." | Write-Warning
+            $currentValueIsNull = $null -eq $currentValue
+            $defaultValueIsNull = $null -eq $defaultValue
+
+            if (-not $currentValueIsNull -and -not $defaultValueIsNull)
+            {
+                $currentValueIsNumeric = [Microsoft.VisualBasic.Information]::IsNumeric($currentValue)
+                $currentValueType = $currentValue.GetType()
+                $defaultValueIsNumeric = [Microsoft.VisualBasic.Information]::IsNumeric($defaultValue)
+                $defaultValueType = $defaultValue.GetType()
+
+                if (-not $currentValueIsNumeric -and `
+                    -not $defaultValueIsNumeric -and `
+                    $currentValueType -ne $defaultValueType)
+                {
+                    "Unable to safely determine the state of attribute ""$($Name)"" on IIS configuration element " +
+                        """$($Target)"": the current value's type " +
+                        "([$($currentValueType.FullName)] $($currentValueMsg)) is different than the default " +
+                        "value's type ([$($currentValueType.FullName)] $($currentValueMsg))." | Write-Warning
+                }
+            }
         }
 
-        if ($Value -is [Enum] -and $currentValue -isnot [Enum])
-        {
-            [void][Enum]::TryParse($Value.GetType(), $currentValue.ToString(), [ref]$currentValue)
-            $currentValueMsg = $currentValue | Get-DisplayValue
-        }
-        if ($currentValue -is [Enum] -and $Value -isnot [Enum])
-        {
-            [void][Enum]::TryParse($currentValue.GetType(), $Value.ToString(), [ref]$Value)
-        }
         $valueMsg = $Value | Get-DisplayValue
+
+        if ($Value -is [Enum] -and $null -ne $currentValue -and $currentValue -isnot [Enum])
+        {
+            try
+            {
+                $currentValue = [Enum]::Parse($Value.GetType(), $currentValue.ToString(), $true)
+                $currentValueMsg = $currentValue | Get-DisplayValue
+            }
+            catch
+            {
+                $Global:Error.RemoveAt(0)
+            }
+        }
+        if ($currentValue -is [Enum] -and $null -ne $Value -and $Value -isnot [Enum])
+        {
+            try
+            {
+                $Value = [Enum]::Parse($currentValue.GetType(), $Value.ToString(), $true)
+                $valueMsg = $Value | Get-DisplayValue
+            }
+            catch
+            {
+                $Global:Error.RemoveAt(0)
+            }
+        }
 
         $newValue = $Value
         if ($newValue -is [securestring])
@@ -306,14 +332,21 @@ function Set-CIisConfigurationAttribute
         $msgPrefix = "    @$($nameFormat -f $currentAttr.Name)  "
         $emptyPrefixMsg = ' ' * $msgPrefix.Length
 
-        Write-Debug "$($msgPrefix     )current         $($currentValue | Get-TypeName) $($currentValueMsg)"
+        Write-Debug "$($msgPrefix     )current                  $($currentValue | Get-TypeName) $($currentValueMsg)"
         if (-not $AsDefaults)
         {
-            "$($emptyPrefixMsg)schema default  $($defaultValueSchema | Get-TypeName) $($defaultValueSchemaMsg)" |
+            "$($emptyPrefixMsg)schema default           $($defaultValueSchema | Get-TypeName) $($defaultValueSchemaMsg)" |
                 Write-Debug
         }
-        Write-Debug "$($emptyPrefixMsg)default         $($defaultValue | Get-TypeName) $($defaultValueMsg)"
-        Write-Debug "$($emptyPrefixMsg)new             $($newValue | Get-TypeName       ) $($valueMsg)"
+        Write-Debug "$($emptyPrefixMsg)default                  $($defaultValue | Get-TypeName) $($defaultValueMsg)"
+        Write-Debug "$($emptyPrefixMsg)new                      $($newValue | Get-TypeName       ) $($valueMsg)"
+        Write-Debug "$($emptyPrefixMsg)current -eq new          $($currentValue -eq $newValue)"
+        Write-Debug "$($emptyPrefixMsg)current -eq default      $($currentValue -eq $defaultValue)"
+        if ($null -ne $currentValue)
+        {
+            Write-Debug "$($emptyPrefixMsg)current.Equals(new)      $($currentValue.Equals($newValue))"
+            Write-Debug "$($emptyPrefixMsg)current.Equals(default)  $($currentValue.Equals($defaultValue))"
+        }
 
         $whatIfTarget = "@$($currentAttr.Name) for $($Target -replace '"', '''')"
 
