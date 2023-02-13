@@ -80,7 +80,7 @@ function Enable-CIisHttps
         [switch] $Require128BitHttps,
 
         # Should client certificates be accepted?
-        [Parameter(ParameterSetName='AcceptClientCertificates')]
+        [Parameter(Mandatory, ParameterSetName='AcceptClientCertificates')]
         [switch] $AcceptClientCertificates,
 
         # Should client certificates be required?  Also requires HTTPS ('RequireHttps` switch).
@@ -91,83 +91,30 @@ function Enable-CIisHttps
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
-    $HttpsFlags_Https = 8
-    $HttpsFlags_NegotiateCert = 32
-    $HttpsFlags_RequireCert = 64
-    $HttpsFlags_MapCert = 128
-    $HttpsFlags_128Bit = 256
-
-    $intFlag = 0
-    $flags = @()
+    $httpsFlags = [CIisHttpsFlags]::None
     if( $RequireHttps -or $RequireClientCertificates )
     {
-        $flags += 'Ssl'
-        $intFlag = $intFlag -bor $HttpsFlags_Https
+        $httpsFlags = $httpsFlags -bor [CIisHttpsFlags]::Ssl
     }
 
     if( $AcceptClientCertificates -or $RequireClientCertificates )
     {
-        $flags += 'SslNegotiateCert'
-        $intFlag = $intFlag -bor $HttpsFlags_NegotiateCert
+        $httpsFlags = $httpsFlags -bor [CIisHttpsFlags]::SslNegotiateCert
     }
 
     if( $RequireClientCertificates )
     {
-        $flags += 'SslRequireCert'
-        $intFlag = $intFlag -bor $HttpsFlags_RequireCert
+        $httpsFlags = $httpsFlags -bor [CIisHttpsFlags]::SslRequireCert
     }
 
     if( $Require128BitHttps )
     {
-        $flags += 'Ssl128'
-        $intFlag = $intFlag -bor $HttpsFlags_128Bit
+        $httpsFlags = $httpsFlags -bor [CIisHttpsFlags]::Ssl128
     }
 
-    $sectionPath = 'system.webServer/security/access'
-    $section =
-        Get-CIisConfigurationSection -LocationPath $LocationPath -VirtualPath $VirtualPath -SectionPath $sectionPath
-    if( -not $section )
-    {
-        return
-    }
-
-    $flags = $flags -join ','
-    $currentIntFlag = $section['sslFlags']
-    $currentFlags = @( )
-    if( $currentIntFlag -band $HttpsFlags_Https )
-    {
-        $currentFlags += 'Ssl'
-    }
-    if( $currentIntFlag -band $HttpsFlags_NegotiateCert )
-    {
-        $currentFlags += 'SslNegotiateCert'
-    }
-    if( $currentIntFlag -band $HttpsFlags_RequireCert )
-    {
-        $currentFlags += 'SslRequireCert'
-    }
-    if( $currentIntFlag -band $HttpsFlags_MapCert )
-    {
-        $currentFlags += 'SslMapCert'
-    }
-    if( $currentIntFlag -band $HttpsFlags_128Bit )
-    {
-        $currentFlags += 'Ssl128'
-    }
-
-    if( -not $currentFlags )
-    {
-        $currentFlags += 'None'
-    }
-
-    $currentFlags = $currentFlags -join ','
-
-    if( $section['sslFlags'] -ne $intFlag )
-    {
-        $target = "IIS:$($section.LocationPath):$($section.SectionPath)"
-        $infoMsg = "$($target)  sslFlags  $($section['sslFlags']) -> $($flags)"
-        $section['sslFlags'] = $flags
-        Save-CIisConfiguration -Target $target -Action 'Enable HTTPS' -Message $infoMsg
-    }
+    Set-CIisConfigurationAttribute -LocationPath (Join-CIisPath $LocationPath,$VirtualPath) `
+                                   -SectionPath 'system.webServer/security/access' `
+                                   -Name 'sslFlags' `
+                                   -Value $httpsFlags
 }
 

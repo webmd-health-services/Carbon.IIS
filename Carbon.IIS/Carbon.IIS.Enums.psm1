@@ -24,3 +24,14 @@ enum CIisHttpRedirectResponseStatus
     Temporary = 307
     PermRedirect = 308
 }
+
+[Flags()]
+enum CIisHttpsFlags
+{
+    None = 0
+    Ssl = 8
+    SslNegotiateCert = 32
+    SslRequireCert = 64
+    SslMapCert = 128
+    Ssl128 = 256
+}
