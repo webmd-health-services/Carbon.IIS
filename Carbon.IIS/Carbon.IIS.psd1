@@ -18,7 +18,7 @@
     RootModule = 'Carbon.IIS.psm1'
 
     # Version number of this module.
-    ModuleVersion = '0.0.0'
+    ModuleVersion = '1.0.0'
 
     # ID used to uniquely identify this module
     GUID = '157f0f80-4787-4dc0-bdee-4881c627750b'
@@ -36,8 +36,7 @@
     Copyright = 'Aaron Jensen and WebMD Health Services'
 
     # Description of the functionality provided by this module
-    Description = 'Carbon.IIS is a module for installing and managing IIS app pools, websites, applications, and ' +
-                  'configuring other parts of IIS.'
+    Description = 'Carbon.IIS is a module for installing and managing IIS app pools, websites, applications, and configuring other parts of IIS.'
 
     # Minimum version of the Windows PowerShell engine required by this module
     PowerShellVersion = '5.1'
@@ -78,39 +77,62 @@
     # Functions to export from this module. Only list public function here.
     FunctionsToExport = @(
         'Add-CIisDefaultDocument',
+        'ConvertTo-CIisVirtualPath',
         'Disable-CIisSecurityAuthentication',
         'Enable-CIisDirectoryBrowsing',
         'Enable-CIisSecurityAuthentication',
-        'Enable-CIisSsl',
+        'Enable-CIisHttps',
         'Get-CIisApplication',
         'Get-CIisAppPool',
         'Get-CIisConfigurationSection',
+        'Get-CIisConfigurationLocationPath',
         'Get-CIisHttpHeader',
         'Get-CIisHttpRedirect',
         'Get-CIisMimeMap',
         'Get-CIisSecurityAuthentication',
         'Get-CIisVersion',
+        'Get-CIisVirtualDirectory',
         'Get-CIisWebsite',
         'Install-CIisApplication',
         'Install-CIisAppPool',
         'Install-CIisVirtualDirectory',
         'Install-CIisWebsite',
-        'Join-CIisVirtualPath',
+        'Join-CIisPath',
         'Lock-CIisConfigurationSection',
+        'Remove-CIisConfigurationAttribute',
+        'Remove-CIisConfigurationLocation',
         'Remove-CIisMimeMap',
+        'Restart-CIisAppPool',
+        'Restart-CIisWebsite',
+        'Save-CIisConfiguration',
+        'Set-CIisAnonymousAuthentication',
+        'Set-CIisAppPool',
+        'Set-CIisAppPoolCpu',
+        'Set-CIisAppPoolPeriodicRestart',
+        'Set-CIisAppPoolProcessModel',
+        'Set-CIisAppPoolRecycling',
+        'Set-CIisConfigurationAttribute',
         'Set-CIisHttpHeader',
         'Set-CIisHttpRedirect',
         'Set-CIisMimeMap',
+        'Set-CIisWebsite',
         'Set-CIisWebsiteID',
-        'Set-CIisWebsiteSslCertificate',
+        'Set-CIisWebsiteLimit',
+        'Set-CIisWebsiteLogFile',
+        'Set-CIisWebsiteHttpsCertificate',
         'Set-CIisWindowsAuthentication',
+        'Start-CIisAppPool',
+        'Start-CIisWebsite',
+        'Stop-CIisAppPool',
+        'Stop-CIisWebsite',
         'Test-CIisAppPool',
         'Test-CIisConfigurationSection',
         'Test-CIisSecurityAuthentication',
         'Test-CIisWebsite',
         'Uninstall-CIisAppPool',
         'Uninstall-CIisWebsite',
-        'Unlock-CIisConfigurationSection'
+        'Unlock-CIisConfigurationSection',
+        'Wait-CIisAppPoolWorkerProcess'
     )
 
     # Cmdlets to export from this module. By default, you get a script module, so there are no cmdlets.

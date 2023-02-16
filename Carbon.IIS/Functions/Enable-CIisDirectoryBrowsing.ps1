@@ -20,31 +20,31 @@ function Enable-CIisDirectoryBrowsing
 
     Enables directory browsing on the `/Snoopy/DogHouse` directory under the `Peanuts` website.
     #>
-    [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSShouldProcess','')]
+    [CmdletBinding(SupportsShouldProcess)]
     param(
-        [Parameter(Mandatory=$true)]
-        [string]
-        # The name of the site where the virtual directory is located.
-        $SiteName,
-        
-        [Alias('Path')]
-        [string]
-        # The directory where directory browsing should be enabled.
-        $VirtualPath
-    )
-    
-    Set-StrictMode -Version 'Latest'
+        # The location path to the website, directory, application, or virtual directory where directory browsing should
+        # be enabled.
+        [Parameter(Mandatory, Position=0)]
+        [Alias('SiteName')]
+        [String] $LocationPath,
 
+        # OBSOLETE. Use `LocationPath` parameter instead.
+        [Alias('Path')]
+        [String] $VirtualPath
+    )
+
+    Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
-    $section = Get-CIisConfigurationSection -SiteName $SiteName -SectionPath 'system.webServer/directoryBrowse'
-
-    if( $section['enabled'] -ne 'true' )
+    if ($VirtualPath)
     {
-        Write-IisVerbose $SiteName 'Directory Browsing' 'disabled' 'enabled'
-        $section['enabled'] = $true
-        $section.CommitChanges()
+        Write-CIisWarningOnce -ForObsoleteSiteNameAndVirtualPathParameter
     }
 
+    Set-CIisConfigurationAttribute -LocationPath ($LocationPath, $VirtualPath | Join-CIisPath) `
+                                   -SectionPath 'system.webServer/directoryBrowse' `
+                                   -Name 'enabled' `
+                                   -Value $true
 }
 

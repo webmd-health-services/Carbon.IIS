@@ -8,13 +8,10 @@ function Get-CIisApplication
     .DESCRIPTION
     Uses the `Microsoft.Web.Administration` API to get an IIS application object.  If the application doesn't exist, `$null` is returned.
 
-    The objects returned have two dynamic properties and one dynamic methods added.
+    If you make any changes to any of the objects returned by `Get-CIisApplication`, call `Save-CIisConfiguration` to
+    save those changes to IIS.
 
-     * `ServerManager { get; }` - The `ServerManager` object which created the `Application` object.
-     * `CommitChanges()` - Persists any configuration changes made to the object back into IIS's configuration files.
-     * `PhysicalPath { get; }` - The physical path to the application.
-
-    Beginning with Carbon 2.0.1, this function is available only if IIS is installed.
+    The objects returned each have a `PhysicalPath` property which is the physical path to the application.
 
     .OUTPUTS
     Microsoft.Web.Administration.Application.
@@ -34,39 +31,46 @@ function Get-CIisApplication
 
     Demonstrates how to get a nested application, i.e. gets the application at `/MainPort/ExhaustPort` under the `DeathStar` website.
     #>
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName='AllApplications')]
     [OutputType([Microsoft.Web.Administration.Application])]
     param(
-        [Parameter(Mandatory=$true)]
-        [string]
         # The site where the application is running.
-        $SiteName,
-        
-        [Parameter()]
+        [Parameter(Mandatory, ParameterSetName='SpecificApplication')]
+        [String] $SiteName,
+
+        # The path/name of the application. Default is to return all applications running under the website given by
+        # the `SiteName` parameter. Wildcards supported.
+        [Parameter(ParameterSetName='SpecificApplication')]
         [Alias('Name')]
-        [string]
-        # The name of the application.  Default is to return all applications running under the website `$SiteName`.
-        $VirtualPath
+        [String] $VirtualPath,
+
+        [Parameter(Mandatory, ParameterSetName='Defaults')]
+        [switch] $Defaults
     )
 
     Set-StrictMode -Version 'Latest'
-
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
-    $site = Get-CIisWebsite -SiteName $SiteName
+    if ($PSCmdlet.ParameterSetName -eq 'Defaults')
+    {
+        return (Get-CIisServerManager).ApplicationDefaults
+    }
+
+    $site = Get-CIisWebsite -Name $SiteName
     if( -not $site )
     {
         return
     }
 
+    $VirtualPath = $VirtualPath | ConvertTo-CIisVirtualPath
+
     $site.Applications |
         Where-Object {
-            if( $VirtualPath )
+            if ($PSBoundParameters.ContainsKey('VirtualPath'))
             {
-                return ($_.Path -eq "/$VirtualPath")
+                return ($_.Path -like $VirtualPath)
             }
             return $true
-        } | 
-        Add-IisServerManagerMember -ServerManager $site.ServerManager -PassThru
+        }
 }
 

@@ -3,8 +3,8 @@ Build:
 - Version:
     Path: Carbon.IIS\Carbon.IIS.psd1
     Prerelease:
-    - "*/*": alpha1
-    - develop: rc1
+    - main: ""
+    - "*": rc1
 
 # Update the AppVeyor build/version number.
 - Exec:
@@ -20,6 +20,7 @@ Build:
     IfExists: Carbon.IIS\Functions\*.ps1
     Path:
     - Carbon.IIS\Functions\*.ps1
+    - Carbon.IIS\Carbon.IIS.ArgumentCompleters.ps1
     DestinationPath: Carbon.IIS\Carbon.IIS.psm1
     DeleteSourceFiles: true
     TextSeparator: "$(NewLine)$(NewLine)"
@@ -27,10 +28,6 @@ Build:
 - PowerShell:
     ExceptDuring: Clean
     ScriptBlock: |
-       if( -not (Get-Module -ListAvailable -Name 'Prism') )
-        {
-            Find-Module -Name 'Prism' | Select-Object -First 1 | Install-Module -Force -Scope CurrentUser
-        }
         prism install | Format-Table -Auto
         prism install -Path .\Carbon.IIS\prism.json | Format-Table -Auto
 
@@ -53,6 +50,20 @@ Build:
 - Delete:
     Path: Carbon.IIS\prism.*
 
+# This must go before creating the ZIP file so the Prerelease info gets set.
+- PublishPowerShellModule:
+    Path: Carbon.IIS
+
+- Exec:
+    OnlyBy: BuildServer
+    Path: appveyor
+    Argument: [
+        'PushArtifact',
+        '.output/Carbon.IIS.$(WHISKEY_SEMVER2_NO_BUILD_METADATA).nupkg',
+        '-DeploymentName',
+        'PowerShellGallery'
+    ]
+
 - Zip:
     ArchivePath: .output\Carbon.IIS-$(WHISKEY_SEMVER2).zip
     Path:
@@ -67,20 +78,8 @@ Build:
     Argument: [ 'PushArtifact', '.output/Carbon.IIS-$(WHISKEY_SEMVER2).zip', '-DeploymentName', 'GitHub' ]
 
 
-- PublishPowerShellModule:
-    Path: Carbon.IIS
-
-- Exec:
-    OnlyBy: BuildServer
-    Path: appveyor
-    Argument: [
-        'PushArtifact',
-        '.output/Carbon.IIS.$(WHISKEY_SEMVER2_NO_BUILD_METADATA).nupkg',
-        '-DeploymentName',
-        'PowerShellGallery'
-    ]
-
 - Pester:
+    InformationAction: SilentlyContinue
     Configuration:
         Run:
             Path: Tests\*.Tests.ps1
@@ -90,23 +89,5 @@ Build:
             Enabled: true
             OutputPath: .output\pester.xml
             TestSuiteName: Carbon.IIS
-
-- PowerShell:
-    ScriptBlock: |
-        .\Tools\Blade\blade.ps1 -Path ".\Tests\IIS" -XmlLogPath ".\.output\blade.xml"
-
-        if( (Test-Path -Path 'env:APPVEYOR_JOB_ID') )
-        {
-            Write-Host "Uploading test results" -NoNewLine
-            $uploadUrl = "https://ci.appveyor.com/api/testresults/nunit/$$($env:APPVEYOR_JOB_ID)"
-            Write-Host " to $$($uploadUrl)."
-            [Net.WebClient]::New().UploadFile($uploadUrl, (Resolve-Path '.\.output\blade.xml'))
-        }
-
-        if( $LastBladeResult.Errors -or $LastBladeResult.Failures )
-        {
-            $numErrors = $LastBladeResult.Errors
-            $numFailures = $LastBladeResult.Failures
-            $msg = "Blade tests failed with $$($numErrors) error(s) and $$($numFailures) failure(s)."
-            throw $msg
-        }
+        Output:
+            Verbosity: Detailed

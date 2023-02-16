@@ -12,17 +12,35 @@
 # See the License for the specific language governing permissions and
 # limitations under the License
 
+using module '.\Carbon.IIS.Enums.psm1'
+using namespace System.Management.Automation
+using namespace Microsoft.Web.Administration
+
 #Requires -Version 5.1
 Set-StrictMode -Version 'Latest'
 $InformationPreference = 'Continue'
 
-# Functions should use $moduleRoot as the relative root from which to find
+# Functions should use $script:moduleRoot as the relative root from which to find
 # things. A published module has its function appended to this file, while a
 # module in development has its functions in the Functions directory.
-$moduleRoot = $PSScriptRoot
+$script:moduleRoot = $PSScriptRoot
+$script:warningMessages = @{}
+$script:applicationHostPath =
+    Join-Path -Path ([Environment]::SystemDirectory) -ChildPath 'inetsrv\config\applicationHost.config'
+# These are all the files that could cause the current server manager object to become stale.
+$script:iisConfigs = & {
+    Join-Path -Path ([Environment]::SystemDirectory) -ChildPath 'inetsrv\config\*.config'
+    Join-Path -Path ([Environment]::GetFolderPath('Windows')) -ChildPath 'Microsoft.NET\Framework*\v*\config\*.config'
+}
 
-Import-Module -Name (Join-Path -Path $moduleRoot -ChildPath 'PSModules\Carbon.Core' -Resolve) `
-              -Function @('Add-CTypeData')
+# Seriously. It has an `IsNumeric` method that isn't part of .NET.
+Add-Type -AssemblyName 'Microsoft.VisualBasic'
+
+Import-Module -Name (Join-Path -Path $script:moduleRoot -ChildPath 'PSModules\Carbon.Core' -Resolve) `
+              -Function @('Add-CTypeData', 'Resolve-CFullPath')
+
+Import-Module -Name (Join-Path -Path $script:moduleRoot -ChildPath 'PSModules\Carbon.Windows.HttpServer' -Resolve) `
+              -Function @('Set-CHttpsCertificateBinding')
 
 function Test-MSWebAdministrationLoaded
 {
@@ -91,8 +109,9 @@ if( -not (Test-MSWebAdministrationLoaded) )
     return
 }
 
-$sm = [Microsoft.Web.Administration.ServerManager]::New()
-if( -not $sm -or $null -eq $sm.Sites )
+$script:serverMgr = [Microsoft.Web.Administration.ServerManager]::New()
+$script:serverMgrCreatedAt = [DateTime]::UtcNow
+if( -not $script:serverMgr -or $null -eq $script:serverMgr.ApplicationPoolDefaults )
 {
     Write-Error -Message "Carbon.IIS is not supported on this version of PowerShell." -ErrorAction Stop
     return
@@ -129,11 +148,19 @@ Add-CTypeData -TypeName 'Microsoft.Web.Administration.Application' `
 # this file, so only dot-source files that exist on the file system. This allows
 # developers to work on a module without having to build it first. Grab all the
 # functions that are in their own files.
-$functionsPath = Join-Path -Path $moduleRoot -ChildPath 'Functions\*.ps1'
-if( (Test-Path -Path $functionsPath) )
+$functionsPath = & {
+    Join-Path -Path $script:moduleRoot -ChildPath 'Functions\*.ps1'
+    Join-Path -Path $script:moduleRoot -ChildPath 'Carbon.IIS.ArgumentCompleters.ps1'
+}
+foreach ($importPath in $functionsPath)
 {
-    foreach( $functionPath in (Get-Item $functionsPath) )
+    if( -not (Test-Path -Path $importPath) )
     {
-        . $functionPath.FullName
+        continue
+    }
+
+    foreach( $fileInfo in (Get-Item $importPath) )
+    {
+        . $fileInfo.FullName
     }
 }

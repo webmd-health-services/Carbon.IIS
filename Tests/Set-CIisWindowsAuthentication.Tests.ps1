@@ -14,14 +14,26 @@ Set-StrictMode -Version 'Latest'
 
 BeforeAll {
     $script:siteName = 'Windows Authentication'
-    $script:sitePort = 4387
+    $script:testNum = 0
 
     & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-CarbonTest.ps1' -Resolve)
 
-    function Assert-WindowsAuthentication($VirtualPath = '', [bool]$KernelMode)
+    function Assert-WindowsAuthentication
     {
-        $authSettings = Get-CIisSecurityAuthentication -SiteName $script:SiteName -VirtualPath $VirtualPath -Windows
-        $KernelMode | Should -Be ($authSettings.GetAttributeValue( 'useKernelMode' ))
+        param(
+            $VirtualPath = '',
+            [bool] $AuthPersistNonNTLM = $true,
+            [bool] $AuthPersistSingleRequest = $false,
+            [bool] $Enabled = $false,
+            [bool] $UseKernelMode = $true
+        )
+        $authSettings =
+            Get-CIisSecurityAuthentication -LocationPath (Join-CIisPath -Path $script:SiteName, $VirtualPath) `
+                                           -Windows
+        $authSettings.GetAttributeValue('authPersistNonNTLM') | Should -Be $AuthPersistNonNTLM
+        $authSettings.GetAttributeValue('authPersistSingleRequest') | Should -Be $AuthPersistSingleRequest
+        $authSettings.GetAttributeValue('enabled') | Should -Be $Enabled
+        $authSettings.GetAttributeValue('useKernelMode') | Should -Be $UseKernelMode
     }
 }
 
@@ -36,8 +48,10 @@ Describe 'Set-CIisWindowsAuthentication' {
 
     BeforeEach {
         $script:testWebRoot = New-TestDirectory
-        Uninstall-CIisWebsite $script:siteName
-        Install-CIisWebsite -Name $script:siteName -Path $script:testWebRoot -Bindings "http://*:$script:sitePort"
+        $script:siteName = "$($PSCommandPath | Split-Path -Leaf)$($script:testNum)"
+        $script:testNum += 1
+
+        Install-CIisWebsite -Name $script:siteName -Path $script:testWebRoot -Bindings (New-Binding)
         $script:webConfigPath = Join-Path -Path $script:testWebRoot -ChildPath 'web.config'
         if( Test-Path $script:webConfigPath -PathType Leaf )
         {
@@ -51,29 +65,53 @@ Describe 'Set-CIisWindowsAuthentication' {
 
     It 'should enable windows authentication' {
         Set-CIisWindowsAuthentication -SiteName $script:siteName
-        Assert-WindowsAuthentication -KernelMode $true
+        Assert-WindowsAuthentication -UseKernelMode $true
         $script:webConfigPath | Should -Not -Exist
     }
 
     It 'should enable kernel mode' {
-        Set-CIisWindowsAuthentication -SiteName $script:siteName
-        Assert-WindowsAuthentication -KernelMode $true
+        Set-CIisWindowsAuthentication -SiteName $script:siteName -UseKernelMode $true
+        Assert-WindowsAuthentication -UseKernelMode $true
     }
 
     It 'set windows authentication on sub folders' {
-        Set-CIisWindowsAuthentication -SiteName $script:siteName -VirtualPath 'SubFolder'
-        Assert-WindowsAuthentication -VirtualPath SubFolder -KernelMode $true
+        Set-CIisWindowsAuthentication -LocationPath (Join-CIisPath -Path $script:siteName, 'SubFolder')
+        Assert-WindowsAuthentication -VirtualPath SubFolder -UseKernelMode $true
     }
 
     It 'should disable kernel mode' {
-        Set-CIisWindowsAuthentication -SiteName $script:siteName -DisableKernelMode
-        Assert-WindowsAuthentication -KernelMode $false
+        Set-CIisWindowsAuthentication -SiteName $script:siteName -UseKernelMode $false
+        Assert-WindowsAuthentication -UseKernelMode $false
     }
 
     It 'should support what if' {
         Set-CIisWindowsAuthentication -SiteName $script:siteName
-        Assert-WindowsAuthentication -KernelMode $true
-        Set-CIisWindowsAuthentication -SiteName $script:siteName -WhatIf -DisableKernelMode
-        Assert-WindowsAuthentication -KernelMode $true
+        Assert-WindowsAuthentication -UseKernelMode $true
+        Set-CIisWindowsAuthentication -SiteName $script:siteName -WhatIf -UseKernelMode $false
+        Assert-WindowsAuthentication -UseKernelMode $true
+    }
+
+    It 'should reset values to defaults' {
+        $sectionPath = 'system.webServer/security/authentication/windowsAuthentication'
+        $initialAttrValues = @{}
+        $attrs =
+            Get-CIisConfigurationSection -LocationPath $script:siteName -SectionPath $sectionPath |
+            Select-Object -ExpandProperty 'Attributes'
+        foreach ($attr in $attrs)
+        {
+            $initialAttrValues[$attr.Name] = $attr.Value
+        }
+
+        $setArgs = @{
+            AuthPersistSingleRequest = (-not $initialAttrValues['authPersistSingleRequest']);
+            Enabled = (-not $initialAttrValues['enabled']);
+            UseAppPoolCredentials = (-not $initialAttrValues['useAppPoolCredentials']);
+            UseKernelMode = (-not $initialAttrValues['useKernelMode']);
+        }
+        Set-CIisWindowsAuthentication -LocationPath $script:siteName @setArgs
+        Assert-WindowsAuthentication @setArgs
+
+        Set-CIisWindowsAuthentication -LocationPath $script:siteName -Reset
+        Assert-WindowsAuthentication @initialAttrValues
     }
 }

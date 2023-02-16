@@ -6,19 +6,17 @@ function Uninstall-CIisWebsite
     Removes a website
 
     .DESCRIPTION
-    Pretty simple: removes the website named `Name`.  If no website with that name exists, nothing happens.
-
-    Beginning with Carbon 2.0.1, this function is not available if IIS isn't installed.
+    Pretty simple: removes the website named `Name`. If no website with that name exists, nothing happens.
 
     .LINK
     Get-CIisWebsite
-    
+
     .LINK
     Install-CIisWebsite
-    
+
     .EXAMPLE
     Uninstall-CIisWebsite -Name 'MyWebsite'
-    
+
     Removes MyWebsite.
 
     .EXAMPLE
@@ -26,30 +24,52 @@ function Uninstall-CIisWebsite
 
     Removes the website whose ID is 1.
     #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
     param(
-        [Parameter(Position=0,Mandatory=$true)]
-        [string]
         # The name or ID of the website to remove.
-        $Name
+        [Parameter(Mandatory, Position=0, ValueFromPipeline, ValueFromPipelineByPropertyName)]
+        [String[]] $Name
     )
 
-    Set-StrictMode -Version 'Latest'
-
-    Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
-    
-    if( Test-CIisWebsite -Name $Name )
+    begin
     {
-        $manager = New-Object 'Microsoft.Web.Administration.ServerManager'
-        try
+        Set-StrictMode -Version 'Latest'
+        Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
+
+        $sitesToDelete = [Collections.Generic.List[String]]::New()
+    }
+
+    process
+    {
+        $sitesToDelete.AddRange($Name)
+    }
+
+    end
+    {
+        $madeChanges = $false
+
+        $manager = Get-CIisServerManager
+
+        foreach( $siteName in $sitesToDelete )
         {
-            $site = $manager.Sites | Where-Object { $_.Name -eq $Name }
-            $manager.Sites.Remove( $site )
-            $manager.CommitChanges()
+            $site = $manager.Sites | Where-Object 'Name' -EQ $siteName
+            if( -not $site )
+            {
+                return
+            }
+
+            $action = 'Remove IIS Website'
+            if( $PSCmdlet.ShouldProcess($siteName, $action) )
+            {
+                Write-Information "Removing IIS website ""$($siteName)""."
+                $manager.Sites.Remove( $site )
+                $madeChanges = $true
+            }
         }
-        finally
+
+        if( $madeChanges )
         {
-            $manager.Dispose()
+            Save-CIisConfiguration
         }
     }
 }

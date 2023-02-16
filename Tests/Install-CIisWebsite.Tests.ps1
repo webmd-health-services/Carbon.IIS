@@ -10,13 +10,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+using namespace System.Diagnostics
+
 Set-StrictMode -Version 'Latest'
 
 BeforeAll {
     & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-CarbonTest.ps1' -Resolve)
 
-    $script:siteName = 'TestNewWebsite'
+    $script:siteName = $null
     $script:testDir = $null
+    $script:siteNum = 0
+    $script:appPoolName = $PSCommandPath | Split-Path -Leaf
 
     function Assert-WebsiteBinding
     {
@@ -34,19 +38,12 @@ BeforeAll {
         }
     }
 
-    function Assert-WebsiteRunning($port)
-    {
-        $browser = New-Object Net.WebClient
-        $html = $browser.downloadString( "http://localhost:$port/NewWebsite.html" )
-        $html | Should -BeLike '*NewWebsite Test Page*'
-    }
-
     function Invoke-NewWebsite($Bindings = $null, $SiteID)
     {
         $optionalParams = @{ }
         if( $PSBoundParameters.ContainsKey( 'SiteID' ) )
         {
-            $optionalParams['SiteID'] = $SiteID
+            $optionalParams['ID'] = $SiteID
         }
 
         if( $PSBoundParameters.ContainsKey( 'Bindings' ) )
@@ -54,10 +51,12 @@ BeforeAll {
             $optionalParams['Bindings'] = $Bindings
         }
 
-        'NewWebsite Test Page' | Set-Content -Path (Join-Path -Path $script:testDir -ChildPath 'NewWebsite.html')
-        $site = Install-CIisWebsite -Name $script:siteName -Path $script:testDir @optionalParams
+        $site = Install-CIisWebsite -Name $script:siteName `
+                                    -Path $script:testDir `
+                                    -AppPoolName $script:appPoolName `
+                                    @optionalParams
         $site | Should -BeNullOrEmpty
-        $Global:Error.Count | Should -Be 0
+        $Global:Error | Should -BeNullOrEmpty
     }
 
     function Remove-TestSite
@@ -77,47 +76,54 @@ BeforeAll {
 
     function Wait-ForWebsiteToBeRunning
     {
-        $tryNum = 0
+        $isRunning = $false
+        $tryFor = [TimeSpan]'00:00:10'
+        $timer = [Stopwatch]::StartNew()
         do
         {
-            $tryNum += 1
-            $website = Get-CIisWebsite -SiteName $script:siteName
-            if( $website.State -eq 'Started' )
-            {
-                break
-            }
+            $website =
+                [Microsoft.Web.Administration.ServerManager]::New().Sites | Where-Object 'Name' -eq $script:siteName
 
             try
             {
                 $website.Start()
+                $website.State | Should -Be 'Started'
+                $isRunning = $true
+                break
             }
             catch
             {
+                Complete-W3ServiceTestFixture
                 Write-Warning -Message ('Exception trying to start website "{0}": {1}' -f $script:siteName,$_)
-                $Global:Error.RemoveAt(0)
+                $Global:Error.Clear()
             }
             Start-Sleep -Milliseconds 100
+        }
+        while( $timer.Elapsed -lt $tryFor )
 
-        } while( $tryNum -lt 100 )
-
-        $website.State | Should -Be 'Started'
+        $isRunning | Should -BeTrue
     }
-
 }
 
 Describe 'Install-CIisWebsite' {
     BeforeAll {
         Start-W3ServiceTestFixture
+        Install-CIisAppPool -Name $script:appPoolName
     }
 
     AfterAll {
+        Uninstall-CIisAppPool -Name $script:appPoolName
         Complete-W3ServiceTestFixture
     }
 
     BeforeEach {
         $Global:Error.Clear()
         $script:testDir = New-TestDirectory
-        Remove-TestSite
+        $script:siteName = "$($PSCommandPath | Split-Path -Leaf)-$($script:siteNum)"
+        $script:siteNum += 1
+        $script:port = Get-Port
+        $script:homepage = [Guid]::NewGuid().ToString()
+        $script:homepage | Set-Content -Path (Join-Path -Path $script:testDir -ChildPath 'index.html') -NoNewLine
     }
 
     AfterEach {
@@ -135,8 +141,8 @@ Describe 'Install-CIisWebsite' {
 
         $details.PhysicalPath | Should -Be $script:testDir
 
-        $anonymousAuthInfo = Get-CIisSecurityAuthentication -Anonymous -SiteName $script:siteName
-        $anonymousAuthInfo['userName'] | Should -BeNullOrEmpty
+        $anonymousAuthInfo = Get-CIisSecurityAuthentication -Anonymous -LocationPath $script:siteName
+        $anonymousAuthInfo['userName'] | Should -Be 'IUSR'
 
         $website = Get-CIisWebsite -Name $script:siteName
         $website | Should -Not -BeNullOrEmpty
@@ -148,53 +154,47 @@ Describe 'Install-CIisWebsite' {
         $newDir = Join-Path -Path $script:testDir -ChildPath ('..\{0}' -f $newDirName)
         New-Item -Path $newDir -ItemType 'Directory'
         Install-CIisWebsite -Name $script:siteName -Path ('{0}\..\{1}' -f $script:testDir,$newDirName)
-        $site = Get-CIisWebsite -SiteName $script:siteName
+        $site = Get-CIisWebsite -Name $script:siteName
         $site | Should -Not -BeNullOrEmpty
         $site.PhysicalPath | Should -Be ([IO.Path]::GetFullPath($newDir))
     }
 
     It 'should create website with custom binding' {
-        Invoke-NewWebsite -Bindings 'http/*:9876:'
+        Invoke-NewWebsite -Bindings "http/*:$($script:port):"
         Wait-ForWebsiteToBeRunning
-        Assert-WebsiteRunning 9876
+        ThenUrlContent "http://localhost:$($script:port)/" -Is $script:homepage
     }
 
     It 'should create website with multiple bindings' {
-        Invoke-NewWebsite -Bindings 'http/*:9876:','http/*:9877:'
+        $port2 = Get-Port
+        Invoke-NewWebsite -Bindings "http/*:$($script:port):", "http/*:$($port2):"
         Wait-ForWebsiteToBeRunning
-        Assert-WebsiteRunning 9876
-        Assert-WebsiteRunning 9877
+        ThenUrlContent "http://localhost:$($script:port)/" -Is $script:homepage
+        ThenUrlContent "http://localhost:$($port2)/" -Is $script:homepage
     }
 
     It 'should add site to custom app pool' {
-        Install-CIisAppPool -Name $script:siteName
-
-        try
-        {
-            Install-CIisWebsite -Name $script:siteName -Path $script:testDir -AppPoolName $script:siteName
-            $appPool = Get-CIisWebsite -Name $script:siteName
-            $appPool = $appPool.Applications[0].ApplicationPoolName
-        }
-        finally
-        {
-            Uninstall-CIisAppPool $script:siteName
-        }
-
-        $appPool | Should -Be $script:siteName
+        Install-CIisWebsite -Name $script:siteName -Path $script:testDir -AppPoolName $script:appPoolName
+        $appPool = Get-CIisWebsite -Name $script:siteName
+        $appPool = $appPool.Applications[0].ApplicationPoolName
+        $appPool | Should -Be $script:appPoolName
     }
 
     It 'should update existing site' {
-        Invoke-NewWebsite -Bindings 'http/*:9876:'
+        Invoke-NewWebsite -Bindings "http/*:$(Get-Port):"
         $Global:Error | Should -BeNullOrEmpty
-        (Test-CIisWebsite -Name $script:siteName) | Should -BeTrue
-        Install-CIisVirtualDirectory -SiteName $script:siteName -VirtualPath '/ShouldStillHangAround' -PhysicalPath $PSScriptRoot
+        Test-CIisWebsite -Name $script:siteName | Should -BeTrue
+        Install-CIisVirtualDirectory -SiteName $script:siteName `
+                                     -VirtualPath '/ShouldStillHangAround' `
+                                     -PhysicalPath $PSScriptRoot
 
         Invoke-NewWebsite
         $Global:Error | Should -BeNullOrEmpty
-        (Test-CIisWebsite -Name $script:siteName) | Should -BeTrue
+        Test-CIisWebsite -Name $script:siteName | Should -BeTrue
 
         $website = Get-CIisWebsite -Name $script:siteName
-        ($website.Applications[0].VirtualDirectories | Where-Object { $_.Path -eq '/ShouldStillHangAround' } ) | Should -Not -BeNullOrEmpty
+        ($website.Applications[0].VirtualDirectories | Where-Object { $_.Path -eq '/ShouldStillHangAround' } ) |
+            Should -Not -BeNullOrEmpty
     }
 
     It 'should create site directory' {
@@ -206,7 +206,7 @@ Describe 'Install-CIisWebsite' {
 
         try
         {
-            Install-CIisWebsite -Name $script:siteName -Path $websitePath -Bindings 'http/*:9876:'
+            Install-CIisWebsite -Name $script:siteName -Path $websitePath -Bindings "http/*:$(Get-Port):" -AppPoolName $script:appPoolName
             Test-Path -Path $websitePath -PathType Container | Should -BeTrue
         }
         finally
@@ -222,80 +222,81 @@ Describe 'Install-CIisWebsite' {
         $Global:Error.Clear()
         Install-CIisWebsite -Name $script:siteName -Path $script:testDir -Bindings 'http/*' -ErrorAction SilentlyContinue
         $Global:Error | Should -Not -BeNullOrEmpty
-        (Test-CIisWebsite -Name $script:siteName) | Should -BeFalse
+        Test-CIisWebsite -Name $script:siteName | Should -BeFalse
         $Global:Error | Should -Not -BeNullOrEmpty
         $Global:Error[0] | Should -Match 'bindings are invalid'
     }
 
     It 'should allow url bindings' {
-        Invoke-NewWebsite -Bindings 'http://*:9876'
-        (Test-CIisWebsite -Name $script:siteName) | Should -BeTrue
+        Invoke-NewWebsite -Bindings "http://*:$($port)"
+        Test-CIisWebsite -Name $script:siteName | Should -BeTrue
         Wait-ForWebsiteToBeRunning
-        Assert-WebsiteRunning 9876
+        ThenUrlContent "http://localhost:$($script:port)/" -Is $script:homepage
     }
 
     It 'should allow https bindings' {
-        Install-CIisWebsite -Name $script:siteName -Path $script:testDir -Bindings 'https/*:9876:','https://*:9443'
-        (Test-CIisWebsite -Name $script:siteName) | Should -BeTrue
-        $bindings = Get-CIisWebsite -SiteName $script:siteName | Select-Object -ExpandProperty Bindings
+        $port2 = Get-Port
+        Install-CIisWebsite -Name $script:siteName `
+                            -Path $script:testDir `
+                            -Bindings "https/*:$($script:port):", "https://*:$($port2)"
+        Test-CIisWebsite -Name $script:siteName | Should -BeTrue
+        $bindings = Get-CIisWebsite -Name $script:siteName | Select-Object -ExpandProperty Bindings
         $bindings[0].Protocol | Should -Be 'https'
         $bindings[1].Protocol | Should -Be 'https'
     }
 
     It 'should not recreate existing website' {
-        Install-CIisWebsite -Name $script:siteName -PhysicalPath $script:testDir -Bindings 'http/*:9876:'
+        Install-CIisWebsite -Name $script:siteName -PhysicalPath $script:testDir -Bindings "http/*:$($script:port):"
         $website = Get-CIisWebsite -Name $script:siteName
         $website | Should -Not -BeNullOrEmpty
 
-        Install-CIisWebsite -Name $script:siteName -PhysicalPath $script:testDir -Bindings 'http/*:9876:'
-        $Global:Error.Count | Should -Be 0
+        Install-CIisWebsite -Name $script:siteName -PhysicalPath $script:testDir -Bindings "http/*:$($script:port):"
+        $Global:Error | Should -BeNullOrEmpty
         $newWebsite = Get-CIisWebsite -Name $script:siteName
         $newWebsite | Should -Not -BeNullOrEmpty
         $newWebsite.Id | Should -Be $website.Id
     }
 
     It 'should change website settings' {
-        $appPool = Install-CIisAppPool -Name 'CarbonShouldChangeWebsiteSettings' -PassThru
-        $tempDir = New-CTempDirectory -Prefix $PSCommandPath
+        Install-CIisWebsite -Name $script:siteName -PhysicalPath $script:testDir
+        $Global:Error | Should -BeNullOrEmpty
+        $website = Get-CIisWebsite -Name $script:siteName
+        $website | Should -Not -BeNullOrEmpty
+        $website.Name | Should -Be $script:siteName
+        $website.PhysicalPath | Should -Be $script:testDir
 
-        try
-        {
-            Install-CIisWebsite -Name $script:siteName -PhysicalPath $PSScriptRoot
-            $Global:Error.Count | Should -Be 0
-            $website = Get-CIisWebsite -Name $script:siteName
-            $website | Should -Not -BeNullOrEmpty
-            $website.Name | Should -Be $script:siteName
-            $website.PhysicalPath | Should -Be $PSScriptRoot
-
-            Install-CIisWebsite -Name $script:siteName -PhysicalPath $tempDir -Bindings 'http/*:9986:' -SiteID 9986 -AppPoolName $appPool.Name
-            $Global:Error.Count | Should -Be 0
-            $website = Get-CIisWebsite -Name $script:siteName
-            $website | Should -Not -BeNullOrEmpty
-            $website.Name | Should -Be $script:siteName
-            $website.PhysicalPath | Should -Be $tempDir.FullName
-            $website.Id | Should -Be 9986
-            $website.Applications[0].ApplicationPoolName | Should -Be $appPool.Name
-            Assert-WebsiteBinding '[http] *:9986:'
-        }
-        finally
-        {
-            Uninstall-CIisAppPool -Name $appPool.Name
-            Remove-Item -Path $tempDir -Recurse
-        }
+        $newWebRoot = New-TestDirectory
+        Install-CIisWebsite -Name $script:siteName `
+                            -PhysicalPath $newWebRoot `
+                            -Bindings "http/*:$($script:port):" `
+                            -ID $script:port `
+                            -AppPoolName $script:appPoolName
+        $Global:Error | Should -BeNullOrEmpty
+        $website = Get-CIisWebsite -Name $script:siteName
+        $website | Should -Not -BeNullOrEmpty
+        $website.Name | Should -Be $script:siteName
+        $website.PhysicalPath | Should -Be $newWebRoot
+        $website.Id | Should -Be $script:port
+        $website.Applications[0].ApplicationPoolName | Should -Be $script:appPoolName
+        Assert-WebsiteBinding "[http] *:$($script:port):"
     }
 
     It 'should update bindings' {
         $output = Install-CIisWebsite -Name $script:siteName -PhysicalPath $PSScriptRoot
         $output | Should -BeNullOrEmpty
 
-        Install-CIisWebsite -Name $script:siteName -Bindings 'http/*:8001:' -PhysicalPath $PSScriptRoot
-        Assert-WebsiteBinding '[http] *:8001:'
-        Install-CIisWebsite -Name $script:siteName -Bindings 'http/*:8001:','http/*:8002:' -PhysicalPath $PSScriptRoot
-        Assert-WebsiteBinding '[http] *:8001:', '[http] *:8002:'
-        Install-CIisWebsite -Name $script:siteName -Bindings 'http/*:8002:' -PhysicalPath $PSScriptRoot
-        Assert-WebsiteBinding '[http] *:8002:'
-        Install-CIisWebsite -Name $script:siteName -Bindings 'http/*:8003:' -PhysicalPath $PSScriptRoot
-        Assert-WebsiteBinding '[http] *:8003:'
+        Install-CIisWebsite -Name $script:siteName -Bindings "http/*:$($script:port):" -PhysicalPath $PSScriptRoot
+        Assert-WebsiteBinding "[http] *:$($script:port):"
+        $port2 = Get-Port
+        Install-CIisWebsite -Name $script:siteName `
+                            -Bindings "http/*:$($script:port):","http/*:$($port2):" `
+                            -PhysicalPath $PSScriptRoot
+        Assert-WebsiteBinding "[http] *:$($script:port):", "[http] *:$($port2):"
+        Install-CIisWebsite -Name $script:siteName -Bindings "http/*:$($port2):" -PhysicalPath $PSScriptRoot
+        Assert-WebsiteBinding "[http] *:$($port2):"
+        $port3 = Get-Port
+        Install-CIisWebsite -Name $script:siteName -Bindings "http/*:$($port3):" -PhysicalPath $PSScriptRoot
+        Assert-WebsiteBinding "[http] *:$($port3):"
     }
 
     It 'should return site object' {
@@ -307,16 +308,5 @@ Describe 'Install-CIisWebsite' {
 
         $site = Install-CIisWebsite -Name $script:siteName -PhysicalPath $PSScriptRoot
         $site | Should -BeNullOrEmpty
-    }
-
-    It 'should force delete and recreate' {
-        $output = Install-CIisWebsite -Name $script:siteName -PhysicalPath $PSScriptRoot -Binding 'http/*:9891:'
-        $output | Should -BeNullOrEmpty
-
-        Set-CIisHttpHeader -SiteName $script:siteName -Name 'X-Carbon-Test' -Value 'Test-ShouldFoceDeleteAndRecreate'
-
-        $output = Install-CIisWebsite -Name $script:siteName -PhysicalPath $PSScriptRoot -Binding 'http/*:9891:' -Force
-        $output | Should -BeNullOrEmpty
-        (Get-CIisHttpHeader -SiteName $script:siteName -Name 'X-Carbon-Test') | Should -BeNullOrEmpty
     }
 }

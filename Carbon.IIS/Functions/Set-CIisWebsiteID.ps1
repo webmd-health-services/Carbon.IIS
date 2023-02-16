@@ -1,28 +1,21 @@
-
 function Set-CIisWebsiteID
 {
     <#
     .SYNOPSIS
     Sets a website's ID to an explicit number.
-
     .DESCRIPTION
     IIS handles assigning websites individual IDs.  This method will assign a website explicit ID you manage (e.g. to support session sharing in a web server farm).
-
     If another site already exists with that ID, you'll get an error.
-
     When you change a website's ID, IIS will stop the site, but not start the site after saving the ID change. This function waits until the site's ID is changed, and then will start the website.
-
     Beginning with Carbon 2.0.1, this function is available only if IIS is installed.
-
     .EXAMPLE
     Set-CIisWebsiteID -SiteName Holodeck -ID 483
-
     Sets the `Holodeck` website's ID to `483`.
     #>
     [CmdletBinding(SupportsShouldProcess)]
     param(
-        # The website name.
         [Parameter(Mandatory)]
+        # The website name.
         [String] $SiteName,
 
         # The website's new ID.
@@ -33,30 +26,27 @@ function Set-CIisWebsiteID
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
+    "The $($PSCmdlet.MyInvocation.MyCommand.Name) function is obsolete. Use `Set-CIIsWebsite` instead." |
+        Write-CIIsWarningOnce
+
     if( -not (Test-CIisWebsite -Name $SiteName) )
     {
-        Write-Error ('Website {0} not found.' -f $SiteName) -ErrorAction $ErrorActionPreference
+        Write-Error ('Website {0} not found.' -f $SiteName)
         return
     }
 
-    $websiteWithID =
-        Get-CIisWebsite |
-        Where-Object 'ID' -EQ $ID |
-        Where-Object 'Name' -NE $SiteName
+    $websiteWithID = Get-CIisWebsite | Where-Object { $_.ID -eq $ID -and $_.Name -ne $SiteName }
     if( $websiteWithID )
     {
-        $msg = "Website ""$($websiteWithID.Name)"" is using ID $($ID)."
-        Write-Error -Message $msg -ErrorAction $ErrorActionPreference
+        Write-Error -Message ('ID {0} already in use for website {1}.' -f $ID,$SiteName) -Category ResourceExists
         return
     }
 
     $website = Get-CIisWebsite -SiteName $SiteName
-    $website | Format-Table -Auto | Out-String | Write-Debug
     $startWhenDone = $false
     if( $website.ID -ne $ID )
     {
-        Write-Debug "IIS:/$($website)  ID  $($website.ID) -> $ID"
-        if( $PSCmdlet.ShouldProcess( ('website {0}' -f $SiteName), 'set site ID' ) )
+        if( $PSCmdlet.ShouldProcess( ('website {0}' -f $SiteName), ('set site ID to {0}' -f $ID) ) )
         {
             $startWhenDone = ($website.State -eq 'Started')
             $website.ID = $ID
@@ -87,9 +77,7 @@ function Set-CIisWebsiteID
 
     if( -not $website -or $website.ID -ne $ID )
     {
-        $msg = "IIS:/$($SiteName): site ID $($website.ID) hasn't changed to $($ID) after 10 seconds. Please check " +
-               'IIS configuration.'
-        Write-Error $msg -ErrorAction $ErrorActionPreference
+        Write-Error ('IIS:/{0}: site ID hasn''t changed to {1} after waiting 10 seconds. Please check IIS configuration.' -f $SiteName,$ID)
     }
 
     if( -not $startWhenDone )
@@ -126,8 +114,6 @@ function Set-CIisWebsiteID
 
     if( -not $website -or $website.State -ne 'Started' )
     {
-        $msg = "IIS:/$($SiteName): failed to start website after setting ID to $($ID)."
-        Write-Error $msg -ErrorAction $ErrorActionPreference
+        Write-Error ('IIS:/{0}: failed to start website after setting ID to {1}' -f $SiteName,$ID)
     }
 }
-

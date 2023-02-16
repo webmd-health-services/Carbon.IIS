@@ -3,33 +3,30 @@ function Join-CIisVirtualPath
 {
     <#
     .SYNOPSIS
-    Combines a path and a child path for an IIS website, application, virtual directory into a single path.  
+    OBSOLETE. Use `Join-CIisPath` instead.
 
     .DESCRIPTION
-    Removes extra slashes.  Converts backward slashes to forward slashes.  Relative portions are not removed.  Sorry.
-
-    Beginning with Carbon 2.0.1, this function is available only if IIS is installed.
-
-    .EXAMPLE
-    Join-CIisVirtualPath 'SiteName' 'Virtual/Path'
-
-    Demonstrates how to join two IIS paths together.  REturns `SiteName/Virtual/Path`.
+    OBSOLETE. Use `Join-CIisPath` instead.
     #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true,Position=0)]
-        [string]
         # The parent path.
-        $Path,
+        [Parameter(Mandatory, Position=0)]
+        [AllowEmptyString()]
+        [AllowNull()]
+        [String]$Path,
 
+        #
         [Parameter(Position=1)]
-        [string]
-        $ChildPath
+        [String[]] $ChildPath
     )
 
     Set-StrictMode -Version 'Latest'
-
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
+
+    $msg = 'The "Join-CIisVirtualPath" function is OBSOLETE and will be removed in the next major version of ' +
+           'Carbon.IIS. Please use the `Join-CIisPath` function instead.'
+    Write-CIisWarningOnce -Message $msg
 
     if( $ChildPath )
     {
@@ -37,4 +34,3 @@ function Join-CIisVirtualPath
     }
     $Path.Replace('\', '/').Trim('/')
 }
-

@@ -17,7 +17,7 @@ BeforeAll {
         )
 
         $verbs =
-            Get-Command -Module 'WhsAutomation'|
+            Get-Command -Module 'Carbon.IIS'|
             Where-Object { $_ -isnot [Management.Automation.AliasInfo] } |
             Select-Object -ExpandProperty Verb |
             Select-Object -Unique

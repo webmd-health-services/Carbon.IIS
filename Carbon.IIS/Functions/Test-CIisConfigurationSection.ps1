@@ -4,25 +4,25 @@ function Test-CIisConfigurationSection
     <#
     .SYNOPSIS
     Tests a configuration section.
-    
+
     .DESCRIPTION
     You can test if a configuration section exists or wheter it is locked.
-    
+
     Beginning with Carbon 2.0.1, this function is available only if IIS is installed.
 
     .OUTPUTS
     System.Boolean.
-    
+
     .EXAMPLE
     Test-CIisConfigurationSection -SectionPath 'system.webServer/I/Do/Not/Exist'
-    
+
     Tests if a configuration section exists.  Returns `False`, because the given configuration section doesn't exist.
-    
+
     .EXAMPLE
     Test-CIisConfigurationSection -SectionPath 'system.webServer/cgi' -Locked
-    
+
     Returns `True` if the global CGI section is locked.  Otherwise `False`.
-    
+
     .EXAMPLE
     Test-CIisConfigurationSection -SectionPath 'system.webServer/security/authentication/basicAuthentication' -SiteName `Peanuts` -VirtualPath 'SopwithCamel' -Locked
 
@@ -30,48 +30,37 @@ function Test-CIisConfigurationSection
     #>
     [CmdletBinding(DefaultParameterSetName='CheckExists')]
     param(
-        [Parameter(Mandatory=$true)]
-        [string]
+        [Parameter(Mandatory)]
         # The path to the section to test.
-        $SectionPath,
-        
-        [Parameter()]
-        [string]
-        # The name of the site whose configuration section to test.  Optional.  The default is the global configuration.
-        $SiteName,
-        
-        [Parameter()]
-        [Alias('Path')]
-        [string]
-        # The optional path under `SiteName` whose configuration section to test.
-        $VirtualPath,
-        
-        [Parameter(Mandatory=$true,ParameterSetName='CheckLocked')]
-        [Switch]
-        # Test if the configuration section is locked.  
-        $Locked
-    )
-    
-    Set-StrictMode -Version 'Latest'
+        [String] $SectionPath,
 
+        # The name of the site whose configuration section to test.  Optional.  The default is the global configuration.
+        [Parameter(Position=0)]
+        [Alias('SiteName')]
+        [String] $LocationPath,
+
+        # OBSOLETE. Use the `LocationPath` parameter instead.
+        [Alias('Path')]
+        [String] $VirtualPath,
+
+        # Test if the configuration section is locked.
+        [Parameter(Mandatory, ParameterSetName='CheckLocked')]
+        [switch] $Locked
+    )
+
+    Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
-    $getArgs = @{
-                    SectionPath = $SectionPath;
-                }
-    if( $SiteName )
+    $getArgs = @{}
+    if ($LocationPath)
     {
-        $getArgs.SiteName = $SiteName
+        $getArgs['LocationPath'] = $LocationPath
+        $getArgs['VirtualPath'] = $VirtualPath
     }
-    
-    if( $VirtualPath )
-    {
-        $getArgs.VirtualPath = $VirtualPath
-    }
-    
-    $section = Get-CIisConfigurationSection @getArgs -ErrorAction SilentlyContinue
-    
-    if( $pscmdlet.ParameterSetName -eq 'CheckExists' )
+
+    $section = Get-CIisConfigurationSection -SectionPath $SectionPath @getArgs -ErrorAction SilentlyContinue
+
+    if( $PSCmdlet.ParameterSetName -eq 'CheckExists' )
     {
         if( $section )
         {
@@ -82,14 +71,18 @@ function Test-CIisConfigurationSection
             return $false
         }
     }
-        
+
     if( -not $section )
     {
-        Write-Error ('IIS:{0}: section {1} not found.' -f (Join-CIisVirtualPath $SiteName $VirtualPath),$SectionPath)
+        if ($VirtualPath)
+        {
+            $LocationPath = Join-CIisPath -Path $LocationPath, $VirtualPath
+        }
+        Write-Error "IIS:$($LocationPath): section $($SectionPath) not found." -ErrorAction $ErrorActionPreference
         return
     }
-    
-    if( $pscmdlet.ParameterSetName -eq 'CheckLocked' )
+
+    if( $PSCmdlet.ParameterSetName -eq 'CheckLocked' )
     {
         return $section.OverrideMode -eq 'Deny'
     }

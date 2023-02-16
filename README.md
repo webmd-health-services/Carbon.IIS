@@ -32,7 +32,7 @@ Import-Module -Name '.\Carbon.IIS'
 * Disable-CIisSecurityAuthentication
 * Enable-CIisDirectoryBrowsing
 * Enable-CIisSecurityAuthentication
-* Enable-CIisSsl
+* Enable-CIisHttps
 * Get-CIisApplication
 * Get-CIisAppPool
 * Get-CIisConfigurationSection
@@ -46,14 +46,13 @@ Import-Module -Name '.\Carbon.IIS'
 * Install-CIisAppPool
 * Install-CIisVirtualDirectory
 * Install-CIisWebsite
-* Join-CIisVirtualPath
+* Join-CIisPath
 * Lock-CIisConfigurationSection
 * Remove-CIisMimeMap
 * Set-CIisHttpHeader
 * Set-CIisHttpRedirect
 * Set-CIisMimeMap
-* Set-CIisWebsiteID
-* Set-CIisWebsiteSslCertificate
+* Set-CIisWebsiteHttpsCertificate
 * Set-CIisWindowsAuthentication
 * Test-CIisAppPool
 * Test-CIisConfigurationSection

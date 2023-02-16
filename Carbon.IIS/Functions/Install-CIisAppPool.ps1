@@ -3,192 +3,207 @@ function Install-CIisAppPool
 {
     <#
     .SYNOPSIS
-    Creates a new app pool.
-    
+    Creates or updates an IIS application pool.
+
     .DESCRIPTION
-    By default, creates a 64-bit app pool running as the `ApplicationPoolIdentity` service account under .NET v4.0 with an integrated pipeline.
-    
-    You can control which version of .NET is used to run an app pool with the `ManagedRuntimeVersion` parameter: versions `v1.0`, `v1.1`, `v2.0`, and `v4.0` are supported. Use an empty string if you're running .NET Core or to set the .NET framework version to `No Managed Code`.
+    The `Install-CIisAppPool` function creates or updates an IIS application pool. Pass the name of the application pool
+    to the `Name` parameter. If that application pool doesn't exist, it is created. If it does exist, its configuration
+    is updated to match the values of the arguments passed. If you don't pass an argument, that argument's setting is
+    deleted and reset to its default value. You always get an application pool with the exact same configuration, even
+    if someone or something has changed an application pool's configuration in some other way.
 
-    To run an application pool using the classic pipeline mode, set the `ClassicPipelineMode` switch.
+    To configure the application pool's process model (i.e. the application pool's account/identity, idle timeout,
+    etc.), use the `Set-CIisAppPoolProcessModel` function.
 
-    To run an app pool using the 32-bit version of the .NET framework, set the `Enable32BitApps` switch.
+    To configure the application pool's periodic restart settings, use the `Set-CIisAppPoolPeriodicRestart`
+    function.
 
-    An app pool can run as several built-in service accounts, by passing one of them as the value of the `ServiceAccount` parameter: `NetworkService`, `LocalService`, or `LocalSystem`  The default is `ApplicationPoolIdentity`, which causes IIS to create and use a custom local account with the name of the app pool.  See [Application Pool Identities](http://learn.iis.net/page.aspx/624/application-pool-identities/) for more information.
+    To configure the application pool's periodic restart settings, use the `Set-CIisAppPoolPeriodicRestart`
+    can't delete an app pool if there are any websites using it, that's why.)
 
-    To run the app pool as a specific user, pass the credentials with the `Credential` parameter. (In some versions of Carbon, there is no `Credential` parameter, so use the `UserName` and `Password` parameters instead.) The user will be granted the `SeBatchLogonRight` privilege.
-
-    If an existing app pool exists with name `Name`, it's settings are modified.  The app pool isn't deleted.  (You can't delete an app pool if there are any websites using it, that's why.)
-
-    By default, this function will create an application pool running the latest version of .NET, with an integrated pipeline, as the NetworkService account.
-
-    Beginning with Carbon 2.0, the `PassThru` switch will cause this function to return a `Microsoft.Web.Administration.ApplicationPool` object for the created/updated application pool.
-
-    Beginning with Carbon 2.0.1, this function is available only if IIS is installed.
-
-    .LINK
-    http://learn.iis.net/page.aspx/624/application-pool-identities/
-
-    .LINK
-    New-CCredential
-    
-    .EXAMPLE
-    Install-CIisAppPool -Name Cyberdyne -ServiceAccount NetworkService
-
-    Creates a new Cyberdyne application pool, running as NetworkService, using .NET 4.0 and an integrated pipeline.  If the Cyberdyne app pool already exists, it is modified to run as NetworkService, to use .NET 4.0 and to use an integrated pipeline.
+    To configure the application pool's CPU settings, use the `Set-CIisAppPoolCpu` function.
 
     .EXAMPLE
-    Install-CIisAppPool -Name Cyberdyne -ServiceAccount NetworkService -Enable32BitApps -ClassicPipelineMode
+    Install-CIisAppPool -Name Cyberdyne
 
-    Creates or sets the Cyberdyne app pool to run as NetworkService, in 32-bit mode (i.e. 32-bit applications are enabled), using the classic IIS request pipeline.
+    Demonstrates how to use Install-CIisAppPool to create/update an application pool with reasonable defaults. In this
+    example, an application pool named "Cyberdyne" is created that is 64-bit, uses .NET 4.0, and an integrated pipeline.
 
     .EXAMPLE
-    Install-CIisAppPool -Name Cyberdyne -Credential $charlieBrownCredential
+    Install-CIisAppPool -Name Cyberdyne -Enable32BitAppOnWin64 $true -ManagedPipelineMode Classic -ManagedRuntimeVersion 'v2.0'
 
-    Creates or sets the Cyberdyne app pool to run as the `PEANUTS\charliebrown` domain account, under .NET 4.0, with an integrated pipeline.
+    Demonstrates how to customize an application pool away from its default settings. In this example, the "Cyberdyne"
+    application pool is created that is 32-bit, uses .NET 2.0, and a classic pipeline.
     #>
-    [CmdletBinding(DefaultParameterSetName='AsServiceAccount')]
     [OutputType([Microsoft.Web.Administration.ApplicationPool])]
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingUserNameAndPassWordParams","")]
+    [CmdletBinding(DefaultParameterSetName='New')]
     param(
         # The app pool's name.
         [Parameter(Mandatory)]
         [String] $Name,
-        
-        # The managed .NET runtime version to use.  Default is 'v4.0'.  Valid values are `v1.0`, `v1.1`, `v2.0`, or `v4.0`. Use an empty string if you're using .NET Core or to set the .NET framework version to `No Managed Code`.
-        [ValidateSet('v1.0','v1.1','v2.0','v4.0','')]
-        [String] $ManagedRuntimeVersion = 'v4.0',
-        
+
+        # Sets the IIS application pool's `autoStart` setting.
+        [Parameter(ParameterSetName='New')]
+        [bool] $AutoStart,
+
+        # Sets the IIS application pool's `CLRConfigFile` setting.
+        [Parameter(ParameterSetName='New')]
+        [String] $CLRConfigFile,
+
+        # Sets the IIS application pool's `enable32BitAppOnWin64` setting.
+        [Parameter(ParameterSetName='New')]
+        [bool] $Enable32BitAppOnWin64,
+
+        # Sets the IIS application pool's `enableConfigurationOverride` setting.
+        [Parameter(ParameterSetName='New')]
+        [bool] $EnableConfigurationOverride,
+
+        # Sets the IIS application pool's `managedPipelineMode` setting.
+        [ManagedPipelineMode] $ManagedPipelineMode,
+
+        # Sets the IIS application pool's `managedRuntimeLoader` setting.
+        [Parameter(ParameterSetName='New')]
+        [String] $ManagedRuntimeLoader,
+
+        # Sets the IIS application pool's `managedRuntimeVersion` setting.
+        [String] $ManagedRuntimeVersion,
+
+        # Sets the IIS application pool's `passAnonymousToken` setting.
+        [Parameter(ParameterSetName='New')]
+        [bool] $PassAnonymousToken,
+
+        # Sets the IIS application pool's `queueLength` setting.
+        [Parameter(ParameterSetName='New')]
+        [UInt32] $QueueLength,
+
+        # Sets the IIS application pool's `startMode` setting.
+        [Parameter(ParameterSetName='New')]
+        [StartMode] $StartMode,
+
+        # Return an object representing the app pool.
+        [switch] $PassThru,
+
         #Idle Timeout value in minutes. Default is 0.
+        [Parameter(ParameterSetName='Deprecated')]
         [ValidateScript({$_ -gt 0})]
         [int] $IdleTimeout = 0,
-        
-        # Use the classic pipeline mode, i.e. don't use an integrated pipeline.
-        [switch] $ClassicPipelineMode,
-        
-        # Enable 32-bit applications.
-        [switch] $Enable32BitApps,
-        
-        # Run the app pool under the given local service account.  Valid values are `NetworkService`, `LocalService`, and `LocalSystem`.  The default is `ApplicationPoolIdentity`, which causes IIS to create a custom local user account for the app pool's identity.  The default is `ApplicationPoolIdentity`.
+
+        # Run the app pool under the given local service account.  Valid values are `NetworkService`, `LocalService`,
+        # and `LocalSystem`.  The default is `ApplicationPoolIdentity`, which causes IIS to create a custom local user
+        # account for the app pool's identity.  The default is `ApplicationPoolIdentity`.
+        [Parameter(ParameterSetName='Deprecated')]
         [ValidateSet('NetworkService', 'LocalService', 'LocalSystem')]
         [String] $ServiceAccount,
-        
+
         # The credential to use to run the app pool.
         #
         # The `Credential` parameter is new in Carbon 2.0.
-        [Parameter(Mandatory, ParameterSetName='AsSpecificUserWithCredential')]
+        [Parameter(ParameterSetName='Deprecated', Mandatory)]
         [pscredential] $Credential,
 
-        # Return an object representing the app pool.
-        [switch] $PassThru
+        # Enable 32-bit applications.
+        [Parameter(ParameterSetName='Deprecated')]
+        [switch] $Enable32BitApps,
+
+        # Use the classic pipeline mode, i.e. don't use an integrated pipeline.
+        [Parameter(ParameterSetName='Deprecated')]
+        [switch] $ClassicPipelineMode
     )
 
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
-    
-    if( $PSCmdlet.ParameterSetName -eq 'AsSpecificUser' -and -not (Test-CIdentity -Name $Credential.UserName) )
+
+    if ($PSCmdlet.ParameterSetName -eq 'Deprecated')
     {
-        Write-Error ('Identity {0} not found. {0} IIS websites and applications assigned to this app pool won''t run.' -f $Credential.UserName,$Name)
+        $functionName = $PSCmdlet.MyInvocation.MyCommand.Name
+
+        $installArgs = @{
+            'ManagedPipelineMode' = [ManagedPipelineMode]::Integrated
+            'ManagedRuntimeVersion' = 'v4.0'
+        }
+
+        $installArgs['Enable32BitAppOnWin64'] = $Enable32BitApps.IsPresent
+
+        if ($ClassicPipelineMode)
+        {
+            "The ""$($functionName)"" function's ""ClassicPipelineMode"" switch is deprecated. Use the " +
+            '"ManagedPipelineMode" parameter instead.' | Write-CIIsWarningOnce
+
+            $installArgs['ManagedPipelineMode'] = [ManagedPipelineMode]::Classic
+        }
+
+        if ($ManagedRuntimeVersion)
+        {
+            $installArgs['ManagedRuntimeVersion'] = $ManagedRuntimeVersion
+        }
+
+        if ($PassThru)
+        {
+            $installArgs['PassThru'] = $PassThru
+        }
+
+        Install-CIisAppPool -Name $Name @installArgs
+
+        $setProcessModelArgs = @{}
+
+        if ($Credential)
+        {
+            "The ""$($functionName)"" function's ""Credential"" parameter is deprecated. Use the " +
+            '"Set-CIisAppPoolProcessModel" function and its "IdentityType", "UserName", and "Password" parameters ' +
+            'instead.' | Write-CIIsWarningOnce
+
+            $setProcessModelArgs['IdentityType'] = [ProcessModelIdentityType]::SpecificUser
+            $setProcessModelArgs['UserName'] = $Credential.UserName
+            $setProcessModelArgs['Password'] = $Credential.Password
+        }
+        elseif ($ServiceAccount)
+        {
+            "The $($functionName) function's ""ServiceAccount"" parameter is deprecated. Use the " +
+            '"Set-CIisAppPoolProcessModel" function and its "IdentityType" parameter instead.' | Write-CIIsWarningOnce
+
+            $setProcessModelArgs['IdentityType'] = $ServiceAccount
+        }
+
+        if ($IdleTimeout)
+        {
+            "The $($functionName) function's ""IdleTimeout"" parameter is deprecated. Use the " +
+            '"Set-CIisAppPoolProcessModel" function and its "IdleTimeout" parameter instead.' | Write-CIIsWarningOnce
+            $setProcessModelArgs['IdleTimeout'] = $IdleTimeout
+        }
+
+        if ($setProcessModelArgs.Count -eq 0)
+        {
+            return
+        }
+
+        Set-CIisAppPoolProcessModel -AppPoolName $Name @setProcessModelArgs
+        return
     }
-    
+
     if( -not (Test-CIisAppPool -Name $Name) )
     {
-        Write-Verbose ('Creating IIS Application Pool {0}' -f $Name)
-        $mgr = New-Object 'Microsoft.Web.Administration.ServerManager'
-        $appPool = $mgr.ApplicationPools.Add($Name)
-        $mgr.CommitChanges()
+        Write-Information "Creating IIS Application Pool ""$($Name)""."
+        $mgr = Get-CIisServerManager
+        $mgr.ApplicationPools.Add($Name) | Out-Null
+        Save-CIisConfiguration
     }
 
-    $appPool = Get-CIisAppPool -Name $Name
-    
-    $updated = $false
-
-    if( $appPool.ManagedRuntimeVersion -ne $ManagedRuntimeVersion )
+    $setArgs = @{}
+    foreach( $parameterName in (Get-Command -Name 'Set-CIisAppPool').Parameters.Keys )
     {
-        Write-Verbose ('IIS Application Pool {0}: Setting ManagedRuntimeVersion = {0}' -f $Name,$ManagedRuntimeVersion)
-        $appPool.ManagedRuntimeVersion = $ManagedRuntimeVersion
-        $updated = $true
-    }
-
-    $pipelineMode = [Microsoft.Web.Administration.ManagedPipelineMode]::Integrated
-    if( $ClassicPipelineMode )
-    {
-        $pipelineMode = [Microsoft.Web.Administration.ManagedPipelineMode]::Classic
-    }
-    if( $appPool.ManagedPipelineMode -ne $pipelineMode )
-    {
-        Write-Verbose ('IIS Application Pool {0}: Setting ManagedPipelineMode = {0}' -f $Name,$pipelineMode)
-        $appPool.ManagedPipelineMode = $pipelineMode
-        $updated = $true
-    }
-
-    $idleTimeoutTimeSpan = New-TimeSpan -Minutes $IdleTimeout
-    if( $appPool.ProcessModel.IdleTimeout -ne $idleTimeoutTimeSpan )
-    {
-        Write-Verbose ('IIS Application Pool {0}: Setting idle timeout = {0}' -f $Name,$idleTimeoutTimeSpan)
-        $appPool.ProcessModel.IdleTimeout = $idleTimeoutTimeSpan 
-        $updated = $true
-    }
-
-    if( $appPool.Enable32BitAppOnWin64 -ne ([bool]$Enable32BitApps) )
-    {
-        Write-Verbose ('IIS Application Pool {0}: Setting Enable32BitAppOnWin64 = {0}' -f $Name,$Enable32BitApps)
-        $appPool.Enable32BitAppOnWin64 = $Enable32BitApps
-        $updated = $true
-    }
-    
-    if( $PSCmdlet.ParameterSetName -like 'AsSpecificUser*' )
-    {
-        if( $appPool.ProcessModel.UserName -ne $Credential.UserName )
+        if( -not $PSBoundParameters.ContainsKey($parameterName) )
         {
-            Write-Verbose ('IIS Application Pool {0}: Setting username = {0}' -f $Name,$Credential.UserName)
-            $appPool.ProcessModel.IdentityType = [Microsoft.Web.Administration.ProcessModelIdentityType]::SpecificUser
-            $appPool.ProcessModel.UserName = $Credential.UserName
-            $appPool.ProcessModel.Password = $Credential.GetNetworkCredential().Password
+            continue
+        }
+        $setArgs[$parameterName] = $PSBoundParameters[$parameterName]
+    }
+    Set-CIisAppPool @setArgs -Reset
 
-            # On Windows Server 2008 R2, custom app pool users need this privilege.
-            Grant-CPrivilege -Identity $Credential.UserName -Privilege SeBatchLogonRight -Verbose:$VerbosePreference
-            $updated = $true
-        }
-    }
-    else
-    {
-        $identityType = [Microsoft.Web.Administration.ProcessModelIdentityType]::ApplicationPoolIdentity
-        if( $ServiceAccount )
-        {
-            $identityType = $ServiceAccount
-        }
-
-        if( $appPool.ProcessModel.IdentityType -ne $identityType )
-        {
-            Write-Verbose ('IIS Application Pool {0}: Setting IdentityType = {0}' -f $Name,$identityType)
-            $appPool.ProcessModel.IdentityType = $identityType
-            $updated = $true
-        }
-    }
-
-    if( $updated )
-    {
-        $appPool.CommitChanges()
-    }
-    
-    # TODO: Pull this out into its own Start-IisAppPool function.  I think.
-    $appPool = Get-CIisAppPool -Name $Name
-    if($appPool -and $appPool.state -eq [Microsoft.Web.Administration.ObjectState]::Stopped )
-    {
-        try
-        {
-            $appPool.Start()
-        }
-        catch
-        {
-            Write-Error ('Failed to start {0} app pool: {1}' -f $Name,$_.Exception.Message)
-        }
-    }
+    Start-CIisAppPool -Name $Name
 
     if( $PassThru )
     {
-        $appPool
+        return (Get-CIisAppPool -Name $Name)
     }
 }
 

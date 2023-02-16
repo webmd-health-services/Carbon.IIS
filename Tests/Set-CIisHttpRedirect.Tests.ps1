@@ -13,70 +13,40 @@
 Set-StrictMode -Version 'Latest'
 
 BeforeAll {
-    $script:port = 9877
-    $script:webConfigPath = ''
-    $script:siteName = 'CarbonSetIisHttpRedirect'
-    $script:testWebRoot = ''
-
     & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-CarbonTest.ps1' -Resolve)
 
-
-    function Read-Url
-    {
-        param(
-            [String] $Path = ''
-        )
-
-        return [Net.WebClient]::New().DownloadString( "http://localhost:$($script:port)/$($Path)" )
-    }
-
-    function Assert-Redirects
-    {
-        param(
-            [String] $Path = ''
-        )
-
-        $numTries = 0
-        $maxTries = 5
-        $content = ''
-        do
-        {
-            try
-            {
-                $content = Read-Url $Path
-                if( $content -match 'Example Domain' )
-                {
-                    break
-                }
-            }
-            catch
-            {
-                Write-Verbose "Error downloading '$Path': $_"
-            }
-            $numTries++
-            Start-Sleep -Milliseconds 100
-        }
-        while( $numTries -lt $maxTries )
-    }
+    $script:webConfigPath = ''
+    $script:appPoolName = $PSCommandPath | Split-Path -Leaf
+    $script:testWebRoot = ''
+    $script:testNum = 0
 }
 
 Describe 'Set-CIisHttpRedirect' {
     BeforeAll {
+        Install-CIisAppPool -Name $script:appPoolName
         Start-W3ServiceTestFixture
     }
 
     AfterAll {
+        Uninstall-CIisAppPool -Name $script:appPoolName
         Complete-W3ServiceTestFixture
     }
 
     BeforeEach {
         $script:testWebRoot = New-TestDirectory
-        Install-CIisWebsite -Name $script:siteName -Path $script:testWebRoot -Bindings "http://*:$($script:port)"
+        $script:port = Get-Port
+        $script:siteName = "$($script:appPoolName)$($script:testNum)"
+        $script:testNum++
+        Install-CIisWebsite -Name $script:siteName `
+                            -Path $script:testWebRoot `
+                            -Bindings "http://*:$($script:port)" `
+                            -AppPoolName $script:appPoolName
         $script:webConfigPath = Join-Path -Path $script:testWebRoot -ChildPath 'web.config'
         if( Test-Path $script:webConfigPath )
         {
             Remove-Item $script:webConfigPath
         }
+        Restart-CIisAppPool -Name $script:appPoolName
     }
 
     AfterEach {
@@ -84,8 +54,8 @@ Describe 'Set-CIisHttpRedirect' {
     }
 
     It 'should redirect site' {
-        Set-CIisHttpRedirect -SiteName $script:siteName -Destination 'http://www.example.com'
-        Assert-Redirects
+        Set-CIisHttpRedirect -SiteName $script:siteName -Destination 'http://www.example.com' -Enabled $true
+        ThenUrlContent "http://localhost:$($script:port)" -Match 'Example Domain'
         $script:webConfigPath | Should -Not -Exist # make sure committed to applicationHost.config
         $settings = Get-CIisHttpRedirect -SiteName $script:siteName
         $settings.GetAttributeValue('Enabled') | Should -BeTrue
@@ -97,11 +67,12 @@ Describe 'Set-CIisHttpRedirect' {
 
     It 'should set redirect customizations' {
         Set-CIisHttpRedirect -SiteName $script:siteName `
+                             -Enabled $true `
                              -Destination 'http://www.example.com' `
-                             -HttpResponseStatus 301 `
-                             -ExactDestination `
-                             -ChildOnly
-        Assert-Redirects
+                             -HttpResponseStatus Permanent `
+                             -ExactDestination $true `
+                             -ChildOnly $true
+        ThenUrlContent "http://localhost:$($script:port)" -Match 'Example Domain'
         $settings = Get-CIisHttpRedirect -SiteName $script:siteName
         $settings.GetAttributeValue('destination') | Should -Be 'http://www.example.com'
         $settings.GetAttributeValue('httpResponseStatus') | Should -Be 301
@@ -111,15 +82,16 @@ Describe 'Set-CIisHttpRedirect' {
 
     It 'should set to default values' {
         Set-CIisHttpRedirect -SiteName $script:siteName `
+                             -Enabled $true `
                              -Destination 'http://www.example.com' `
-                             -HttpResponseStatus 302 `
-                             -ExactDestination `
-                             -ChildOnly
-        Assert-Redirects
-        Set-CIisHttpRedirect -SiteName $script:siteName -Destination 'http://www.example.com'
-        Assert-Redirects
+                             -HttpResponseStatus 301 `
+                             -ExactDestination $true `
+                             -ChildOnly $true
+        ThenUrlContent "http://localhost:$($script:port)" -Match 'Example Domain'
+        Set-CIisHttpRedirect -SiteName $script:siteName -Destination 'http://www.example.com' -Reset
 
         $settings = Get-CIisHttpRedirect -SiteName $script:siteName
+        $settings.GetAttributeValue('enabled') | Should -BeFalse
         $settings.GetAttributeValue('destination') | Should -Be 'http://www.example.com'
         $settings.GetAttributeValue('httpResponseStatus') | Should -Be 302
         $settings.GetAttributeValue('exactDestination') | Should -BeFalse
@@ -127,14 +99,17 @@ Describe 'Set-CIisHttpRedirect' {
     }
 
     It 'should set redirect on path' {
-        'NewWebsite' | Set-Content -Path (Join-Path -Path $script:testWebRoot -ChildPath 'NewWebsite.html')
+        $PSCommandPath | Set-Content -Path (Join-Path -Path $script:testWebRoot -ChildPath 'index.html') -NoNewLine
 
-        Set-CIisHttpRedirect -SiteName $script:siteName -VirtualPath 'SubFolder' -Destination 'http://www.example.com'
-        Assert-Redirects -Path 'Subfolder'
-        $content = Read-Url -Path 'NewWebsite.html'
-        ($content -match 'NewWebsite') | Should -BeTrue
+        New-Item -Path (Join-Path -Path $script:testWebRoot -ChildPath 'SubFolder') -ItemType 'Directory'
 
-        $settings = Get-CIisHttpRedirect -SiteName $script:siteName -Path 'SubFolder'
+        $locationPath = $script:siteName, 'SubFolder' | Join-CIisPath
+
+        Set-CIisHttpRedirect -LocationPath $locationPath -Enabled $true -Destination 'http://www.example.com'
+        ThenUrlContent "http://localhost:$($script:port)/SubFolder" -Match 'Example Domain'
+        ThenUrlContent "http://localhost:$($script:port)/" -Is $PSCommandPath
+
+        $settings = Get-CIisHttpRedirect -LocationPath $locationPath
         $settings.GetAttributeValue('enabled') | Should -BeTrue
         $settings.GetAttributeValue('destination') | Should -Be 'http://www.example.com'
     }

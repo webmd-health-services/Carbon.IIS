@@ -13,6 +13,7 @@
 Set-StrictMode -Version 'Latest'
 
 BeforeAll {
+    Write-Debug 'BeforeAll'
     $script:siteName = 'Anonymous Authentication'
     $script:sitePort = 4387
 
@@ -21,14 +22,17 @@ BeforeAll {
 
 Describe 'Disable-CIisSecurityAuthentication' {
     BeforeAll {
+        Write-Debug 'BeforeAll'
         Start-W3ServiceTestFixture
     }
 
     AfterAll {
+        Write-Debug 'AfterAll'
         Complete-W3ServiceTestFixture
     }
 
     BeforeEach {
+        Write-Debug 'BeforeEach'
         $script:webRoot = New-TestDirectory
         Uninstall-CIisWebsite $script:siteName
         Install-CIisWebsite -Name $script:siteName -Path $script:webRoot -Bindings "http://*:$script:sitePort"
@@ -38,15 +42,18 @@ Describe 'Disable-CIisSecurityAuthentication' {
         {
             Remove-Item -Path $webConfigPath
         }
+        Write-Debug 'It'
     }
 
     AfterEach {
+        Write-Debug 'AfterEach'
         Uninstall-CIisWebsite $script:siteName
     }
 
-    It 'should disable anonymous authentication on v dir' {
-        Disable-CIisSecurityAuthentication -SiteName $script:siteName -Path SubFolder -Anonymous
-        (Test-CIisSecurityAuthentication -SiteName $script:siteName -Path SubFolder -Anonymous) | Should -BeFalse
+    It 'should disable anonymous authentication on vdir' {
+        $locationPath = $script:siteName, 'SubFolder' | Join-CIisPath
+        Disable-CIisSecurityAuthentication -LocationPath $locationPath -Anonymous
+        Test-CIisSecurityAuthentication -LocationPath $locationPath -Anonymous | Should -BeFalse
     }
 
     It 'should disable anonymous authentication' {
@@ -75,7 +82,7 @@ Describe 'Disable-CIisSecurityAuthentication' {
         (Test-CIisSecurityAuthentication -SiteName $script:siteName -Anonymous) | Should -BeFalse
     }
 
-    It 'should support what if' {
+    It 'should support WhatIf' {
         Enable-CIisSecurityAuthentication -SiteName $script:siteName -Anonymous
         (Test-CIisSecurityAuthentication -SiteName $script:siteName -Anonymous) | Should -BeTrue
         Disable-CIisSecurityAuthentication -SiteName $script:siteName -Anonymous -WhatIf

@@ -1,15 +1,15 @@
 
 function Install-CIisWebsite
 {
-    <# 
+    <#
     .SYNOPSIS
     Installs a website.
 
     .DESCRIPTION
     `Install-CIisWebsite` installs an IIS website. Anonymous authentication is enabled, and the anonymous user is set to
     the website's application pool identity. Before Carbon 2.0, if a website already existed, it was deleted and
-    re-created. Beginning with Carbon 2.0, existing websites are modified in place. 
-    
+    re-created. Beginning with Carbon 2.0, existing websites are modified in place.
+
     If you don't set the website's app pool, IIS will pick one for you (usually `DefaultAppPool`), an
      `Install-CIisWebsite` will never manage the app pool for you (i.e. if someone changes it manually, this function
      won't set it back to the default). We recommend always supplying an app pool name, even if it is `DefaultAppPool`.
@@ -41,7 +41,7 @@ function Install-CIisWebsite
 
     .LINK
     Get-CIisWebsite
-    
+
     .LINK
     Uninstall-CIisWebsite
 
@@ -66,44 +66,41 @@ function Install-CIisWebsite
     [OutputType([Microsoft.Web.Administration.Site])]
     param(
         # The name of the website.
-        [Parameter(Position=0, Mandatory)]
+        [Parameter(Mandatory, Position=0)]
         [String] $Name,
-        
+
         # The physical path (i.e. on the file system) to the website. If it doesn't exist, it will be created for you.
-        [Parameter(Position=1, Mandatory)]
+        [Parameter(Mandatory, Position=1)]
         [Alias('Path')]
         [String] $PhysicalPath,
-        
+
         # The site's network bindings.  Default is `http/*:80:`.  Bindings should be specified in
         # `protocol/IPAddress:Port:Hostname` format.
         #
-        #  * Protocol should be http or https. 
+        #  * Protocol should be http or https.
         #  * IPAddress can be a literal IP address or `*`, which means all of the computer's IP addresses.  This
         #  function does not validate if `IPAddress` is actually in use on this computer.
         #  * Leave hostname blank for non-named websites.
         [Parameter(Position=2)]
         [Alias('Bindings')]
         [String[]] $Binding = @('http/*:80:'),
-        
-        # The name of the app pool under which the website runs.  The app pool must exist.  If not provided, IIS picks
+
+        # The name of the app pool under which the website runs. The app pool must exist. If not provided, IIS picks
         # one for you.  No whammy, no whammy! It is recommended that you create an app pool for each website. That's
         # what the IIS Manager does.
         [String] $AppPoolName,
 
-        # The site's IIS ID. IIS picks one for you automatically if you don't supply one. Must be greater than 0.
-        #
-        # The `SiteID` switch is new in Carbon 2.0.
-        [int] $SiteID,
+        # Sets the IIS website's `id` setting.
+        [Alias('SiteID')]
+        [UInt32] $ID,
+
+        # Sets the IIS website's `serverAutoStart` setting.
+        [bool] $ServerAutoStart,
 
         # Return a `Microsoft.Web.Administration.Site` object for the website.
-        #
-        # The `PassThru` switch is new in Carbon 2.0.
         [switch] $PassThru,
 
-        # Deletes the website before installation, if it exists. Preserves default behavior in Carbon before 2.0.
-        #
-        # The `Force` switch is new in Carbon 2.0.
-        [switch] $Force
+        [TimeSpan] $Timeout = [TimeSpan]::New(0, 0, 30)
     )
 
     Set-StrictMode -Version 'Latest'
@@ -122,7 +119,7 @@ function Install-CIisWebsite
         Set-StrictMode -Version 'Latest'
 
         $InputObject -match $bindingRegex | Out-Null
-        [pscustomobject]@{ 
+        [pscustomobject]@{
                 'Protocol' = $Matches['Protocol'];
                 'IPAddress' = $Matches['IPAddress'];
                 'Port' = $Matches['Port'];
@@ -139,8 +136,8 @@ function Install-CIisWebsite
     {
         New-Item $PhysicalPath -ItemType Directory | Out-String | Write-Verbose
     }
-    
-    $invalidBindings = $Binding | Where-Object { $_ -notmatch $bindingRegex } 
+
+    $invalidBindings = $Binding | Where-Object { $_ -notmatch $bindingRegex }
     if( $invalidBindings )
     {
         $invalidBindings = $invalidBindings -join "`n`t"
@@ -152,23 +149,24 @@ function Install-CIisWebsite
         return
     }
 
-    if( $Force )
-    {
-        Uninstall-CIisWebsite -Name $Name
-    }
-
     [Microsoft.Web.Administration.Site] $site = $null
     $modified = $false
     if( -not (Test-CIisWebsite -Name $Name) )
     {
-        Write-Verbose -Message ('Creating website ''{0}'' ({1}).' -f $Name,$PhysicalPath)
         $firstBinding = $Binding | Select-Object -First 1 | ConvertTo-Binding
-        $mgr = New-Object 'Microsoft.Web.Administration.ServerManager'
+        $mgr = Get-CIisServerManager
+        $msg = "Creating IIS website ""$($Name)"" bound to " +
+               "$($firstBinding.Protocol)/$($firstBinding.BindingInformation)."
+        Write-Information $msg
         $site = $mgr.Sites.Add( $Name, $firstBinding.Protocol, $firstBinding.BindingInformation, $PhysicalPath )
-        $mgr.CommitChanges()
+        Save-CIisConfiguration
     }
 
     $site = Get-CIisWebsite -Name $Name
+    if (-not $site)
+    {
+        return
+    }
 
     $expectedBindings = [Collections.Generic.Hashset[String]]::New()
     $Binding |
@@ -179,9 +177,11 @@ function Install-CIisWebsite
         $site.Bindings |
         Where-Object { -not $expectedBindings.Contains(  ('{0}/{1}' -f $_.Protocol,$_.BindingInformation ) ) }
 
+    $bindingMsgs = [Collections.Generic.List[String]]::New()
+
     foreach( $bindingToRemove in $bindingsToRemove )
     {
-        Write-IisVerbose $Name 'Binding' ('{0}/{1}' -f $bindingToRemove.Protocol,$bindingToRemove.BindingInformation)
+        $bindingMsgs.Add("- $($bindingToRemove.Protocol)/$($bindingToRemove.BindingInformation)")
         $site.Bindings.Remove( $bindingToRemove )
         $modified = $true
     }
@@ -196,16 +196,24 @@ function Install-CIisWebsite
 
     foreach( $bindingToAdd in $bindingsToAdd )
     {
-        Write-IisVerbose $Name 'Binding' '' ('{0}/{1}' -f $bindingToAdd.Protocol,$bindingToAdd.BindingInformation)
+        $bindingMsgs.Add("+ $($bindingToAdd.Protocol)/$($bindingToAdd.BindingInformation)")
         $site.Bindings.Add( $bindingToAdd.BindingInformation, $bindingToAdd.Protocol ) | Out-Null
         $modified = $true
     }
-    
+
+    $prefix = "Configuring ""$($Name)"" IIS website's bindings:  "
+    foreach( $bindingMsg in $bindingMsgs )
+    {
+        Write-Information "$($prefix)$($bindingMsg)"
+        $prefix = ' ' * $prefix.Length
+    }
+
     [Microsoft.Web.Administration.Application] $rootApp = $null
     if( $site.Applications.Count -eq 0 )
     {
+        Write-Information "Adding ""$($Name)"" IIS website's default application."
         $rootApp = $site.Applications.Add('/', $PhysicalPath)
-        $modifed = $true
+        $modified = $true
     }
     else
     {
@@ -214,18 +222,18 @@ function Install-CIisWebsite
 
     if( $site.PhysicalPath -ne $PhysicalPath )
     {
-        Write-IisVerbose $Name 'PhysicalPath' $site.PhysicalPath $PhysicalPath 
+        Write-Information "Setting ""$($Name)"" IIS website's physical path to ""$($PhysicalPath)""."
         [Microsoft.Web.Administration.VirtualDirectory] $vdir =
             $rootApp.VirtualDirectories | Where-Object 'Path' -EQ '/'
         $vdir.PhysicalPath = $PhysicalPath
         $modified = $true
     }
-    
+
     if( $AppPoolName )
     {
         if( $rootApp.ApplicationPoolName -ne $AppPoolName )
         {
-            Write-IisVerbose $Name 'AppPool' $rootApp.ApplicationPoolName $AppPoolName 
+            Write-Information "Setting ""$($Name)"" IIS website's application pool to ""$($AppPoolName)""."
             $rootApp.ApplicationPoolName = $AppPoolName
             $modified = $true
         }
@@ -233,37 +241,39 @@ function Install-CIisWebsite
 
     if( $modified )
     {
-        $site.CommitChanges()
+        Save-CIisConfiguration
     }
-    
-    if( $SiteID )
-    {
-        Set-CIisWebsiteID -SiteName $Name -ID $SiteID
-    }
-    
-    # Make sure anonymous authentication is enabled and uses the application pool identity
-    $security = Get-CIisSecurityAuthentication -SiteName $Name -VirtualPath '/' -Anonymous
-    Write-IisVerbose $Name 'Anonymous Authentication UserName' $security['username'] ''
-    $security['username'] = ''
-    $security.CommitChanges()
 
-    # Now, wait until site is actually running
-    $tries = 0
+    $site = Get-CIisWebsite -Name $Name
+    # Can't ever remove a site ID, only change it, so set the ID to the website's current value.
+    $setArgs = @{
+        'ID' = $site.ID;
+    }
+    foreach( $parameterName in (Get-Command -Name 'Set-CIisWebsite').Parameters.Keys )
+    {
+        if( -not $PSBoundParameters.ContainsKey($parameterName) )
+        {
+            continue
+        }
+        $setArgs[$parameterName] = $PSBoundParameters[$parameterName]
+    }
+    Set-CIisWebsite @setArgs -Reset
+
+    # Now, wait until site is actually running. Do *not* use Start-CIisWebsite. If there are any HTTPS bindings that
+    # don't have an assigned HTTPS certificate the start will fail.
+    $timer = [Diagnostics.Stopwatch]::StartNew()
     $website = $null
     do
     {
-        $website = Get-CIisWebsite -SiteName $Name
-        $tries += 1
+        $website = Get-CIisWebsite -Name $Name
         if($website.State -ne 'Unknown')
         {
             break
         }
-        else
-        {
-            Start-Sleep -Milliseconds 100
-        }
+
+        Start-Sleep -Milliseconds 100
     }
-    while( $tries -lt 100 )
+    while ($timer.Elapsed -lt $Timeout)
 
     if( $PassThru )
     {

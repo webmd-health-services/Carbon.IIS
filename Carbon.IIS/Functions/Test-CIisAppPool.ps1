@@ -1,11 +1,11 @@
 
 function Test-CIisAppPool
 {
-    <# 
+    <#
     .SYNOPSIS
     Checks if an app pool exists.
 
-    .DESCRIPTION 
+    .DESCRIPTION
     Returns `True` if an app pool with `Name` exists.  `False` if it doesn't exist.
 
     Beginning with Carbon 2.0.1, this function is available only if IIS is installed.
@@ -22,16 +22,15 @@ function Test-CIisAppPool
         # The name of the app pool.
         $Name
     )
-    
-    Set-StrictMode -Version 'Latest'
 
+    Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
-    $appPool = Get-CIisAppPool -Name $Name
+    $appPool = Get-CIisAppPool -Name $Name -ErrorAction Ignore
     if( $appPool )
     {
         return $true
     }
-    
+
     return $false
 }
