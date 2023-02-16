@@ -85,6 +85,7 @@ function Set-CIisAppPoolPeriodicRestart
     elseif ($AsDefaults)
     {
         $getArgs['Defaults'] = $true
+        $AppPoolName = 'default'
     }
 
     $appPool = Get-CIisAppPool @getArgs
@@ -93,11 +94,7 @@ function Set-CIisAppPoolPeriodicRestart
         return
     }
 
-    $targetMsg = 'IIS appliation pool defaults periodic restart'
-    if( $AppPoolName )
-    {
-        $targetMsg = """$($AppPoolName)"" IIS application pool's periodic restart"
-    }
+    $targetMsg = """$($AppPoolName)"" IIS application pool periodic restart"
 
     Invoke-SetConfigurationAttribute -ConfigurationElement $appPool.Recycling.PeriodicRestart `
                                      -PSCmdlet $PSCmdlet `
@@ -114,11 +111,15 @@ function Set-CIisAppPoolPeriodicRestart
 
     $currentSchedule = $appPool.Recycling.PeriodicRestart.Schedule
     $currentTimes = $currentSchedule | Select-Object -ExpandProperty 'Time' | Sort-Object
+    $currentTimesMsg = $currentTimes -join ', '
     $Schedule = $Schedule | Sort-Object
+    $scheduleMsg = $Schedule -join ', '
     $scheduleChanged = $false
-    if( ($currentTimes -join ', ') -ne ($Schedule -join ', ') )
+    Write-Debug "$($AppPoolName) application pool recycling/periodicRestart/schedule"
+    Write-Debug "  current  $($currentTimesMsg)"
+    Write-Debug "  new      $($scheduleMsg)"
+    if( $currentTimesMsg -ne $scheduleMsg )
     {
-        $prefixMsg = "IIS ""$($AppPoolName)"" application pool: periodic restart schedule  "
         $clearedPrefix = $false
 
         $bothSchedules = & {
@@ -127,22 +128,24 @@ function Set-CIisAppPoolPeriodicRestart
             } |
             Where-Object { $_ } |
             Select-Object -Unique
+
+        Write-Information "IIS ""$($AppPoolName)"" application pool periodic restart schedule  "
         foreach ($time in $bothSchedules)
         {
-            $icon = ' '
+            $flag = ' '
             $action = ''
             if( $Schedule -notcontains $time )
             {
-                $icon = '-'
+                $flag = '-'
                 $action = 'Remove'
             }
             elseif( $currentTimes -notcontains $time )
             {
-                $icon = '+'
+                $flag = '+'
                 $action = 'Add'
             }
 
-            if( $icon -eq ' ' )
+            if( $flag -eq ' ' )
             {
                 continue
             }
@@ -151,12 +154,12 @@ function Set-CIisAppPoolPeriodicRestart
             $target = "$($time) for '$($AppPoolName)' IIS application pool's periodic restart schedule"
             if( $PSCmdlet.ShouldProcess($target, $action) )
             {
-                Write-Information "$($prefixMsg)$($icon) $($time)"
+
+                Write-Information "  $($flag) $($time)"
                 $scheduleChanged = $true
             }
             if( -not $clearedPrefix )
             {
-                $prefixMsg = ' ' * $prefixMsg.Length
                 $clearedPrefix = $true
             }
         }
