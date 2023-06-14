@@ -4,6 +4,7 @@
 $carbonIisCmds = Get-ChildItem -Path 'function:' | Where-Object 'ModuleName' -EQ 'Carbon.IIS'
 $alwaysExclude = @{
     'Split-CIisLocationPath' = $true;
+    'Get-CIisCollectionKeyName' = $true;
     'Write-CIisVerbose' = $true;
     'Write-IisVerbose' = $true;
 }

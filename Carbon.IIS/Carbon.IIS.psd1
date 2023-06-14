@@ -84,6 +84,7 @@
         'Enable-CIisHttps',
         'Get-CIisApplication',
         'Get-CIisAppPool',
+        'Get-CIisCollection'
         'Get-CIisConfigurationSection',
         'Get-CIisConfigurationLocationPath',
         'Get-CIisHttpHeader',
