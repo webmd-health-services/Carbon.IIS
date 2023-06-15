@@ -177,11 +177,18 @@ function Install-CIisWebsite
         $site.Bindings |
         Where-Object { -not $expectedBindings.Contains(  ('{0}/{1}' -f $_.Protocol,$_.BindingInformation ) ) }
 
-    $bindingMsgs = [Collections.Generic.List[String]]::New()
+    $bindingsPreamble = "IIS Website ""$($site.Name)"" Bindings"
+    $bindingsPrefix = '  '
+    $shownBindingsPreamble = $false
 
     foreach( $bindingToRemove in $bindingsToRemove )
     {
-        $bindingMsgs.Add("- $($bindingToRemove.Protocol)/$($bindingToRemove.BindingInformation)")
+        if (-not $shownBindingsPreamble)
+        {
+            Write-Information $bindingsPreamble
+            $shownBindingsPreamble = $true
+        }
+        Write-Information "${bindingsPrefix}- $($bindingToRemove.Protocol)/$($bindingToRemove.BindingInformation)"
         $site.Bindings.Remove( $bindingToRemove )
         $modified = $true
     }
@@ -196,16 +203,14 @@ function Install-CIisWebsite
 
     foreach( $bindingToAdd in $bindingsToAdd )
     {
-        $bindingMsgs.Add("+ $($bindingToAdd.Protocol)/$($bindingToAdd.BindingInformation)")
+        if (-not $shownBindingsPreamble)
+        {
+            Write-Information $bindingsPreamble
+            $shownBindingsPreamble = $true
+        }
+        Write-Information "${bindingsPrefix}+ $($bindingToAdd.Protocol)/$($bindingToAdd.BindingInformation)"
         $site.Bindings.Add( $bindingToAdd.BindingInformation, $bindingToAdd.Protocol ) | Out-Null
         $modified = $true
-    }
-
-    $prefix = "Configuring ""$($Name)"" IIS website's bindings:  "
-    foreach( $bindingMsg in $bindingMsgs )
-    {
-        Write-Information "$($prefix)$($bindingMsg)"
-        $prefix = ' ' * $prefix.Length
     }
 
     [Microsoft.Web.Administration.Application] $rootApp = $null

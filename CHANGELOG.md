@@ -1,6 +1,13 @@
-<!-- markdownlint-disable no-duplicate-heading -->
+<!--markdownlint-disable no-duplicate-heading-->
+<!--markdownlint-disable MD012 no-multiple-blanks-->
 
 # Carbon.IIS Changelog
+
+## 1.0.1
+
+Fixed: `Install-CIisWebsite` doesn't show information messages about changes to a website's bindings if passed duplicate
+bindings.
+
 
 ## 1.0.0
 
