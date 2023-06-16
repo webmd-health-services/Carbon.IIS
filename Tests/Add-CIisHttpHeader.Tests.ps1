@@ -63,7 +63,7 @@ Describe 'Add-CIisHttpHeader' {
 
     It 'should overwrite previous if there are duplicates' {
         $name = 'X-AddHttpHeader'
-        $firstValue = 'FirstAdd'
+        $value = 'FirstAdd'
 
         Add-CIisHttpHeader -Name $name -Value $value -LocationPath $script:locationPath
         ThenExists -Name $name -Value $value
