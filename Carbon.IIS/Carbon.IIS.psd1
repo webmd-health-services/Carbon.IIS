@@ -76,6 +76,7 @@
 
     # Functions to export from this module. Only list public function here.
     FunctionsToExport = @(
+        'Add-CIisCollectionItem',
         'Add-CIisDefaultDocument',
         'ConvertTo-CIisVirtualPath',
         'Disable-CIisSecurityAuthentication',
@@ -85,6 +86,7 @@
         'Get-CIisApplication',
         'Get-CIisAppPool',
         'Get-CIisCollection'
+        'Get-CIisCollectionKeyName'
         'Get-CIisConfigurationSection',
         'Get-CIisConfigurationLocationPath',
         'Get-CIisHttpHeader',
