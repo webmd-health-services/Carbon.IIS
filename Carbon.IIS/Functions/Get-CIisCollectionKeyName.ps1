@@ -14,6 +14,9 @@ function Get-CIisCollectionKeyName
         [Parameter(Mandatory)]
         [ConfigurationElementCollection] $Collection
     )
+    Set-StrictMode -Version 'Latest'
+    Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
+
     return $Collection.CreateElement().Attributes |
         Where-Object { $_.Schema.IsUniqueKey } |
         Select-Object -ExpandProperty 'name'

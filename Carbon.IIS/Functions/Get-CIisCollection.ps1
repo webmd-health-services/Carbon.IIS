@@ -28,6 +28,8 @@ function Get-CIisCollection
         # If no name, call `GetCollection()` on the configuration element, passing no name.
         [String] $Name
     )
+    Set-StrictMode -Version 'Latest'
+    Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
     $sectionArgs = @{
         "SectionPath" = $SectionPath
