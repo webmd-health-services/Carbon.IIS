@@ -78,6 +78,7 @@
     FunctionsToExport = @(
         'Add-CIisCollectionItem',
         'Add-CIisDefaultDocument',
+        'Add-CIisHttpHeader',
         'ConvertTo-CIisVirtualPath',
         'Disable-CIisSecurityAuthentication',
         'Enable-CIisDirectoryBrowsing',
