@@ -103,6 +103,7 @@
         'Install-CIisWebsite',
         'Join-CIisPath',
         'Lock-CIisConfigurationSection',
+        'Remove-CIisCollectionItem',
         'Remove-CIisConfigurationAttribute',
         'Remove-CIisConfigurationLocation',
         'Remove-CIisMimeMap',
