@@ -44,7 +44,7 @@ function Set-CIisCollection
     #>
     [CmdletBinding()]
     param(
-        # [Parameter(Mandatory, ParameterSetName='Location')]
+        [Parameter(Mandatory, ParameterSetName='Location')]
         [String] $LocationPath,
 
         [Parameter(Mandatory)]
@@ -61,12 +61,13 @@ function Set-CIisCollection
 
     begin
     {
+        Set-StrictMode -Version 'Latest'
+        Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
         $items = [Collections.Generic.List[Microsoft.Web.Administration.ConfigurationElement]]::New()
-
         $collection = Get-CIisCollection @PSBoundParameters
-
         $keyAttrName = Get-CIisCollectionKeyName -Collection $collection
         Write-Verbose $keyAttrName
+        $save = $false
     }
 
     process
@@ -100,6 +101,7 @@ function Set-CIisCollection
             if ($collectionItem -notin $items -and $LocationPath)
             {
                 $collection.Clear()
+                $save = $true
                 break
             }
         }
@@ -109,6 +111,9 @@ function Set-CIisCollection
             $collection.Add($item)
         }
 
-        Save-CIisConfiguration
+        if ($save)
+        {
+            Save-CIisConfiguration
+        }
     }
 }

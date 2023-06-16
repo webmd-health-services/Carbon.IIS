@@ -85,14 +85,12 @@ Describe 'Set-CIisCollection' {
     }
 
     It 'should add items with provided names' {
-        $VerbosePreference = 'Continue'
         $names = 'first', 'second', 'third', 'fourth'
         GivenItemsAreAdded $names
         ThenItemsValid $names
     }
 
     It 'should add items with provided attributes' {
-        $VerbosePreference = 'Continue'
         $inputs = @{
             "name" = "first"
             "value" = "firstVal"
