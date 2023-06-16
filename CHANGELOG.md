@@ -1,8 +1,19 @@
-<!-- markdownlint-disable no-duplicate-heading -->
+<!--markdownlint-disable no-duplicate-heading-->
+<!--markdownlint-disable MD012 no-multiple-blanks-->
 
 # Carbon.IIS Changelog
 
+## 1.0.1
+
+> Released 16 Jun 2023
+
+Fixed: `Install-CIisWebsite` doesn't show information messages about changes to a website's bindings if passed duplicate
+bindings.
+
+
 ## 1.0.0
+
+> Released 17 Feb 2023
 
 ### Upgrade Instructions
 
