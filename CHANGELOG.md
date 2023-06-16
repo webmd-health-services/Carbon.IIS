@@ -3,6 +3,16 @@
 
 # Carbon.IIS Changelog
 
+## 1.2.0
+
+Added: `Get-CIisCollection` for accessing items in a specific IIS collection.
+Added: `Get-CIisCollectionKey` for determining unique key for an IIS collection.
+Added: `Set-CIisCollection` for setting an IIS collection's elements.
+Added: `Add-CIisCollectionItem` for adding a new item to an IIS collection.
+Added: `Add-CIisHttpHeader` for adding custom HTTP headers to IIS.
+Added: `Remove-CIisCollectionItem` for removing an item from an IIS collection.
+
+
 ## 1.1.0
 
 > Released 16 Aug 2023

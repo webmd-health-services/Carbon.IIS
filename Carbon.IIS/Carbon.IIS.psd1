@@ -187,7 +187,7 @@
             # A URL to an icon representing this module.
             # IconUri = ''
 
-            Prerelease = ''
+            Prerelease = 'rc10'
 
             # ReleaseNotes of this module
             ReleaseNotes = 'https://github.com/webmd-health-services/Carbon.IIS/blob/master/CHANGELOG.md'
