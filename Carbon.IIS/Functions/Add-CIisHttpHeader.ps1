@@ -2,18 +2,16 @@ function Add-CIisHttpHeader
 {
     <#
     .SYNOPSIS
-    Adds a new 'customHeader' configuration element in the 'system.webServer/httpProtocol' collection.
+    Adds a new header to the IIS configuration.
 
     .DESCRIPTION
-    The `Add-CIisHttpHeader` function adds a new `<add />` element to the 'system.webServer/httpProtocol/customHeaders'
-    collection with the provided name and value attributes. If an item already exists in the collection with the provided
-    name attribute, the previous value will be overwritten with the new attribute.
+    The `Add-CIisHttpHeader` function adds a new header to the IIS configuration. If adding a header for a specific
+    website, pass that location to the `LocationPath` parameter.
 
     .EXAMPLE
     Add-CIisHttpHeader -Name 'foo' -Value 'bar'
 
-    Demonstrates how to add an item to the 'system.webServer/httpProtocol/customHeaders' collection
-    with the provided name and value. After the above command runs, this will be in the applicationHast.config:
+    Demonstrates how to add a new HTTP header globally. After the above command runs, this will be in the applicationHost.
 
         <system.webServer>
             <httpProtocol>
@@ -26,8 +24,8 @@ function Add-CIisHttpHeader
     .EXAMPLE
     Add-CIisHttpHeader -LocationPath 'SITE_NAME' -Name 'X-AddHeader' -Value 'usingCarbon'
 
-    Demonstrates how to add an item to the 'customHeaders' IIS collection with a specific Location Path.
-    After the above command runs. this will be in the applicationHost.config:
+    Demonstrates how to add a new HTTP header to the site `SITE_NAME`. After the above command runs, this will be in:
+    the applicationHost.config:
 
         <location path="SITE_NAME">
             <system.webServer>
@@ -39,34 +37,34 @@ function Add-CIisHttpHeader
             </system.webServer>
         <location path="SITE_NAME" />
     #>
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName='Global')]
     param(
+        # The HTTP header name to add
         [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName)]
         [String] $Name,
 
+        # The HTTP header value to add
         [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName)]
         [String] $Value,
 
+        # The sitename to edit
+        [Parameter(ParameterSetName='Local')]
         [String] $LocationPath
     )
 
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
 
-    $attributes = @{
-        'name' = $Name
-        'value' = $Value
-    }
-
-    $addParameters = @{
-        'SectionPath' = 'system.webServer/httpProtocol'
-        'CollectionName' = 'customHeaders'
-    }
+    $addParameters = @{}
 
     if ($LocationPath)
     {
         $addParameters['LocationPath'] = $LocationPath
     }
 
-    Add-CIisCollectionItem @addParameters -Attribute $attributes
+    Set-CIisCollectionItem -SectionPath 'system.webServer/httpProtocol' `
+                           -CollectionName 'customHeaders' `
+                           -Value $Name `
+                           -Attribute @{ 'value' = $Value } `
+                           @addParameters
 }

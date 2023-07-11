@@ -35,7 +35,7 @@ BeforeAll {
             [string] $Value
         )
 
-        Add-CIisCollectionItem -LocationPath $script:locationPath `
+        Set-CIisCollectionItem -LocationPath $script:locationPath `
                                -SectionPath 'system.webServer/httpProtocol' `
                                -CollectionName 'customHeaders' `
                                -Value $Value

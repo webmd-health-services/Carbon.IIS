@@ -76,7 +76,6 @@
 
     # Functions to export from this module. Only list public function here.
     FunctionsToExport = @(
-        'Add-CIisCollectionItem',
         'Add-CIisDefaultDocument',
         'Add-CIisHttpHeader',
         'ConvertTo-CIisVirtualPath',
@@ -117,6 +116,7 @@
         'Set-CIisAppPoolProcessModel',
         'Set-CIisAppPoolRecycling',
         'Set-CIisCollection'
+        'Set-CIisCollectionItem',
         'Set-CIisConfigurationAttribute',
         'Set-CIisHttpHeader',
         'Set-CIisHttpRedirect',
@@ -187,7 +187,7 @@
             # A URL to an icon representing this module.
             # IconUri = ''
 
-            Prerelease = 'rc10'
+            Prerelease = 'rc1'
 
             # ReleaseNotes of this module
             ReleaseNotes = 'https://github.com/webmd-health-services/Carbon.IIS/blob/master/CHANGELOG.md'

@@ -8,10 +8,11 @@ BeforeAll {
     function GivenValueAdded {
         [CmdletBinding()]
         param(
+            [Parameter(Mandatory)]
             [string] $Value
         )
 
-        Add-CIisCollectionItem -LocationPath $script:locationPath `
+        Set-CIisCollectionItem -LocationPath $script:locationPath `
                                -SectionPath 'system.webServer/httpProtocol' `
                                -CollectionName 'customHeaders' `
                                -Value $Value
@@ -20,19 +21,27 @@ BeforeAll {
     function GivenAttributesAdded {
         [CmdletBinding()]
         param(
+            [Parameter(Mandatory)]
+            [object] $Value,
+
+            [Parameter(Mandatory)]
             [hashtable] $Attribute
         )
 
-        Add-CIisCollectionItem -LocationPath $script:locationPath `
+        Set-CIisCollectionItem -LocationPath $script:locationPath `
                                -SectionPath 'system.webServer/httpProtocol' `
                                -CollectionName 'customHeaders' `
+                               -Value $Value `
                                -Attribute $Attribute
     }
 
     function InCollection {
         [CmdletBinding()]
         param(
-            [Object] $Item
+            [Parameter(Mandatory)]
+            [Object] $Value,
+
+            [hashtable] $Item
         )
 
         $collection = Get-CIisCollection -LocationPath $script:locationPath `
@@ -43,15 +52,14 @@ BeforeAll {
         $itemExists = $false
         foreach ($collectionItem in $collection)
         {
-            if ($Item -is [string])
+            if ($Value)
             {
-                if ($collectionItem.GetAttributeValue($collectionKey) -eq $Item)
+                if ($collectionItem.GetAttributeValue($collectionKey) -eq $Value)
                 {
                     $itemExists = $true
-                    break
                 }
             }
-            if ($Item -is [hashtable])
+            if ($Item)
             {
                 $allFieldsMatch = $true
                 foreach ($key in $Item.Keys)
@@ -63,43 +71,22 @@ BeforeAll {
                     }
                 }
 
-                if ($allFieldsMatch)
+                if ($allFieldsMatch -and $itemExists)
                 {
-                    $itemExists = $true
                     break
                 }
+                else
+                {
+                    $itemExists = $false
+                }
             }
-            # if ($Item -is [hashtable])
-            # {
-            #     $allMatch = $true
-            #     foreach ($key in $Item.Keys)
-            #     {
-            #         if ($collectionItem[$key] -ne $Item[$key])
-            #         {
-            #             $allMatch = $false
-            #             break
-            #         }
-            #     }
-
-            #     if ($allMatch)
-            #     {
-            #         $itemExists = $true
-            #         break
-            #     }
-            # }
-            # elseif ($item -is [string] -and $collectionItem[$collectionKey] -eq $Item)
-            # {
-            #     $itemExists = $true
-            #     break
-            # }
         }
-        # $itemExists | Should -BeTrue
         return $itemExists
     }
 }
 
 
-Describe 'Add-CIisCollectionItem' {
+Describe 'Set-CIisCollectionItem' {
     BeforeAll {
         Start-W3ServiceTestFixture
     }
@@ -120,33 +107,37 @@ Describe 'Add-CIisCollectionItem' {
     It 'should successfully add item if key provided' {
         $value = 'X-AddIisItem'
         GivenValueAdded $value
-        InCollection $value | Should -BeTrue
+        InCollection -Value $value | Should -BeTrue
     }
 
-    It 'should successfully add item if hashtable provided with key' {
-        $attributes = @{ 'name' = 'X-AddIisItem'; 'value' = 'dont add' }
-        GivenAttributesAdded $attributes
-        InCollection $attributes | Should -BeTrue
+    It 'should successfully add item if hashtable provided' {
+        $attributes = @{ 'value' = 'dont add' }
+        GivenAttributesAdded -Value 'X-AddIisItem' -Attribute $attributes
+        InCollection -Value 'X-AddIisItem' -Item $attributes | Should -BeTrue
     }
 
-    It 'should not add item if item with same key exists' {
-        $value = 'X-AddIisItem'
-        GivenValueAdded $value
-        InCollection $value | Should -BeTrue
+    It 'should overwrite item if it already exists' {
+        $attributes = @{ 'value' = 'overwrite me' }
+        GivenAttributesAdded -Value 'X-AddIisItem' -Attribute $attributes
+        InCollection -Value 'X-AddIisItem' -Item $attributes | Should -BeTrue
 
-        $newValue = @{ 'name' = 'X-AddIisItem'; 'value' = 'dont add' }
-        GivenAttributesAdded $newValue
-        InCollection $value | Should -BeTrue
-        InCollection $newValue | Should -BeTrue
+        $newAttrs = @{ 'value' = 'overwritten' }
+        GivenAttributesAdded -Value 'X-AddIisItem' -Attribute $newAttrs
+        InCollection -Value 'X-AddIisItem' -Item $newAttrs | Should -BeTrue
+        InCollection -Value 'X-AddIisItem' -Item $attributes | Should -BeFalse
     }
 
-    It 'should throw error if no key is in hashtable' {
-        $attributes = @{ 'value' = 'throw error' }
-        { Add-CIisCollectionItem -LocationPath $script:locationPath `
+    It 'should throw warning if key is in hashtable' {
+        $attributes = @{
+            'name' = 'name'
+            'value' = 'throw error'
+        }
+        { Set-CIisCollectionItem -LocationPath $script:locationPath `
                                 -SectionPath 'system.webServer/httpProtocol' `
                                 -CollectionName 'customHeaders' `
+                                -Value 'X-Carbon-AddCollectionItem' `
                                 -Attribute $attributes `
-                                -ErrorAction 'Stop'
-        } | Should -Throw -ExpectedMessage "*because the unique key*"
+                                -WarningAction 'Stop'
+        } | Should -Throw -ExpectedMessage "*as the Value parameter.*"
     }
 }
