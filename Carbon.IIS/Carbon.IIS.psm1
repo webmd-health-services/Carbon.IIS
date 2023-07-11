@@ -17,6 +17,7 @@ using namespace System.Management.Automation
 using namespace Microsoft.Web.Administration
 
 #Requires -Version 5.1
+#Requires -RunAsAdministrator
 Set-StrictMode -Version 'Latest'
 $InformationPreference = 'Continue'
 
