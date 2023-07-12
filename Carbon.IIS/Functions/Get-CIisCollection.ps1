@@ -2,49 +2,86 @@ function Get-CIisCollection
 {
     <#
     .SYNOPSIS
-    Returns an instance of a `Microsoft.Web.Administration.ConfigurationElementCollection` class.
+    Gets an instance of an IIS Collection
 
     .DESCRIPTION
-    The `Get-CIisCollection` function returns an instance of `Microsoft.Web.Aministration.ConfigurationElementCollection`
-    class that is located at the provided `LocationPath`, `SectionPath`, and `Name`. If no name is provided then it
-    returns the provided `SectionPath` as a `ConfigurationElementCollection` class.
+    The `Get-CIisCollection` function gets the specified IIS collection. Pass the collection's IIS confuguration section
+    path to the `SectionPath` parameter.
 
-    After using the configuration collection, if you've made any changes to any objects inside the collection, call the
-    `Save-CIisConfiguration` function to save/commit your changes.
+    If the configuration section given by `SectionPath` is not a collection, pass the name of the collection to the
+    `Name` parameter.
+
+    If the collection needed is for a website, application, virtual directory, or directory, pass the path to that
+    location to the `LocatianPath` parameter.
 
     .EXAMPLE
-    $collection = Get-CIisCollection -SectionPath 'system.webServer/httpProtocol' -Name 'customHeaders'
+    $collection = Get-CIisCollection -SectionPath 'system.webServer/httpProtocol/customHeaders'
 
-    Demonstrates how to get the 'customHeaders' collection from the 'system.webServer/httpProtocol' section.
+    Demonstrates how to get the section `system.webServer/httpProtocol/customHeaders` as an IIS collection.
+
+    .EXAMPLE
+    $collection = Get-CIisCollection -LocationPath 'SITE_NAME' -SectionPath 'system.webServer/httpProtocol/' -Name 'customHeaders'
+
+    Demonstrates how to get the collection 'customHeaders' inside the section 'system.webServer/httpProtocol' for the
+    site 'SITE_NAME'.
     #>
     [CmdletBinding(DefaultParameterSetName='Global')]
     param(
+        # The name of the site where the collection belongs
         [Parameter(Mandatory, ParameterSetName='Location')]
         [String] $LocationPath,
 
+        # The path for the configuration section that points to the collection
         [Parameter(Mandatory)]
         [String] $SectionPath,
 
-        # If no name, call `GetCollection()` on the configuration element, passing no name.
+        # The name of the collection
         [String] $Name
     )
+
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
-    $sectionArgs = @{
-        "SectionPath" = $SectionPath
-    }
+    $getArgs = @{}
 
     if ($LocationPath)
     {
-        $sectionArgs["LocationPath"] = $LocationPath
+        $getArgs['LocationPath'] = $LocationPath
     }
 
-    $section = Get-CIisConfigurationSection @sectionArgs
+    $section = Get-CIisConfigurationSection @getArgs -SectionPath $sectionPath
 
     if ($Name)
     {
-        return ,$section.GetCollection($Name)
+        $collection = $section.GetCollection($Name)
     }
-    return ,$section.GetCollection()
+    else
+    {
+        $collection = $section.GetCollection()
+    }
+
+    if (-not $collection)
+    {
+        if ($Name)
+        {
+            $msg = "IIS:$($LocationPath): configuration path $($SectionPath)/$($Name) is not a collection."
+        }
+        else
+        {
+            $msg = "IIS:$($LocationPath): configuration path $($SectionPath) is not a collection."
+        }
+
+        Write-Error -Message $msg -ErrorAction $ErrorActionPreference
+        return
+    }
+
+    if ($Name -and $collection.ElementTagName -ne $Name)
+    {
+        $msg = "IIS:$($LocationPath): configuration path $($SectionPath) with collection name $($Name) had the wrong " +
+               "element name."
+        Write-Error -Message $msg -ErrorAction $ErrorActionPreference
+        return
+    }
+
+    return ,$collection
 }

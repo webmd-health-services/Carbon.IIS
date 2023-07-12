@@ -47,6 +47,7 @@ Describe 'Get-CIisCollection' {
 
     It 'should have newly added items' {
         $collection = GetNewCollection
+        $VerbosePreference = 'Continue'
         $newItem = $collection.CreateElement('add')
         $newItem.SetAttributeValue('name', 'foobarbaz')
         $collection.Add($newItem)
@@ -67,5 +68,12 @@ Describe 'Get-CIisCollection' {
             }
         }
         $hasName | Should -BeTrue
+    }
+
+    It 'should error if not a collection' {
+        { Get-CIisCollection -LocationPath $script:locationPath `
+                             -SectionPath 'system.webServer/httpProtocol' `
+                             -ErrorAction 'Stop'
+        } | Should -Throw -ExpectedMessage '*is not a collection*'
     }
 }
