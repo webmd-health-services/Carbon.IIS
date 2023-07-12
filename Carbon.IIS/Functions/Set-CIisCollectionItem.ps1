@@ -55,10 +55,11 @@ function Set-CIisCollectionItem
     #>
     [CmdletBinding(DefaultParameterSetName='Global')]
     param(
-        # TODO: Add parameter Documentation
+        # The site to add the item to
         [Parameter(Mandatory, ParameterSetName='Location')]
         [String] $LocationPath,
 
+        # The path for the configuration section to edit
         [Parameter(Mandatory)]
         [String] $SectionPath,
 
