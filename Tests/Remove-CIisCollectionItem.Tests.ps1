@@ -79,7 +79,7 @@ Describe 'Remove-CIisCollectionItem' {
                                   -SectionPath 'system.webServer/httpProtocol' `
                                   -CollectionName 'customHeaders' `
                                   -Value $Value `
-                                  -WarningAction 'Stop'} |
+                                  -ErrorAction 'Stop'} |
             Should -Throw -ExpectedMessage '*Unable to find item*'
 
         HasItemWithValue -Value $value -Not
