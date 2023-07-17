@@ -5,12 +5,19 @@
 
 ## 1.2.0
 
-Added: `Get-CIisCollection` for accessing items in a specific IIS collection.
-Added: `Get-CIisCollectionKey` for determining unique key for an IIS collection.
-Added: `Set-CIisCollection` for setting an IIS collection's elements.
-Added: `Add-CIisCollectionItem` for adding a new item to an IIS collection.
-Added: `Add-CIisHttpHeader` for adding custom HTTP headers to IIS.
-Added: `Remove-CIisCollectionItem` for removing an item from an IIS collection.
+### Added
+
+* Function `Add-CIisHttpHeader` for adding custom HTTP headers to IIS.
+* Function `Get-CIisCollection` for accessing items in a specific IIS collection.
+* Function `Get-CIisCollectionKey` for determining unique key for an IIS collection.
+* Function `Remove-CIisCollectionItem` for removing an item from an IIS collection.
+* Function `Set-CIisCollection` for setting an IIS collection's elements.
+* Function `Set-CIisCollectionItem` for adding a new item to an IIS collection.
+
+### Fixed
+
+* Importing `Carbon.IIS` module requires running powershell as administrator. Without running as administrator the
+module would fail to import.
 
 
 ## 1.1.0
