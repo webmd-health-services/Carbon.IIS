@@ -15,11 +15,6 @@ function Get-CIisCollection
     location to the `LocatianPath` parameter.
 
     .EXAMPLE
-    $collection = Get-CIisCollection -SectionPath 'system.webServer/httpProtocol/customHeaders'
-
-    Demonstrates how to get the section `system.webServer/httpProtocol/customHeaders` as an IIS collection.
-
-    .EXAMPLE
     $collection = Get-CIisCollection -LocationPath 'SITE_NAME' -SectionPath 'system.webServer/httpProtocol/' -Name 'customHeaders'
 
     Demonstrates how to get the collection 'customHeaders' inside the section 'system.webServer/httpProtocol' for the

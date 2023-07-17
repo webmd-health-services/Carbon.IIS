@@ -2,12 +2,11 @@ function Get-CIisCollectionKeyName
 {
     <#
     .SYNOPSIS
-    Returns the unique key for the child elements of the provided `Microsoft.Web.Administration.ConfigurationElementCollection`
+    Returns the unique key for a configuration collection.
 
     .DESCRIPTION
-    The `Get-CIisCollectionKeyName` function finds the required unique key for the provided
-    `Microsoft.Web.Administration.ConfigurationElementCollection`. The unique key changes depending on the collection
-    passed into the function.
+    The `Get-CIisCollectionKeyName` locaties the mandatory attribute for an IIS configuration collection. This attribute
+    name must be included for all entries inside of an IIS collection.
 
     .EXAMPLE
     Get-CIisCollectionKeyName -Collection (Get-CIisCollection -SectionPath 'system.webServer/httpProtocol' -Name 'customHeaders')
