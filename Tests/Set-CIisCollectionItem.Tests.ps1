@@ -160,6 +160,6 @@ Describe 'Set-CIisCollectionItem' {
 
     It 'should fail if key not found' {
         Mock -CommandName 'Get-CIisCollectionKeyName' -ModuleName 'Carbon.IIS'
-        ThenError -ErrorMessage '*not found*'
+        ThenError -ErrorMessage '*Unable to find*'
     }
 }
