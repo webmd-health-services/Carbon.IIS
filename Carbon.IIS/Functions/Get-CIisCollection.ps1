@@ -5,7 +5,7 @@ function Get-CIisCollection
     Gets an instance of an IIS Collection
 
     .DESCRIPTION
-    The `Get-CIisCollection` function gets the specified IIS collection. Pass the collection's IIS confuguration section
+    The `Get-CIisCollection` function gets the specified IIS collection. Pass the collection's IIS configuration section
     path to the `SectionPath` parameter.
 
     If the configuration section given by `SectionPath` is not a collection, pass the name of the collection to the
@@ -66,14 +66,6 @@ function Get-CIisCollection
             $msg = "IIS:$($LocationPath): configuration path $($SectionPath) is not a collection."
         }
 
-        Write-Error -Message $msg -ErrorAction $ErrorActionPreference
-        return
-    }
-
-    if ($Name -and $collection.ElementTagName -ne $Name)
-    {
-        $msg = "IIS:$($LocationPath): configuration path $($SectionPath) with collection name $($Name) had the wrong " +
-               "element name."
         Write-Error -Message $msg -ErrorAction $ErrorActionPreference
         return
     }

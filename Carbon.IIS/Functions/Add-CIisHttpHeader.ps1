@@ -2,11 +2,16 @@ function Add-CIisHttpHeader
 {
     <#
     .SYNOPSIS
-    Adds a new header to the IIS configuration.
+    Adds a new HTTP header to IIS.
 
     .DESCRIPTION
-    The `Add-CIisHttpHeader` function adds a new header to the IIS configuration. If adding a header for a specific
-    website, pass that location to the `LocationPath` parameter.
+    The `Add-CIisHttpHeader` function adds a new header to the IIS configuration. Pass the header's name to the `Name`
+    parameter and the header's value to the `Value` parameter. By default, the header is added to all HTTP responses. To
+    add the header only to responses from a specific website, application, virtual directory, or directory, pass the
+    path to that location to the `LocationPath` parameter.
+
+    The function adds the HTTP header by adding it to the `system.webServvver/httpProtocol/customHeaders` configuration
+    collection.
 
     .EXAMPLE
     Add-CIisHttpHeader -Name 'foo' -Value 'bar'
@@ -55,16 +60,16 @@ function Add-CIisHttpHeader
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
 
-    $addParameters = @{}
+    $setConditionalArgs = @{}
 
     if ($LocationPath)
     {
-        $addParameters['LocationPath'] = $LocationPath
+        $setConditionalArgs['LocationPath'] = $LocationPath
     }
 
     Set-CIisCollectionItem -SectionPath 'system.webServer/httpProtocol' `
                            -CollectionName 'customHeaders' `
                            -Value $Name `
                            -Attribute @{ 'value' = $Value } `
-                           @addParameters
+                           @setConditionalArgs
 }

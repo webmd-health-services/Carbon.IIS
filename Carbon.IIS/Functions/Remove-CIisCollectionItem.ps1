@@ -2,7 +2,7 @@ function Remove-CIisCollectionItem
 {
     <#
     .SYNOPSIS
-    Removes a IIS Configuration element.
+    Removes a IIS configuration element.
 
     .DESCRIPTION
     The `Remove-CIisCollectionItem` function removes an item from an IIS configuration collection. Pass the collection's
@@ -56,7 +56,28 @@ function Remove-CIisCollectionItem
 
     $collection = Get-CIisCollection @collectionArgs -SectionPath $SectionPath
 
+    if ($CollectionName)
+    {
+        $outputSection = "$($SectionPath)/$($CollectionName)"
+    }
+    else
+    {
+        $outputSection = "$($SectionPath)"
+    }
+
+    if (-not $collection)
+    {
+        return
+    }
+
     $keyAttrName = Get-CIisCollectionKeyName -Collection $collection
+
+    if (-not $keyAttrName)
+    {
+        $msg = "Unable to find key for $($LocationPath):$($outputSection)"
+        Write-Error -Message $msg
+        return
+    }
 
     $itemToRemove = $collection | Where-Object { $_.GetAttributeValue($keyAttrName) -eq $Value }
 

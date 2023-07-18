@@ -7,9 +7,10 @@
 
 ### Added
 
-* Function `Add-CIisHttpHeader` for adding custom HTTP headers to IIS.
+* Function `Add-CIisHttpHeader` for adding HTTP headers by adding them to the
+`system.webServer/httpProtocol/customHeaders` configuration collection.
 * Function `Get-CIisCollection` for accessing items in a specific IIS collection.
-* Function `Get-CIisCollectionKey` for determining unique key for an IIS collection.
+* Function `Get-CIisCollectionKeyName` for determining unique key for an IIS collection.
 * Function `Remove-CIisCollectionItem` for removing an item from an IIS collection.
 * Function `Set-CIisCollection` for setting an IIS collection's elements.
 * Function `Set-CIisCollectionItem` for adding a new item to an IIS collection.

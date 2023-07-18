@@ -74,13 +74,15 @@ Describe 'Remove-CIisCollectionItem' {
 
     It 'should warn item doesn''t exist' {
         $value = 'X-RemoveItem'
+        GivenItemAdded 'random-item'
         HasItemWithValue -Value $value -Not
-        {Remove-CIisCollectionItem -LocationPath $script:locationPath `
-                                  -SectionPath 'system.webServer/httpProtocol' `
-                                  -CollectionName 'customHeaders' `
-                                  -Value $Value `
-                                  -ErrorAction 'Stop'} |
-            Should -Throw -ExpectedMessage '*Unable to find item*'
+        {
+            Remove-CIisCollectionItem -LocationPath $script:locationPath `
+                                   -SectionPath 'system.webServer/httpProtocol' `
+                                   -CollectionName 'customHeaders' `
+                                   -Value $Value `
+                                   -ErrorAction 'Stop'
+        } | Should -Throw -ExpectedMessage '*Unable to find item*'
 
         HasItemWithValue -Value $value -Not
     }
@@ -91,5 +93,16 @@ Describe 'Remove-CIisCollectionItem' {
         HasItemWithValue -Value $value
         GivenRemoves $value
         HasItemWithValue -Value $value -Not
+    }
+
+    It 'should error if collection key not found' {
+        Mock -CommandName 'Get-CIisCollectionKeyName' -ModuleName 'Carbon.IIS'
+        {
+            Remove-CIisCollectionItem -LocationPath $script:locationPath `
+                                      -SectionPath 'system.webServer/httpProtocol' `
+                                      -CollectionName 'customHeaders' `
+                                      -Value 'no-key' `
+                                      -ErrorAction 'Stop'
+        } | Should -Throw -ExpectedMessage '*Unable to find key*'
     }
 }

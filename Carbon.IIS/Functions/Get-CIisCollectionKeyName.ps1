@@ -5,7 +5,7 @@ function Get-CIisCollectionKeyName
     Returns the unique key for a configuration collection.
 
     .DESCRIPTION
-    The `Get-CIisCollectionKeyName` locaties the mandatory attribute for an IIS configuration collection. This attribute
+    The `Get-CIisCollectionKeyName` locates the mandatory attribute for an IIS configuration collection. This attribute
     name must be included for all entries inside of an IIS collection.
 
     .EXAMPLE

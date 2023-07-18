@@ -2,7 +2,7 @@ function Set-CIisCollection
 {
     <#
     .SYNOPSIS
-    Changes the specied IIS Collection to only contain provided elements.
+    Sets the exact contents of an IIS configuration section collection.
 
     .DESCRIPTION
     The `Set-CIisCollection` function adds the provided elements to the specified IIS configuration collection. If a
@@ -67,34 +67,79 @@ function Set-CIisCollection
         Set-StrictMode -Version 'Latest'
         Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
         $items = [Collections.Generic.List[Microsoft.Web.Administration.ConfigurationElement]]::New()
-        $collection = Get-CIisCollection @PSBoundParameters
+
+        $collectionArgs = @{}
+
+        if ($LocationPath)
+        {
+            $collectionArgs['LocationPath'] = $LocationPath
+        }
+
+        if ($Name)
+        {
+            $collectionArgs['Name'] = $Name
+        }
+
+        $collection = Get-CIisCollection -SectionPath $SectionPath @collectionArgs
+
+        $pathMessage = "$($LocationPath):$($SectionPath)"
+
+        if ($collectionName)
+        {
+            $pathMessage = "$($pathMessage)/$($collectionName)"
+        }
+
+        if (-not $collection)
+        {
+            return
+        }
+
         $keyAttrName = Get-CIisCollectionKeyName -Collection $collection
+
+        if (-not $keyAttrName)
+        {
+            $msg = "Unable to find key for $($pathMessage)"
+            Write-Error -Message $msg
+            return
+        }
+
         $save = $false
     }
-
     process
     {
-        $addItem = $collection.CreateElement('add')
-        if ($InputObject[0] -is [string])
+        if (-not $collection)
         {
-            $addItem.SetAttributeValue($keyAttrName, $InputObject[0])
+            return
         }
-        elseif ($InputObject[0] -is [hashtable])
+
+        foreach ($item in $InputObject)
         {
-            foreach ($key in $InputObject[0].Keys)
+            $addItem = $collection.CreateElement('add')
+            if ($item -is [string])
             {
-                $addItem.SetAttributeValue($key, $InputObject[0][$key])
+                $addItem.SetAttributeValue($keyAttrName, $item)
             }
+            elseif ($item -is [hashtable])
+            {
+                foreach ($key in $item.Keys)
+                {
+                    $addItem.SetAttributeValue($key, $item[$key])
+                }
+            }
+            else
+            {
+                $msg = "Was expecting the input to be a string or a hashtable but got $($item.GetType())"
+                Write-Error -Message $msg -ErrorAction $ErrorActionPreference
+            }
+            $items.Add($addItem)
         }
-        else
-        {
-            $msg = "Was expecting the input to be a string or a hashtable but got $($InputObject[0].GetType())"
-            Write-Error -Message $msg -ErrorAction $ErrorActionPreference
-        }
-        $items.Add($addItem)
     }
     end
     {
+        if (-not $collection)
+        {
+            return
+        }
         foreach ($collectionItem in $collection)
         {
             if ($collectionItem -notin $items)

@@ -83,6 +83,23 @@ BeforeAll {
         }
         return $itemExists
     }
+
+    function ThenError
+    {
+        [CmdletBinding()]
+        param(
+            [Parameter(Mandatory)]
+            [string] $ErrorMessage
+        )
+
+        {
+            Set-CIisCollectionItem -LocationPath $script:locationPath `
+                                   -SectionPath 'system.webServer/httpProtocol' `
+                                   -CollectionName 'customHeaders' `
+                                   -Value 'Error Out' `
+                                   -ErrorAction 'Stop'
+        } | Should -Throw -ExpectedMessage $ErrorMessage
+    }
 }
 
 
@@ -139,5 +156,10 @@ Describe 'Set-CIisCollectionItem' {
                                 -Attribute $attributes `
                                 -WarningAction 'Stop'
         } | Should -Throw -ExpectedMessage "*as the Value parameter.*"
+    }
+
+    It 'should fail if key not found' {
+        Mock -CommandName 'Get-CIisCollectionKeyName' -ModuleName 'Carbon.IIS'
+        ThenError -ErrorMessage '*not found*'
     }
 }

@@ -7,7 +7,8 @@ function Set-CIisCollectionItem
     .DESCRIPTION
     The `Set-CIisCollectionItem` function adds a new item to an IIS configuration collection. Pass the collection's IIS
     configuration section path to the `SectionPath` parameter and the value to add to the collection to the `Value`
-    parameter. The function adds that value to the collection if it doesn't already exist in the collection.
+    parameter. The function adds that value to the collection if it doesn't already exist in the collection or if its
+    value has changed.
 
     To add extra attributes to the collection item, pass the *extra* attributes as a hashtable to the `Attribute`
     parameter. If the item already exists in the collection, any attributes on the item that aren't in the `Attribute`
@@ -84,6 +85,7 @@ function Set-CIisCollectionItem
     $collectionArgs = @{}
 
     $msgPrefix = 'IIS section '
+    $outputSection = "$($LocationPath):$($SectionPath)"
 
     if ($LocationPath)
     {
@@ -96,6 +98,7 @@ function Set-CIisCollectionItem
     if ($CollectionName)
     {
         $msgPrefix = $msgPrefix + "/$($CollectionName)"
+        $outputSection + "/$($CollectionName)"
         $collectionArgs['Name'] = $CollectionName
     }
 
@@ -103,7 +106,19 @@ function Set-CIisCollectionItem
 
     $collection = Get-CIisCollection @collectionArgs -SectionPath $SectionPath
 
+    if (-not $collection)
+    {
+        return
+    }
+
     $keyAttrName = Get-CIisCollectionKeyName -Collection $collection
+
+    if (-not $keyAttrName)
+    {
+        $msg = "Unable to find key for $($outputSection)"
+        Write-Error -Message $msg
+        return
+    }
 
     $add = $collection | Where-Object { $_.GetAttributeValue($keyAttrName) -eq $Value }
 

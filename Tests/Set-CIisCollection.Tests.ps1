@@ -10,12 +10,29 @@ BeforeAll {
         [CmdletBinding()]
         param(
             [Parameter(Mandatory)]
-            [object[]] $itemsToAdd
+            [object[]] $ItemsToAdd
         )
 
-        $itemsToAdd | Set-CIisCollection -LocationPath $script:locationPath `
+        $ItemsToAdd | Set-CIisCollection -LocationPath $script:locationPath `
                                          -SectionPath 'system.webServer/httpProtocol' `
                                          -Name 'customHeaders'
+    }
+
+    function ThenError
+    {
+        [CmdletBinding()]
+        param(
+            [Parameter(Mandatory)]
+            [object[]] $ItemsToAdd,
+            [string] $ErrorMessage
+        )
+
+        {
+            $ItemsToAdd | Set-CIisCollection -LocationPath $script:locationPath `
+                                             -SectionPath 'system.webServer/httpProtocol' `
+                                             -Name 'customHeaders' `
+                                             -ErrorAction 'Stop'
+        } | Should -Throw -ExpectedMessage $ErrorMessage
     }
 
     function ThenItemsValid
@@ -26,8 +43,6 @@ BeforeAll {
             [Object[]] $addedItems
         )
 
-        # $globalCollection = Get-CIisCollection -SectionPath 'system.webServer/httpProtocol' `
-        #                                         -Name 'customHeaders'
         $localCollection = Get-CIisCollection -LocationPath $script:locationPath `
                                               -SectionPath 'system.webServer/httpProtocol' `
                                               -Name 'customHeaders'
@@ -130,5 +145,10 @@ Describe 'Set-CIisCollection' {
         $newNames = 'foo', 'baz'
         GivenItemsAreAdded $newNames
         ThenItemsValid $newNames
+    }
+
+    It 'should error if key not found' {
+        Mock -CommandName 'Get-CIisCollectionKeyName' -ModuleName 'Carbon.IIS'
+        ThenError -ItemsToAdd 'hello-world' -ErrorMessage 'Unable to find key*'
     }
 }
