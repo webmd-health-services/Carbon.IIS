@@ -80,6 +80,8 @@ function Set-CIisCollection
             $collectionArgs['Name'] = $Name
         }
 
+        $errorThrown = $false
+
         $collection = Get-CIisCollection -SectionPath $SectionPath @collectionArgs
 
         $pathMessage = "$($LocationPath):$($SectionPath)"
@@ -91,6 +93,7 @@ function Set-CIisCollection
 
         if (-not $collection)
         {
+            $errorThrown = $true
             return
         }
 
@@ -100,6 +103,7 @@ function Set-CIisCollection
         {
             $msg = "Unable to find key for $($pathMessage)"
             Write-Error -Message $msg
+            $errorThrown = $true
             return
         }
 
@@ -107,7 +111,7 @@ function Set-CIisCollection
     }
     process
     {
-        if (-not $collection)
+        if ($errorThrown)
         {
             return
         }
@@ -136,7 +140,7 @@ function Set-CIisCollection
     }
     end
     {
-        if (-not $collection)
+        if ($errorThrown)
         {
             return
         }
