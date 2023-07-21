@@ -86,9 +86,9 @@ function Set-CIisCollection
 
         $pathMessage = "$($LocationPath):$($SectionPath)"
 
-        if ($collectionName)
+        if ($Name)
         {
-            $pathMessage = "$($pathMessage)/$($collectionName)"
+            $pathMessage = "$($pathMessage)/$($Name)"
         }
 
         if (-not $collection)
