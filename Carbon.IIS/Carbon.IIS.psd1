@@ -18,7 +18,7 @@
     RootModule = 'Carbon.IIS.psm1'
 
     # Version number of this module.
-    ModuleVersion = '1.0.1'
+    ModuleVersion = '1.1.0'
 
     # ID used to uniquely identify this module
     GUID = '157f0f80-4787-4dc0-bdee-4881c627750b'
@@ -116,6 +116,7 @@
         'Set-CIisHttpRedirect',
         'Set-CIisMimeMap',
         'Set-CIisWebsite',
+        'Set-CIisWebsiteBinding',
         'Set-CIisWebsiteID',
         'Set-CIisWebsiteLimit',
         'Set-CIisWebsiteLogFile',
@@ -169,7 +170,7 @@
                       'applicationHost.config', 'application', 'default', 'document', 'server', 'manager', 'security',
                       'authentication', 'configuration', 'section', 'mime', 'map', 'directory', 'browsing', 'redirect',
                       'virtual', 'header', 'id', 'certificate', 'windows', 'anonymous', 'basic',  'lock', 'unlock',
-                      'WebAdministration', 'Microsoft.Web.Administration', 'Carbon' )
+                      'WebAdministration', 'Microsoft.Web.Administration', 'Carbon', 'bindings', 'sslflags', 'sni' )
 
             # A URL to the license for this module.
             LicenseUri = 'http://www.apache.org/licenses/LICENSE-2.0'

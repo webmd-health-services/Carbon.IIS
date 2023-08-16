@@ -3,6 +3,13 @@
 
 # Carbon.IIS Changelog
 
+## 1.1.0
+
+> Released 16 Aug 2023
+
+Added `Set-CIisWebsiteBinding` function for configuring a website's existing bindings.
+
+
 ## 1.0.1
 
 > Released 16 Jun 2023
