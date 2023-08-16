@@ -28,7 +28,7 @@ Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath '..\PSModules\Carb
               -Function @('Install-CCertificate', 'Uninstall-CCertificate') `
               -Prefix 'T'
 
-Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath '..\Carbon.IIS\PSModules\Carbon.Windows.HttpServer' -Resolve) `
+Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath '..\Carbon.IIS\Modules\Carbon.Windows.HttpServer' -Resolve) `
               -Function @('Get-CHttpsCertificateBinding', 'Remove-CHttpsCertificateBinding') `
               -Prefix 'T'
 

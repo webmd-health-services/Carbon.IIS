@@ -36,10 +36,11 @@ $script:iisConfigs = & {
 # Seriously. It has an `IsNumeric` method that isn't part of .NET.
 Add-Type -AssemblyName 'Microsoft.VisualBasic'
 
-Import-Module -Name (Join-Path -Path $script:moduleRoot -ChildPath 'PSModules\Carbon.Core' -Resolve) `
+$psModulesRoot = Join-Path -Path $script:moduleRoot -ChildPath 'Modules'
+Import-Module -Name (Join-Path -Path $psModulesRoot -ChildPath 'Carbon.Core' -Resolve) `
               -Function @('Add-CTypeData', 'Resolve-CFullPath')
 
-Import-Module -Name (Join-Path -Path $script:moduleRoot -ChildPath 'PSModules\Carbon.Windows.HttpServer' -Resolve) `
+Import-Module -Name (Join-Path -Path $psModulesRoot -ChildPath 'Carbon.Windows.HttpServer' -Resolve) `
               -Function @('Set-CHttpsCertificateBinding')
 
 function Test-MSWebAdministrationLoaded
