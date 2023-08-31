@@ -18,7 +18,7 @@
     RootModule = 'Carbon.IIS.psm1'
 
     # Version number of this module.
-    ModuleVersion = '1.1.0'
+    ModuleVersion = '1.2.0'
 
     # ID used to uniquely identify this module
     GUID = '157f0f80-4787-4dc0-bdee-4881c627750b'
