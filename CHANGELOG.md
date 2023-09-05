@@ -14,6 +14,8 @@
 * Function `Remove-CIisCollectionItem` for removing an item from an IIS collection.
 * Function `Set-CIisCollection` for setting an IIS collection's elements.
 * Function `Set-CIisCollectionItem` for adding a new item to an IIS collection.
+* Function `Disable-CIisCollectionInheritance` for disabling IIS collections from inheriting items, i.e. it adds the
+`clear` element to the collection.
 
 ### Fixed
 
