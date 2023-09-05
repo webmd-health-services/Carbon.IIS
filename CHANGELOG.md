@@ -4,6 +4,7 @@
 # Carbon.IIS Changelog
 
 ## 1.2.0
+
 ### Added
 
 * Function `Add-CIisHttpHeader` for adding HTTP headers by adding them to the
