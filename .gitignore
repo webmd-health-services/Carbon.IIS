@@ -4,7 +4,8 @@
 *_LOCAL_*
 *_REMOTE_*
 .*
-PSModules
+/PSModules/
+/Carbon.IIS/Modules/
 /Carbon.IIS/*.md
 /Carbon.IIS/LICENSE
 /Carbon.IIS/NOTICE
