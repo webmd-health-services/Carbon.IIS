@@ -1,4 +1,10 @@
+
+#Requires -Version 5.1
+Set-StrictMode -Version 'Latest'
+
 BeforeAll {
+    Set-StrictMode -Version 'Latest'
+
     & (Join-Path -Path $PSScriptRoot 'Initialize-CarbonTest.ps1' -Resolve)
 
     $script:locationPath = 'CarbonGetIisCollection'
@@ -75,5 +81,13 @@ Describe 'Get-CIisCollection' {
                              -SectionPath 'system.webServer/httpProtocol' `
                              -ErrorAction 'Stop'
         } | Should -Throw -ExpectedMessage '*is not a collection*'
+    }
+
+    It 'gets collection from configuration element' {
+        $ce = Get-CIisConfigurationSection -SectionPath 'system.webServer/httpProtocol'
+        $ce | Should -Not -BeNullOrEmpty
+        $c = Get-CIisCollection -ConfigurationElement $ce -Name 'customHeaders'
+        ,$c | Should -Not -BeNullOrEmpty
+        ,$c | Should -BeOfType [Microsoft.Web.Administration.ConfigurationElementCollection]
     }
 }

@@ -20,15 +20,18 @@ function Get-CIisCollection
     Demonstrates how to get the collection 'customHeaders' inside the section 'system.webServer/httpProtocol' for the
     site 'SITE_NAME'.
     #>
-    [CmdletBinding(DefaultParameterSetName='Global')]
+    [CmdletBinding()]
     param(
-        # The name of the site where the collection belongs
-        [Parameter(Mandatory, ParameterSetName='Location')]
-        [String] $LocationPath,
+        [Parameter(Mandatory, ParameterSetName='Direct')]
+        [ConfigurationElement] $ConfigurationElement,
 
         # The path for the configuration section that points to the collection
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory, ParameterSetName='ByPath')]
         [String] $SectionPath,
+
+        # The name of the site where the collection belongs
+        [Parameter(ParameterSetName='ByPath')]
+        [String] $LocationPath,
 
         # The name of the collection
         [String] $Name
@@ -37,35 +40,36 @@ function Get-CIisCollection
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
-    $getArgs = @{}
 
-    if ($LocationPath)
+    if (-not $ConfigurationElement)
     {
-        $getArgs['LocationPath'] = $LocationPath
-    }
+        $getArgs = @{}
+        if ($LocationPath)
+        {
+            $getArgs['LocationPath'] = $LocationPath
+        }
 
-    $section = Get-CIisConfigurationSection @getArgs -SectionPath $sectionPath
+        $ConfigurationElement = Get-CIisConfigurationSection @getArgs -SectionPath $SectionPath
+        if (-not $ConfigurationElement)
+        {
+            return
+        }
+    }
 
     if ($Name)
     {
-        $collection = $section.GetCollection($Name)
+        $collection = $ConfigurationElement.GetCollection($Name)
     }
     else
     {
-        $collection = $section.GetCollection()
+        $collection = $ConfigurationElement.GetCollection()
     }
 
     if (-not $collection)
     {
-        if ($Name)
-        {
-            $msg = "IIS:$($LocationPath): configuration path $($SectionPath)/$($Name) is not a collection."
-        }
-        else
-        {
-            $msg = "IIS:$($LocationPath): configuration path $($SectionPath) is not a collection."
-        }
-
+        $displayPath = Get-CIisDisplayPath -SectionPath $SectionPath -LocationPath $LocationPath -SubSectionPath $Name
+        $msg = "Failed to get IIS configuration collection ${displayPath} because that it does not exist or is not a " +
+               'collection'
         Write-Error -Message $msg -ErrorAction $ErrorActionPreference
         return
     }
