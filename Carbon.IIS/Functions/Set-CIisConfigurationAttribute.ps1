@@ -329,7 +329,7 @@ function Set-CIisConfigurationAttribute
             $currentValueMsg = '********'
         }
 
-        $msgPrefix = "    @$($nameFormat -f $currentAttr.Name)  "
+        $msgPrefix = "    $($nameFormat -f $currentAttr.Name)  "
         $emptyPrefixMsg = ' ' * $msgPrefix.Length
 
         Write-Debug "$($msgPrefix     )current                  $($currentValue | Get-TypeName) $($currentValueMsg)"
@@ -348,7 +348,7 @@ function Set-CIisConfigurationAttribute
             Write-Debug "$($emptyPrefixMsg)current.Equals(default)  $($currentValue.Equals($defaultValue))"
         }
 
-        $whatIfTarget = "@$($currentAttr.Name) for $($Target -replace '"', '''')"
+        $whatIfTarget = "$($currentAttr.Name) for $($Target -replace '"', '''')"
 
         if (-not $PSBoundParameters.ContainsKey('Value') -and $hasCurrentValue)
         {

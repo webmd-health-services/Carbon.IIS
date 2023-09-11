@@ -103,7 +103,7 @@ function Remove-CIisConfigurationAttribute
             }
 
             $nameItem = "$($nameItem.Substring(0, 1).ToLowerInvariant())$($nameItem.Substring(1, $nameItem.Length -1))"
-            $msgPrefix = "$($basePrefix)@$($nameFormat -f $nameItem)]  "
+            $msgPrefix = "$($basePrefix)$($nameFormat -f $nameItem)]  "
 
             Write-Debug "$($msgPrefix)$($attr.IsInheritedFromDefaultValue)  $($attr.Value)  $($attr.Schema.DefaultValue)"
             $hasDefaultValue = $attr.Value -eq $attr.Schema.DefaultValue
