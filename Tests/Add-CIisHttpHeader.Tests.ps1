@@ -15,8 +15,8 @@ BeforeAll {
         )
 
         $customHeaders = Get-CIisCollection -LocationPath $script:locationPath `
-                                         -SectionPath 'system.webServer/httpProtocol' `
-                                         -Name 'customHeaders'
+                                            -SectionPath 'system.webServer/httpProtocol' `
+                                            -Name 'customHeaders'
 
         $matchesParams = $customHeaders |
             Where-Object {
@@ -71,5 +71,16 @@ Describe 'Add-CIisHttpHeader' {
         Add-CIisHttpHeader -Name $name -Value $secondValue -LocationPath $script:locationPath
         ThenExists -Name $name -Value $value -Not
         ThenExists -Name $name -Value $secondValue
+    }
+
+    It 'accepts pipeline input' {
+        @(
+            [pscustomobject]@{ name = 'Add-CIisHttpHeader1' ; value = 'Add-CIisHttpHeaderA' },
+            [pscustomobject]@{ name = 'Add-CIisHttpHeader2' ; value = 'Add-CIisHttpHeaderB' },
+            [pscustomobject]@{ name = 'Add-CIisHttpHeader3' ; value = 'Add-CIisHttpHeaderC' }
+        ) | Add-CIisHttpHeader -LocationPath $script:locationPath
+        ThenExists -Name 'Add-CIisHttpHeader1' -Value 'Add-CIisHttpHeaderA'
+        ThenExists -Name 'Add-CIisHttpHeader2' -Value 'Add-CIisHttpHeaderB'
+        ThenExists -Name 'Add-CIisHttpHeader3' -Value 'Add-CIisHttpHeaderC'
     }
 }

@@ -100,6 +100,11 @@ function Stop-CIisAppPool
                 }
                 catch
                 {
+                    if ($script:skipCommit)
+                    {
+                        return
+                    }
+
                     $lastError = $_
                     Start-Sleep -Milliseconds 100
                     $appPool = Get-CIisAppPool -Name $appPool.Name

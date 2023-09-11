@@ -2,7 +2,7 @@ function Get-CIisCollection
 {
     <#
     .SYNOPSIS
-    Gets an instance of an IIS Collection
+    Gets an IIS configuration ollection.
 
     .DESCRIPTION
     The `Get-CIisCollection` function gets the specified IIS collection. Pass the collection's IIS configuration section
@@ -13,6 +13,10 @@ function Get-CIisCollection
 
     If the collection needed is for a website, application, virtual directory, or directory, pass the path to that
     location to the `LocatianPath` parameter.
+
+    You can pass an instance of a `[Microsoft.Web.Administration.ConfigurationElement]` to the `ConfigurationElement`
+    parameter to return that element as a collection, or, with the `Name` parameter, get a named collection under that
+    configuration element.
 
     .EXAMPLE
     $collection = Get-CIisCollection -LocationPath 'SITE_NAME' -SectionPath 'system.webServer/httpProtocol/' -Name 'customHeaders'
@@ -40,7 +44,6 @@ function Get-CIisCollection
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
-
     if (-not $ConfigurationElement)
     {
         $getArgs = @{}
@@ -59,6 +62,10 @@ function Get-CIisCollection
     if ($Name)
     {
         $collection = $ConfigurationElement.GetCollection($Name)
+    }
+    elseif ($ConfigurationElement -is [ICollection])
+    {
+        $collection = $ConfigurationElement
     }
     else
     {

@@ -35,10 +35,9 @@ BeforeAll {
             [string] $Value
         )
 
-        Set-CIisCollectionItem -LocationPath $script:locationPath `
-                               -SectionPath 'system.webServer/httpProtocol' `
-                               -CollectionName 'customHeaders' `
-                               -Value $Value
+        $Value | Set-CIisCollectionItem -LocationPath $script:locationPath `
+                                        -SectionPath 'system.webServer/httpProtocol' `
+                                        -CollectionName 'customHeaders'
     }
 
     function GivenRemoves {

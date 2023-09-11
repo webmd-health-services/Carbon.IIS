@@ -18,23 +18,6 @@ BeforeAll {
                                          -Name 'customHeaders'
     }
 
-    function ThenError
-    {
-        [CmdletBinding()]
-        param(
-            [Parameter(Mandatory)]
-            [object[]] $ItemsToAdd,
-            [string] $ErrorMessage
-        )
-
-        {
-            $ItemsToAdd | Set-CIisCollection -LocationPath $script:locationPath `
-                                             -SectionPath 'system.webServer/httpProtocol' `
-                                             -Name 'customHeaders' `
-                                             -ErrorAction 'Stop'
-        } | Should -Throw -ExpectedMessage $ErrorMessage
-    }
-
     function ThenItemsValid
     {
         [CmdletBinding()]
@@ -91,6 +74,7 @@ Describe 'Set-CIisCollection' {
     }
 
     BeforeEach {
+        $Global:Error.Clear()
         $script:testDir = New-TestDirectory
         Install-CIisWebsite -Name $script:locationPath -Path $script:testDir -Binding "http/*:$($script:sitePort):*"
     }
@@ -147,8 +131,41 @@ Describe 'Set-CIisCollection' {
         ThenItemsValid $newNames
     }
 
-    It 'should error if key not found' {
+    It 'ensures user includes key attribute' {
         Mock -CommandName 'Get-CIisCollectionKeyName' -ModuleName 'Carbon.IIS'
-        ThenError -ItemsToAdd 'hello-world' -ErrorMessage 'Unable to find key*'
+        {
+            'hello-world' | Set-CIisCollection -LocationPath $script:locationPath `
+                                               -SectionPath 'system.webServer/httpProtocol' `
+                                               -Name 'customHeaders' `
+                                               -ErrorAction 'Stop'
+            } | Should -Throw -ExpectedMessage '*does not have a key attribute*'
     }
+
+    It 'sets the collection using a configuration element' {
+        Suspend-CIisAutoCommit
+        $name = "Set-CIisCollection-$([IO.Path]::GetRandomFileName())"
+        try
+        {
+            $appPool = Install-CIisAppPool -Name $name -PassThru
+            $schedule = $appPool.Recycling.PeriodicRestart.Schedule
+            $times = ((New-TimeSpan -Hours 1), (New-TimeSpan -Hours 2), (New-TimeSpan -Hours 3))
+            $times | Set-CIisCollection -ConfigurationElement $schedule
+            $schedule | Should -HaveCount 3
+            $schedule[0].Time | Should -Be $times[0]
+            $schedule[1].Time | Should -Be $times[1]
+            $schedule[2].Time | Should -Be $times[2]
+
+            $times = ((New-TimeSpan -Hours 4), (New-TimeSpan -Hours 5))
+            $times | Set-CIisCollection -ConfigurationElement $schedule
+            $schedule | Should -HaveCount 2
+            $schedule[0].Time | Should -Be $times[0]
+            $schedule[1].Time | Should -Be $times[1]
+        }
+        finally
+        {
+            Resume-CIisAutoCommit -Save
+            Uninstall-CIisAppPool -Name $name
+        }
+    }
+
 }

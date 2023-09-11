@@ -94,6 +94,11 @@ function Start-CIisWebsite
                 }
                 catch
                 {
+                    if ($script:skipCommit)
+                    {
+                        return
+                    }
+
                     $lastError = $_
                     Start-Sleep -Milliseconds 100
                     $website = Get-CIisWebsite -Name $website.Name

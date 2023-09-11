@@ -2,21 +2,21 @@ function Add-CIisHttpHeader
 {
     <#
     .SYNOPSIS
-    Adds a new HTTP header to IIS.
+    Adds an HTTP header to IIS.
 
     .DESCRIPTION
-    The `Add-CIisHttpHeader` function adds a new header to the IIS configuration. Pass the header's name to the `Name`
-    parameter and the header's value to the `Value` parameter. By default, the header is added to all HTTP responses. To
-    add the header only to responses from a specific website, application, virtual directory, or directory, pass the
-    path to that location to the `LocationPath` parameter.
+    The `Add-CIisHttpHeader` function adds a header to IIS. Pass the header's name to the `Name` parameter and the
+    header's value to the `Value` parameter. By default, the header is added to all HTTP responses (i.e. IIS's global
+    settings are updated). To add the header only to responses from a specific website, application, virtual directory,
+    or directory, pass the location's path to the `LocationPath` parameter.
 
-    The function adds the HTTP header by adding it to the `system.webServvver/httpProtocol/customHeaders` configuration
-    collection.
+    The function adds the HTTP header to the `system.webServvver/httpProtocol/customHeaders` configuration collection.
 
     .EXAMPLE
     Add-CIisHttpHeader -Name 'foo' -Value 'bar'
 
-    Demonstrates how to add a new HTTP header globally. After the above command runs, this will be in the applicationHost.
+    Demonstrates how to add a new HTTP header globally. After the above command runs, this will be in the
+    applicationHost.
 
         <system.webServer>
             <httpProtocol>
@@ -57,19 +57,30 @@ function Add-CIisHttpHeader
         [String] $LocationPath
     )
 
-    Set-StrictMode -Version 'Latest'
-    Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
-
-    $setConditionalArgs = @{}
-
-    if ($LocationPath)
+    begin
     {
-        $setConditionalArgs['LocationPath'] = $LocationPath
+        Set-StrictMode -Version 'Latest'
+        Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
+
+        $setConditionalArgs = @{}
+
+        if ($LocationPath)
+        {
+            $setConditionalArgs['LocationPath'] = $LocationPath
+        }
+
+        $headers = [List[hashtable]]::New()
     }
 
-    Set-CIisCollectionItem -SectionPath 'system.webServer/httpProtocol' `
-                           -CollectionName 'customHeaders' `
-                           -Value $Name `
-                           -Attribute @{ 'value' = $Value } `
-                           @setConditionalArgs
+    process
+    {
+        $headers.Add(@{ 'name' = $Name ; 'value' = $Value })
+    }
+
+    end
+    {
+        $headers | Set-CIisCollectionItem -SectionPath 'system.webServer/httpProtocol' `
+                                          -CollectionName 'customHeaders' `
+                                          @setConditionalArgs
+    }
 }

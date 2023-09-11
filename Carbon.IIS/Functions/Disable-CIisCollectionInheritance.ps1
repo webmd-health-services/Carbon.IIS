@@ -16,6 +16,16 @@ function Disable-CIisCollectionInheritance
     To disable inheritance for a site, directory, application, or virtual directory, pass its location path to the
     `LocationPath` parameter.
 
+    To disable inheritance for a collection that is a or is a child of a
+    `[Microsoft.Web.Administration.ConfigurationElement]` (i.e. configuration under a site, application pool, etc.),
+    pass the object to the `ConfigurationElement` parameter. If the object isn't a collection, pass the name of the
+    child element collection to the `Name` parameter.
+
+    When making changes directly to ConfigurationElement objects, test that those changes are saved correctly to the IIS
+    application host configuration. Some configuration has to be saved at the same time as its parent configuration
+    elements are created (i.e. sites, application pools, etc.). Use the `Suspend-CIisAutoCommit` and
+    `Resume-CIisAutoCommit` functions to ensure configuration gets committed simultaneously.
+
     .EXAMPLE
     Disable-CIisCollectionInheritance -SectionPath 'system.webServer/httpProtocol' -Name 'customHeaders'
 
@@ -31,13 +41,18 @@ function Disable-CIisCollectionInheritance
     #>
     [CmdletBinding()]
     param(
-        # The configuration element who's inheritance to disable. Can be the collection itself, or the collection's
-        # parent element. If passing the parent element, pass the name of the collection to the `Name` parameter.
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory, ParameterSetName='ByConfigurationElement')]
+        [ConfigurationElement] $ConfigurationElement,
+
+        # The configuration section's path who's inheritance to disable. Can be the path to the collection itself, or
+        # the collection's parent element. If passing the parent element, pass the name of the collection to the `Name`
+        # parameter.
+        [Parameter(Mandatory, ParameterSetName='ByPath')]
         [String] $SectionPath,
 
         # Location path to the site, directory, application, or virtual directory that should be changed. The default is
         # to modify global configuration.
+        [Parameter(, ParameterSetName='ByPath')]
         [String] $LocationPath,
 
         # The name of the collection.
@@ -55,7 +70,12 @@ function Disable-CIisCollectionInheritance
             return
         }
 
-        $displayPath = Get-CIisDisplayPath -SectionPath $sectionPath -LocationPath $LocationPath
+        $displayPath = $collection.ElementTagName
+        if ($PSCmdlet.ParameterSetName -eq 'ByPath')
+        {
+            $displayPath = Get-CIisDisplayPath -SectionPath $sectionPath -LocationPath $LocationPath
+        }
+
         if (-not $collection.AllowsClear)
         {
             $msg = "Failed to clear collection ${displayPath} because it does not allow clearing."

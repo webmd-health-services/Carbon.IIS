@@ -16,6 +16,8 @@
 * Function `Set-CIisCollectionItem` for adding a new item to an IIS collection.
 * Function `Disable-CIisCollectionInheritance` for disabling IIS collections from inheriting items, i.e. it adds the
 `clear` element to the collection.
+* Function `Suspend-CIisAutoCommit` to stop Carbon.IIS from committing changes.
+* Function `Resume-CIisAutoCommit` to start Carbon.IIS commiting changes again.
 
 ### Fixed
 

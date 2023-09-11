@@ -13,6 +13,8 @@
 # limitations under the License
 
 using module '.\Carbon.IIS.Enums.psm1'
+using namespace System.Collections
+using namespace System.Collections.Generic
 using namespace System.Management.Automation
 using namespace Microsoft.Web.Administration
 
@@ -33,6 +35,7 @@ $script:iisConfigs = & {
     Join-Path -Path ([Environment]::SystemDirectory) -ChildPath 'inetsrv\config\*.config'
     Join-Path -Path ([Environment]::GetFolderPath('Windows')) -ChildPath 'Microsoft.NET\Framework*\v*\config\*.config'
 }
+$script:skipCommit = $false
 
 # Seriously. It has an `IsNumeric` method that isn't part of .NET.
 Add-Type -AssemblyName 'Microsoft.VisualBasic'

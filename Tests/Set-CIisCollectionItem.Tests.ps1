@@ -1,87 +1,44 @@
 BeforeAll {
     & (Join-Path -Path $PSScriptRoot 'Initialize-CarbonTest.ps1' -Resolve)
 
-    $script:locationPath = 'CarbonAddIisCollectionItem'
+    $script:locationPath = ''
     $script:sitePort = 47038
     $script:testDir = $null
 
-    function GivenValueAdded {
+    function WhenSetting {
         [CmdletBinding()]
         param(
             [Parameter(Mandatory)]
-            [string] $Value
+            [Object] $Value
         )
 
-        Set-CIisCollectionItem -LocationPath $script:locationPath `
-                               -SectionPath 'system.webServer/httpProtocol' `
-                               -CollectionName 'customHeaders' `
-                               -Value $Value
+        $Value | Set-CIisCollectionItem -LocationPath $script:locationPath `
+                                        -SectionPath 'system.webServer/httpProtocol' `
+                                        -CollectionName 'customHeaders'
     }
 
-    function GivenAttributesAdded {
+    function ThenCollectionIs {
         [CmdletBinding()]
         param(
             [Parameter(Mandatory)]
-            [object] $Value,
-
-            [Parameter(Mandatory)]
-            [hashtable] $Attribute
-        )
-
-        Set-CIisCollectionItem -LocationPath $script:locationPath `
-                               -SectionPath 'system.webServer/httpProtocol' `
-                               -CollectionName 'customHeaders' `
-                               -Value $Value `
-                               -Attribute $Attribute
-    }
-
-    function InCollection {
-        [CmdletBinding()]
-        param(
-            [Parameter(Mandatory)]
-            [Object] $Value,
-
-            [hashtable] $Item
+            [hashtable[]] $Value
         )
 
         $collection = Get-CIisCollection -LocationPath $script:locationPath `
                                          -SectionPath 'system.webServer/httpProtocol' `
                                          -Name 'customHeaders'
-        $collectionKey = Get-CIisCollectionKeyName -Collection $collection
-
-        $itemExists = $false
-        foreach ($collectionItem in $collection)
+        $collection | Should -HaveCount $Value.Length
+        for ($idx = 0 ; $idx -lt $Value.Length ; ++$idx)
         {
-            if ($Value)
-            {
-                if ($collectionItem.GetAttributeValue($collectionKey) -eq $Value)
-                {
-                    $itemExists = $true
-                }
-            }
-            if ($Item)
-            {
-                $allFieldsMatch = $true
-                foreach ($key in $Item.Keys)
-                {
-                    if ($collectionItem[$key] -ne $Item[$key])
-                    {
-                        $allFieldsMatch = $false
-                        break
-                    }
-                }
+            $actualValue = $collection[$idx]
+            $expectedValue = $Value[$idx]
 
-                if ($allFieldsMatch -and $itemExists)
-                {
-                    break
-                }
-                else
-                {
-                    $itemExists = $false
-                }
+            $actualValue.Attributes.Count | Should -Be $expectedValue.Count
+            foreach ($key in $expectedValue.Keys)
+            {
+                $actualValue.GetAttributeValue($key) | Should -Be $expectedValue[$key]
             }
         }
-        return $itemExists
     }
 
     function ThenError
@@ -113,53 +70,66 @@ Describe 'Set-CIisCollectionItem' {
     }
 
     BeforeEach {
+        $Global:Error.Clear()
         $script:testDir = New-TestDirectory
+        $script:locationPath = "Set-CIisCollectionItem-$([IO.Path]::GetRandomFileName())"
         Install-CIisWebsite -Name $script:locationPath -Path $script:testDir -Binding "http/*:$($script:sitePort):*"
+        Disable-CIisCollectionInheritance -SectionPath 'system.webServer/httpProtocol' `
+                                          -Name 'customHeaders' `
+                                          -LocationPath $script:locationPath
     }
 
     AfterEach {
+        Resume-CIisAutoCommit
         Uninstall-CIisWebsite -Name $script:locationPath
     }
 
-    It 'should successfully add item if key provided' {
-        $value = 'X-AddIisItem'
-        GivenValueAdded $value
-        InCollection -Value $value | Should -BeTrue
+    It 'adds item' {
+        $attribute = @{ 'name' = 'X-AddIisItem' ; 'value' = 'dont add' }
+        WhenSetting $attribute
+        ThenCollectionIs $attribute
     }
 
-    It 'should successfully add item if hashtable provided' {
-        $attributes = @{ 'value' = 'dont add' }
-        GivenAttributesAdded -Value 'X-AddIisItem' -Attribute $attributes
-        InCollection -Value 'X-AddIisItem' -Item $attributes | Should -BeTrue
+    It 'replaces value on existing item' {
+        $attribute = @{ 'name' = 'X-AddIisItem' ; 'value' = 'overwrite me' }
+        WhenSetting $attribute
+        ThenCollectionIs $attribute
+
+        $attribute = @{ 'name' = 'X-AddIisItem' ; 'value' = 'overwritten' }
+        WhenSetting $attribute
+        ThenCollectionIs @{ 'name' = 'X-AddIisItem' ; 'value' = 'overwritten' }
     }
 
-    It 'should overwrite item if it already exists' {
-        $attributes = @{ 'value' = 'overwrite me' }
-        GivenAttributesAdded -Value 'X-AddIisItem' -Attribute $attributes
-        InCollection -Value 'X-AddIisItem' -Item $attributes | Should -BeTrue
+    It 'sets collection item on a configuration element' {
+        Uninstall-CIisWebsite -Name $script:locationPath
+        Suspend-CIisAutoCommit
+        $site = Install-CIisWebsite -Name $script:locationPath `
+                                    -Path $script:testDir `
+                                    -Binding "http/*:${script:sitePort}:*" `
+                                    -PassThru
+        $customFields = $site.LogFile.CustomLogFields
+        $customFields | Should -HaveCount 0
+        @{ logFieldName = 'logFieldName' ; sourceName = 'sourceName' ; sourceType = 'RequestHeader' } |
+            Set-CIisCollectionItem -ConfigurationElement $customFields
 
-        $newAttrs = @{ 'value' = 'overwritten' }
-        GivenAttributesAdded -Value 'X-AddIisItem' -Attribute $newAttrs
-        InCollection -Value 'X-AddIisItem' -Item $newAttrs | Should -BeTrue
-        InCollection -Value 'X-AddIisItem' -Item $attributes | Should -BeFalse
-    }
+        $customFields | Should -HaveCount 1
+        $customFields[0].LogFieldName | Should -Be 'logFieldName'
+        $customFields[0].SourceName | Should -Be 'sourceName'
+        $customFields[0].SourceType | Should -Be 'RequestHeader'
 
-    It 'should throw warning if key is in hashtable' {
-        $attributes = @{
-            'name' = 'name'
-            'value' = 'throw error'
-        }
-        { Set-CIisCollectionItem -LocationPath $script:locationPath `
-                                -SectionPath 'system.webServer/httpProtocol' `
-                                -CollectionName 'customHeaders' `
-                                -Value 'X-Carbon-AddCollectionItem' `
-                                -Attribute $attributes `
-                                -WarningAction 'Stop'
-        } | Should -Throw -ExpectedMessage "*as the Value parameter.*"
-    }
+        @(
+            @{ logFieldName = 'logFieldName' ; sourceName = 'sourceNameb' ; sourceType = 'ResponseHeader' },
+            @{ logFieldName = 'logFieldName2' ; sourceName = 'sourceName2' ; sourceType = 'RequestHeader' }
 
-    It 'should fail if key not found' {
-        Mock -CommandName 'Get-CIisCollectionKeyName' -ModuleName 'Carbon.IIS'
-        ThenError -ErrorMessage '*Unable to find*'
+        ) |
+            Set-CIisCollectionItem -ConfigurationElement $customFields
+
+        $customFields | Should -HaveCount 2
+        $customFields[0].LogFieldName | Should -Be 'logFieldName'
+        $customFields[0].SourceName | Should -Be 'sourceNameb'
+        $customFields[0].SourceType | Should -Be 'ResponseHeader'
+        $customFields[1].LogFieldName | Should -Be 'logFieldName2'
+        $customFields[1].SourceName | Should -Be 'sourceName2'
+        $customFields[1].SourceType | Should -Be 'RequestHeader'
     }
 }

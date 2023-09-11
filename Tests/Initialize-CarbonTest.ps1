@@ -57,7 +57,7 @@ if( -not (Test-TCUser -Username $CarbonTestUser.UserName) )
     {
         try
         {
-            Write-Verbose -Message ('Attempting to launch process as "CarbonTestUser".') -Verbose
+            Write-Verbose -Message ('Attempting to launch process as "CarbonTestUser".')
             $usedCredential =
                 Start-Job -ScriptBlock { [Environment]::UserName } -Credential $CarbonTestUser  |
                 Wait-Job |

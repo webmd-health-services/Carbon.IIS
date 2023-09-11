@@ -17,12 +17,13 @@ function Get-CIisCollectionKeyName
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)]
-        [ConfigurationElementCollection] $Collection
+        [ConfigurationElement] $Collection
     )
+
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
     return $Collection.CreateElement().Attributes |
-        Where-Object { $_.Schema.IsUniqueKey } |
-        Select-Object -ExpandProperty 'name'
+                Where-Object { $_.Schema.IsUniqueKey } |
+                Select-Object -ExpandProperty 'name'
 }

@@ -94,7 +94,8 @@ function Get-CIisConfigurationSection
     }
     else
     {
-        $msg = 'IIS:{0}: configuration section {1} not found.' -f $LocationPath,$SectionPath
+        $displayPath = Get-CIisDisplayPath -SectionPath $SectionPath -LocationPath $LocationPath
+        $msg = "IIS configuration section ${displayPath} does not exist."
         Write-Error $msg -ErrorAction $ErrorActionPreference
         return
     }

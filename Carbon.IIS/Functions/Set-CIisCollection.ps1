@@ -5,11 +5,19 @@ function Set-CIisCollection
     Sets the exact contents of an IIS configuration section collection.
 
     .DESCRIPTION
-    The `Set-CIisCollection` function adds the provided elements to the specified IIS configuration collection. If a
-    `LocationPath` is set, then the function will clear all existing elements, otherwise it will just add to the
-    existing element list and leave the pre-set global values. The provided `$InputObjects` can be either hashtables or
-    strings. If they are hashtables then `Set-CIisCollection` will create elements with attributes that match all of the
-    key value pairs. If they are strings, then the function will use the strings to set th attribute for the collection's unique key values.
+    The `Set-CIisCollection` function sets IIS configuration collection to a specific set of items. Pipe the collection
+    items to the function (or pass them to the `InputObject` parameter). You can pass just item vales if the collection
+    items only have single values. Otherwise, pass a hashtable of name/value pairs.
+
+    To make changes to a global configuration section, pass its path to the `SectionPath` parameter. To make changes to
+    a site, directory, application, or virtual directory, pass its pass location path to the `LocatinPath`. To make
+    changes to a specifci `[Microsoft.Web.Administration.ConfigurationElement]` object, pass it to the
+    `ConfigurationElement` parameter.
+
+    When making changes directly to ConfigurationElement objects, test that those changes are saved correctly to the IIS
+    application host configuration. Some configuration has to be saved at the same time as its parent configuration
+    elements are created (i.e. sites, application pools, etc.). Use the `Suspend-CIisAutoCommit` and
+    `Resume-CIisAutoCommit` functions to ensure configuration gets committed simultaneously.
 
     .EXAMPLE
     @{ name = 'HttpLoggingModule' ; image = '%windir%\System32\inetsrv\loghttp.dll' } | Set-CIisCollection -SectionPath 'system.webServer/globalModules'
@@ -42,16 +50,20 @@ function Set-CIisCollection
         </location>
 
     #>
-    [CmdletBinding(DefaultParameterSetName='Global')]
+    [CmdletBinding()]
     param(
-        # The site the collection belongs to.
-        [Parameter(Mandatory, ParameterSetName='Location')]
-        [String] $LocationPath,
-
+        # The configuration element on which to operate. If not a collection, pass the name of the collection under this
+        # element to the `Name` parameter.
+        [Parameter(Mandatory, ParameterSetName='ByConfigurationElement')]
+        [ConfigurationElement] $ConfigurationElement,
 
         # The path to the collection.
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory, ParameterSetName='ByPath')]
         [String] $SectionPath,
+
+        # The site the collection belongs to.
+        [Parameter(ParameterSetName='ByPath')]
+        [String] $LocationPath,
 
         # The name of the collection to change.
         [String] $Name,
@@ -66,52 +78,59 @@ function Set-CIisCollection
     {
         Set-StrictMode -Version 'Latest'
         Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
-        $items = [Collections.Generic.List[Microsoft.Web.Administration.ConfigurationElement]]::New()
 
-        $collectionArgs = @{}
+        $stopProcessing = $false
 
-        if ($LocationPath)
-        {
-            $collectionArgs['LocationPath'] = $LocationPath
-        }
-
+        $getArgs = @{}
         if ($Name)
         {
-            $collectionArgs['Name'] = $Name
+            $getArgs['Name'] = $Name
         }
 
-        $errorThrown = $false
-
-        $collection = Get-CIisCollection -SectionPath $SectionPath @collectionArgs
-
-        $pathMessage = "$($LocationPath):$($SectionPath)"
-
-        if ($Name)
+        $pathMessage = ''
+        if ($ConfigurationElement)
         {
-            $pathMessage = "$($pathMessage)/$($Name)"
+            $getArgs['ConfigurationElement'] = $ConfigurationElement
+            $pathMessage = $ConfigurationElement.ElementTagName
         }
+        else
+        {
+            $getArgs['SectionPath'] = $SectionPath
+
+            if ($LocationPath)
+            {
+                $getArgs['LocationPath'] = $LocationPath
+            }
+
+            $pathMessage =
+                Get-CIisDisplayPath -SectionPath $SectionPath -LocationPath $LocationPath -SubSectionPath $Name
+        }
+
+        $collection = Get-CIisCollection @getArgs
 
         if (-not $collection)
         {
-            $errorThrown = $true
+            $stopProcessing = $true
             return
         }
 
+        $items = [List[ConfigurationElement]]::New()
         $keyAttrName = Get-CIisCollectionKeyName -Collection $collection
 
         if (-not $keyAttrName)
         {
-            $msg = "Unable to find key for $($pathMessage)"
+            $msg = "Failed to set IIS configuration collection ${pathMessage} because it does not have a key attribute."
             Write-Error -Message $msg
-            $errorThrown = $true
+            $stopProcessing = $true
             return
         }
 
         $save = $false
     }
+
     process
     {
-        if ($errorThrown)
+        if ($stopProcessing)
         {
             return
         }
@@ -119,11 +138,7 @@ function Set-CIisCollection
         foreach ($item in $InputObject)
         {
             $addItem = $collection.CreateElement('add')
-            if ($item -is [string])
-            {
-                $addItem.SetAttributeValue($keyAttrName, $item)
-            }
-            elseif ($item -is [hashtable])
+            if ($item -is [IDictionary])
             {
                 foreach ($key in $item.Keys)
                 {
@@ -132,18 +147,18 @@ function Set-CIisCollection
             }
             else
             {
-                $msg = "Was expecting the input to be a string or a hashtable but got $($item.GetType())"
-                Write-Error -Message $msg -ErrorAction $ErrorActionPreference
+                $addItem.SetAttributeValue($keyAttrName, $item)
             }
             $items.Add($addItem)
         }
     }
     end
     {
-        if ($errorThrown)
+        if ($stopProcessing)
         {
             return
         }
+
         foreach ($collectionItem in $collection)
         {
             if ($collectionItem -notin $items)

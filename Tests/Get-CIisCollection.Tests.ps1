@@ -1,4 +1,7 @@
 
+using namespace Microsoft.Web.Administration
+using namespace System.Runtime.Serialization
+
 #Requires -Version 5.1
 Set-StrictMode -Version 'Latest'
 
@@ -53,7 +56,6 @@ Describe 'Get-CIisCollection' {
 
     It 'should have newly added items' {
         $collection = GetNewCollection
-        $VerbosePreference = 'Continue'
         $newItem = $collection.CreateElement('add')
         $newItem.SetAttributeValue('name', 'foobarbaz')
         $collection.Add($newItem)
@@ -89,5 +91,12 @@ Describe 'Get-CIisCollection' {
         $c = Get-CIisCollection -ConfigurationElement $ce -Name 'customHeaders'
         ,$c | Should -Not -BeNullOrEmpty
         ,$c | Should -BeOfType [Microsoft.Web.Administration.ConfigurationElementCollection]
+    }
+
+    It 'gets collection from configuration element collection' {
+        $site = Get-CIisWebsite -Name $script:locationPath
+        $c = Get-CIisCollection -ConfigurationElement $site.LogFile.CustomLogFields
+        $null -eq $c | Should -BeFalse
+        ,$c | Should -BeOfType [Microsoft.Web.Administration.CustomLogFieldCollection]
     }
 }
