@@ -20,6 +20,12 @@ Describe 'Suspend-CIisAutoCommit' {
         $script:name = "Suspend-CIisAutoCommit-$([IO.Path]::GetRandomFileName())"
     }
 
+    AfterEach {
+        Resume-CIisAutoCommit -Save
+        Uninstall-CIisWebsite -Name $script:name
+        Uninstall-CIisAppPool -Name $script:name
+    }
+
     It 'stops saving changes' {
         $appHostPath =Join-Path -Path ([Environment]::GetFolderPath('System')) `
                                 -ChildPath 'inetsrv\config\applicationHost.config' `
@@ -35,7 +41,8 @@ Describe 'Suspend-CIisAutoCommit' {
         (Get-Item -Path $appHostPath).LastWriteTime | Should -Be $expectedLastWriteTime
 
         $customFields = $site.LogFile.CustomLogFields
-        Disable-CIisCollectionInheritance -ConfigurationElement $customFields
+        $xpath = "/configuration/system.applicationHost/sites/site[@id = $($site.Id)]/logFile/customFields"
+        Disable-CIisCollectionInheritance -ConfigurationElement $customFields -CollectionElementXPath $xpath
         @(
             'Content-Type',
             'CLIENT-CERT-NOTAFTER',

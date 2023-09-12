@@ -6,9 +6,11 @@ function Remove-CIisMimeMap
     Removes a file extension to MIME type map from an entire web server.
 
     .DESCRIPTION
-    IIS won't serve static files unless they have an entry in the MIME map.  Use this function toremvoe an existing MIME map entry.  If one doesn't exist, nothing happens.  Not even an error.
+    IIS won't serve static files unless they have an entry in the MIME map.  Use this function to remove an existing
+    MIME map entry.  If one doesn't exist, nothing happens.  Not even an error.
 
-    If a specific website has the file extension in its MIME map, that site will continue to serve files with those extensions.
+    If a specific website has the file extension in its MIME map, that site will continue to serve files with those
+    extensions.
 
     Beginning with Carbon 2.0.1, this function is available only if IIS is installed.
 

@@ -41,7 +41,7 @@ Describe 'Uninstall-CIisAppPool' {
         Test-CIisAppPool -Name $script:appPoolName | Should -BeFalse
     }
 
-    It 'should remvoe missing app pool' {
+    It 'should remove missing app pool' {
         $missingAppPool = 'IDoNotExist'
         Test-CIisAppPool -Name $missingAppPool | Should -BeFalse
         Uninstall-CIisAppPool -Name $missingAppPool

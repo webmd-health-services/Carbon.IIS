@@ -13,18 +13,29 @@ BeforeAll {
 
     function ThenInheritanceDisabled
     {
+        [CmdletBinding(DefaultParameterSetName='BySectionPath')]
         param(
+            [Parameter(Position=0, ParameterSetName='BySectionPath')]
             [String] $Named,
+
+            [Parameter(Mandatory, ParameterSetName='BySectionPath')]
             [String] $InSection,
-            [String] $ForLocation
+
+            [Parameter(ParameterSetName='BySectionPath')]
+            [String] $ForLocation,
+
+            [Parameter(Mandatory, ParameterSetName='ByXPath')]
+            [String] $AtXPath
         )
 
-        $xpath = $InSection
-        if ($Named)
+        if (-not $AtXPath)
         {
-            $xpath = "${xpath}/${Named}"
+            $AtXPath = $InSection
+            if ($Named)
+            {
+                $AtXPath = "${AtXPath}/${Named}"
+            }
         }
-        $xpath = "${xpath}/clear"
 
         InModuleScope 'Carbon.IIS' {
             param(
@@ -32,8 +43,14 @@ BeforeAll {
                 $LocationPath
             )
 
-            Test-CIisApplicationHostElement -XPath $XPath -LocationPath $LocationPath
-        } -ArgumentList @($xpath, $ForLocation) |
+            $testArgs = @{}
+            if ($LocationPath)
+            {
+                $testArgs['LocationPath'] = $LocationPath
+            }
+
+            Test-CIisApplicationHostElement -XPath "${XPath}/clear" @testArgs
+        } -ArgumentList @($AtXPath, $ForLocation) |
             Should -BeTrue
     }
 }
@@ -65,7 +82,7 @@ Describe 'Disable-CIisCollectionInheritance' {
         ThenInheritanceDisabled $collectionName -InSection $sectionPath -ForLocation $script:name
     }
 
-   It 'handles already cleared collection' {
+    It 'handles already cleared collection' {
         $headerName = [IO.Path]::GetRandomFileName()
         $header2Name = [IO.Path]::GetRandomFileName()
 
@@ -82,5 +99,13 @@ Describe 'Disable-CIisCollectionInheritance' {
         Mock 'Save-CIisConfiguration' -ModuleName 'Carbon.IIS'
         Disable-CIisCollectionInheritance -SectionPath $sectionPath @locationArg -Name $collectionName
         Should -Not -Invoke 'Save-CIisConfiguration' -ModuleName 'Carbon.IIS'
-   }
+    }
+
+    It 'clears configuration element collections' {
+        $site = Get-CIisWebsite -Name $script:name
+        $xpath = "/configuration/system.applicationHost/sites/site[@id = $($site.Id)]/logFile/customFields"
+        $collection = $site.LogFile.CustomLogFields
+        Disable-CIisCollectionInheritance -ConfigurationElement $collection -CollectionElementXPath $xpath
+        ThenInheritanceDisabled -AtXPath $xpath
+    }
 }

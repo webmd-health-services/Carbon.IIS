@@ -19,7 +19,10 @@ function Disable-CIisCollectionInheritance
     To disable inheritance for a collection that is a or is a child of a
     `[Microsoft.Web.Administration.ConfigurationElement]` (i.e. configuration under a site, application pool, etc.),
     pass the object to the `ConfigurationElement` parameter. If the object isn't a collection, pass the name of the
-    child element collection to the `Name` parameter.
+    child element collection to the `Name` parameter. Becuase the Microsoft.Web.Administration API doesn't expose a way
+    to know if a collection has been cleared, the `Disable-CIisCollectionInheritance` function has to inspect the
+    application host config file directly, so you'll also need to pass the XPath expression to the collection element
+    to the `CollectionElementXPath` parameter.
 
     When making changes directly to ConfigurationElement objects, test that those changes are saved correctly to the IIS
     application host configuration. Some configuration has to be saved at the same time as its parent configuration
@@ -41,8 +44,16 @@ function Disable-CIisCollectionInheritance
     #>
     [CmdletBinding()]
     param(
+        # The configuration element to configure. If this is the parent element of the collection to configure, pass the
+        # name of the collection child element to the `Name` parameter.
         [Parameter(Mandatory, ParameterSetName='ByConfigurationElement')]
         [ConfigurationElement] $ConfigurationElement,
+
+        # The XPath to the configuration element. The Microsoft.Web.Administration API doesn't expose a way to check
+        # if a collection's inheritance is disabled or not, so we have to look directly in the application host config
+        # file.
+        [Parameter(Mandatory, ParameterSetName='ByConfigurationElement')]
+        [String] $CollectionElementXPath,
 
         # The configuration section's path who's inheritance to disable. Can be the path to the collection itself, or
         # the collection's parent element. If passing the parent element, pass the name of the collection to the `Name`
@@ -64,16 +75,30 @@ function Disable-CIisCollectionInheritance
         Set-StrictMode -Version 'Latest'
         Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
 
+        $PSBoundParameters.Remove('CollectionElementXPath') | Out-Null
+
         $collection = Get-CIisCollection @PSBoundParameters
         if (-not $collection)
         {
             return
         }
 
+        $testArgs = @{}
         $displayPath = $collection.ElementTagName
         if ($PSCmdlet.ParameterSetName -eq 'ByPath')
         {
             $displayPath = Get-CIisDisplayPath -SectionPath $sectionPath -LocationPath $LocationPath
+
+            $CollectionElementXPath = $SectionPath.Trim('/')
+            if ($Name)
+            {
+                $CollectionElementXPath = "${CollectionElementXPath}/$($Name.Trim('/'))"
+            }
+
+            if ($LocationPath)
+            {
+                $testArgs['LocationPath'] = $LocationPath
+            }
         }
 
         if (-not $collection.AllowsClear)
@@ -83,15 +108,9 @@ function Disable-CIisCollectionInheritance
             return
         }
 
-        $xpath = $SectionPath.Trim('/')
-        if ($Name)
-        {
-            $xpath = "${xpath}/$($Name.Trim('/'))"
-        }
-
         # The Microsoft.Web.Administration API does not expose any way of determining if a collection has a `clear`
         # element, so we have to crack open the applicationHost.config file to look for it. :(
-        if (Test-CIisApplicationHostElement -XPath "${xpath}/clear" -LocationPath $LocationPath)
+        if (Test-CIisApplicationHostElement -XPath "${CollectionElementXPath}/clear" @testArgs)
         {
             return
         }
