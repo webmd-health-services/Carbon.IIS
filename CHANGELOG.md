@@ -9,15 +9,15 @@
 
 * Function `Add-CIisHttpHeader` for adding HTTP headers by adding them to the
 `system.webServer/httpProtocol/customHeaders` configuration collection.
-* Function `Get-CIisCollection` for accessing items in a specific IIS collection.
-* Function `Get-CIisCollectionKeyName` for determining unique key for an IIS collection.
-* Function `Remove-CIisCollectionItem` for removing an item from an IIS collection.
-* Function `Set-CIisCollection` for setting an IIS collection's elements.
-* Function `Set-CIisCollectionItem` for adding a new item to an IIS collection.
-* Function `Disable-CIisCollectionInheritance` for disabling IIS collections from inheriting items, i.e. it adds the
-`clear` element to the collection.
+* Function `Get-CIisCollection` for getting an IIS configuration collection.
+* Function `Get-CIisCollectionKeyName` for getting the unique key for an IIS configuration collection.
+* Function `Remove-CIisCollectionItem` for removing an item from an IIS configuration collection.
+* Function `Set-CIisCollection` for setting an IIS configuration collection.
+* Function `Set-CIisCollectionItem` for adding/update item in an IIS configuration collection.
+* Function `Disable-CIisCollectionInheritance` for disabling IIS configuration collections from inheriting items, i.e.
+it adds the `clear` element to the collection.
 * Function `Suspend-CIisAutoCommit` to stop Carbon.IIS from committing changes.
-* Function `Resume-CIisAutoCommit` to start Carbon.IIS commiting changes again.
+* Function `Resume-CIisAutoCommit` to start Carbon.IIS commiting changes.
 * Function `Get-CIisCollectionItem` for getting the items from an IIS configuration collection.
 
 ### Fixed
