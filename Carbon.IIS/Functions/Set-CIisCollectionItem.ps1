@@ -88,15 +88,40 @@ function Set-CIisCollectionItem
         Set-StrictMode -Version 'Latest'
         Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
+        function Write-Message
+        {
+            [CmdletBinding()]
+            param(
+                [Parameter(Mandatory)]
+                [String] $Message
+            )
+
+            if (-not $firstLineWritten)
+            {
+                Write-Information $firstLine
+                Set-Variable -Name 'firstLineWritten' -Value $true -Scope 1
+            }
+
+            if (-not $keyValueWritten)
+            {
+                Write-Information "    ${keyValue}"
+                Set-Variable -Name 'keyValueWritten' -Value $true -Scope 1
+            }
+
+            Write-Information $Message
+        }
+
+        $firstLine = 'IIS configuration collection '
+        $firstLineWritten = $false
+        $keyValueWritten = $false
+
         $save = $false
-        $msgs = [System.Collections.ArrayList] @()
         $collectionArgs = @{}
-        $msgPrefix = 'IIS configuration collection '
 
         $elementPath = ''
         if ($ConfigurationElement)
         {
-            $msgPrefix = "${msgPrefix}$($ConfigurationElement.ElementTagName)"
+            $firstLine = "${firstLine}$($ConfigurationElement.ElementTagName)"
             $collectionArgs['ConfigurationElement'] = $ConfigurationElement
             $elementPath = $ConfigurationElement.ElementTagName
             if (Get-Member -Name 'SectionPath' -InputObject $ConfigurationElement)
@@ -109,7 +134,7 @@ function Set-CIisCollectionItem
             $displayPath = Get-CIisDisplayPath -SectionPath $SectionPath `
                                                -LocationPath $locationPath `
                                                -SubSectionPath $CollectionName
-            $msgPrefix = "${msgPrefix}${displayPath}"
+            $firstLine = "${firstLine}${displayPath}"
             $elementPath = $SectionPath
             $collectionArgs['SectionPath'] = $SectionPath
             if ($LocationPath)
@@ -123,8 +148,6 @@ function Set-CIisCollectionItem
             $elementPath = "${elementPath}/$($CollectionName)"
             $collectionArgs['Name'] = $CollectionName
         }
-
-        [void]$msgs.Add($msgPrefix)
 
         $collection = Get-CIisCollection @collectionArgs
 
@@ -170,33 +193,41 @@ function Set-CIisCollectionItem
 
         if (-not $item)
         {
+            $keyValueWritten = $true
+            Write-Message "  + ${keyValue}"
+
             $item = $collection.CreateElement('add')
             foreach ($attrName in $InputObject.Keys)
             {
+                if ($attrName -ne $keyAttrName)
+                {
+                    Write-Message "    + ${attrName}  $($InputObject[$attrName])"
+                }
                 $item.SetAttributeValue($attrName, $InputObject[$attrName])
             }
             [void]$collection.Add($item)
-            [void]$msgs.Add("  + ${keyAttrName} = ${keyValue}")
             $save = $true
         }
-
-        foreach ($attrName in $InputObject.Keys)
+        else
         {
-            $expectedValue = $InputObject[$attrName]
-            $actualValue = $item.GetAttributeValue($attrName)
+            foreach ($attrName in $InputObject.Keys)
+            {
+                $expectedValue = $InputObject[$attrName]
+                $actualValue = $item.GetAttributeValue($attrName)
 
-            if ($null -eq $actualValue)
-            {
-                [void]$msgs.Add("      + ${attrName} = ${expectedValue}")
-                $item.SetAttributeValue($attrName, $expectedValue)
-                $save = $true
-                continue
-            }
-            elseif ($expectedValue -ne $actualValue)
-            {
-                [void]$msgs.Add("      ${attrName}  $($actualValue) -> ${expectedValue}")
-                $item.SetAttributeValue($attrName, $expectedValue)
-                $save = $true
+                if ($null -eq $actualValue)
+                {
+                    Write-Message "    + ${attrName}  ${expectedValue}"
+                    $item.SetAttributeValue($attrName, $expectedValue)
+                    $save = $true
+                    continue
+                }
+                elseif ($expectedValue -ne $actualValue)
+                {
+                    Write-Message "      ${attrName}  $($actualValue) -> ${expectedValue}"
+                    $item.SetAttributeValue($attrName, $expectedValue)
+                    $save = $true
+                }
             }
         }
 
@@ -207,7 +238,7 @@ function Set-CIisCollectionItem
                 continue
             }
 
-            [void]$msgs.Add("    - $($attr.Name)")
+            Write-Message "    - $($attr.Name)"
             [void]$attr.Delete()
             $save = $true
         }
@@ -215,21 +246,16 @@ function Set-CIisCollectionItem
 
     end
     {
-        if ($save)
+        if (-not $save)
         {
-            foreach ($msg in $msgs)
-            {
-                Write-Information $msg
-            }
-
-            if ($SkipCommit)
-            {
-                return $true
-            }
-            else
-            {
-                Save-CIisConfiguration
-            }
+            return
         }
+
+        if ($SkipCommit)
+        {
+            return $true
+        }
+
+        Save-CIisConfiguration
     }
 }
