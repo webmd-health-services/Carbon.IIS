@@ -22,83 +22,121 @@ function Remove-CIisCollectionItem
 
     Demonstrates how to remove the 'X-CarbonRemoveItem' header from the 'SITE_NAME' location.
     #>
-    [CmdletBinding(DefaultParameterSetName='Global')]
+    [CmdletBinding()]
     param(
-        # The site name where the item should be removed.
-        [Parameter(Mandatory, ParameterSetName='Location')]
-        [String] $LocationPath,
+        [Parameter(Mandatory, ParameterSetName='ByConfigurationElement')]
+        [ConfigurationElement] $ConfigurationElement,
 
         # The path to the section the item is located.
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory, ParameterSetName='BySectionPath')]
         [String] $SectionPath,
 
+        # The location path of the site, directory, application, or virtual directory whose configuration to update.
+        # Default is to update the global configuration.
+        [Parameter(ParameterSetName='BySectionPath')]
+        [String] $LocationPath,
+
         # The collection the item belongs to.
+        [Alias('Name')]
         [String] $CollectionName,
 
         # The value to be removed.
-        [Parameter(Mandatory)]
-        [Object] $Value
+        [Parameter(Mandatory, ValueFromPipeline)]
+        [String[]] $Value
     )
 
-    Set-StrictMode -Version 'Latest'
-    Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
-
-    $collectionArgs = @{}
-
-    if ($LocationPath)
+    begin
     {
-        $collectionArgs['LocationPath'] = $LocationPath
-    }
-    if ($CollectionName)
-    {
-        $collectionArgs['Name'] = $CollectionName
-    }
+        Set-StrictMode -Version 'Latest'
+        Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
-    $collection = Get-CIisCollection @collectionArgs -SectionPath $SectionPath
+        $getArgs = @{}
+        if ($CollectionName)
+        {
+            $getArgs['Name'] = $CollectionName
+        }
 
-    if ($CollectionName)
-    {
-        $outputSection = "$($SectionPath)/$($CollectionName)"
-    }
-    else
-    {
-        $outputSection = "$($SectionPath)"
-    }
+        $displayPath = ''
+        if ($ConfigurationElement)
+        {
+            $getArgs['ConfigurationElement'] = $ConfigurationElement
+            $displayPath = $ConfigurationElement.ElementTagName
+        }
+        else
+        {
+            $getArgs['SectionPath'] = $SectionPath
+            if ($LocationPath)
+            {
+                $getArgs['LocationPath'] = $LocationPath
+            }
+            $displayPath =
+                Get-CIisDisplayPath -SectionPath $SectionPath -LocationPath $LocationPath -SubSectionPath $CollectionName
+        }
 
-    if (-not $collection)
-    {
-        return
-    }
+        $stopProcessing = $false
 
-    $keyAttrName = Get-CIisCollectionKeyName -Collection $collection
+        $collection = Get-CIisCollection @getArgs
+        if (-not $collection)
+        {
+            $stopProcessing = $true
+            return
+        }
 
-    if (-not $keyAttrName)
-    {
-        $msg = "Unable to find key for $($LocationPath):$($outputSection)"
-        Write-Error -Message $msg
-        return
-    }
+        $keyAttrName = Get-CIisCollectionKeyName -Collection $collection
 
-    $itemToRemove = $collection | Where-Object { $_.GetAttributeValue($keyAttrName) -eq $Value }
+        if (-not $keyAttrName)
+        {
+            $stopProcessing = $true
+            $msg = "Failed to remove items from IIS configuration collection ${displayPath} because that collection " +
+                   'doesn''t have a key attribute.'
+            Write-Error -Message $msg -ErrorAction $ErrorActionPreference
+            return
+        }
 
-    if ($CollectionName)
-    {
-        $outputSection = "$($SectionPath)/$($CollectionName)"
-    }
-    else
-    {
-        $outputSection = "$($SectionPath)"
-    }
+        $firstLine = "IIS configuration collection ${displayPath}"
+        $firstLineWritten = $false
 
-    if (-not $itemToRemove)
-    {
-        $msg = "Unable to find item ""$($Value)"" in ""$($LocationPath):$($outputSection)"""
-        Write-Error $msg -ErrorAction $ErrorActionPreference
-        return
+        $itemsRemoved = $false
     }
 
-    $collection.Remove($itemToRemove)
-    Write-Information "IIS $($LocationPath):$($outputSection)"
-    Write-Information "    - $($Value)"
-    Save-CIisConfiguration
+    process
+    {
+        if ($stopProcessing)
+        {
+            return
+        }
+
+        if (-not $firstLineWritten)
+        {
+            Write-Information $firstLine
+            $firstLineWritten = $true
+        }
+
+        foreach ($valueItem in $Value)
+        {
+            $itemToRemove = $collection | Where-Object { $_.GetAttributeValue($keyAttrName) -eq $valueItem }
+
+            if (-not $itemToRemove)
+            {
+                $msg = "Failed to remove item ""${valueItem}"" from IIS configuration collection ${displayPath} " +
+                       'because it doesn''t exist in the collection.'
+                Write-Error $msg -ErrorAction $ErrorActionPreference
+                return
+            }
+
+            Write-Information "  - $($valueItem)"
+            $collection.Remove($itemToRemove)
+            $itemsRemoved = $true
+        }
+    }
+
+    end
+    {
+        if ($stopProcessing -or -not $itemsRemoved)
+        {
+            return
+        }
+
+        Save-CIisConfiguration
+    }
 }

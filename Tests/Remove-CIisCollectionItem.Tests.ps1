@@ -63,6 +63,7 @@ Describe 'Remove-CIisCollectionItem' {
     }
 
     BeforeEach {
+        $Global:Error.Clear()
         $script:testDir = New-TestDirectory
         Install-CIisWebsite -Name $script:locationPath -Path $script:testDir -Binding "http/*:$($script:sitePort):*"
     }
@@ -81,7 +82,7 @@ Describe 'Remove-CIisCollectionItem' {
                                    -CollectionName 'customHeaders' `
                                    -Value $Value `
                                    -ErrorAction 'Stop'
-        } | Should -Throw -ExpectedMessage '*Unable to find item*'
+        } | Should -Throw -ExpectedMessage '*doesn''t exist in the collection*'
 
         HasItemWithValue -Value $value -Not
     }
@@ -102,6 +103,23 @@ Describe 'Remove-CIisCollectionItem' {
                                       -CollectionName 'customHeaders' `
                                       -Value 'no-key' `
                                       -ErrorAction 'Stop'
-        } | Should -Throw -ExpectedMessage '*Unable to find key*'
+        } | Should -Throw -ExpectedMessage '*doesn''t have a key attribute*'
+    }
+
+    It 'removes items from configuration element collection' {
+        Add-CIisHttpHeader -Name 'Remove-CIisCollectionItem' -Value 'from configuration element'
+        $section = Get-CIisConfigurationSection -SectionPath 'system.webServer/httpProtocol' `
+                                                -LocationPath $script:locationPath
+
+        $section | Should -Not -BeNullOrEmpty
+        Remove-CIisCollectionItem -ConfigurationElement $section `
+                                  -CollectionName 'customHeaders' `
+                                  -Value 'Remove-CIisCollectionItem'
+
+        Get-CIisCollectionItem -SectionPath 'system.webServer/httpProtocol' `
+                               -CollectionName 'customHeaders' `
+                               -LocationPath $script:locationPath |
+            Where-Object { $_.GetAttributeValue('name') -eq 'Remove-CIisCollectionItem' } |
+            Should -BeNullOrEmpty
     }
 }
