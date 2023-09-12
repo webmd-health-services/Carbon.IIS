@@ -79,34 +79,57 @@ function Set-CIisCollection
         Set-StrictMode -Version 'Latest'
         Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
-        $stopProcessing = $false
-
-        $getArgs = @{}
-        if ($Name)
+        function Write-Message
         {
-            $getArgs['Name'] = $Name
+            [CmdletBinding()]
+            param(
+                [Parameter(Mandatory, ValueFromPipeline)]
+                [AllowNull()]
+                [AllowEmptyString()]
+                [String] $Message
+            )
+
+            process
+            {
+                if (-not $firstLineWritten)
+                {
+                    Write-Information "Setting IIS configuration collection ${displayPath}."
+                    $firstLineWritten = $true
+                }
+
+                Write-Information "    ${Message}"
+            }
         }
 
-        $pathMessage = ''
+        $stopProcessing = $false
+        $firstLineWritten = $false
+
+        $getSetArgs = @{}
+        if ($Name)
+        {
+            $getSetArgs['Name'] = $Name
+        }
+
+        $displayPath = ''
         if ($ConfigurationElement)
         {
-            $getArgs['ConfigurationElement'] = $ConfigurationElement
-            $pathMessage = $ConfigurationElement.ElementTagName
+            $getSetArgs['ConfigurationElement'] = $ConfigurationElement
+            $displayPath = $ConfigurationElement.ElementTagName
         }
         else
         {
-            $getArgs['SectionPath'] = $SectionPath
+            $getSetArgs['SectionPath'] = $SectionPath
 
             if ($LocationPath)
             {
-                $getArgs['LocationPath'] = $LocationPath
+                $getSetArgs['LocationPath'] = $LocationPath
             }
 
-            $pathMessage =
+            $displayPath =
                 Get-CIisDisplayPath -SectionPath $SectionPath -LocationPath $LocationPath -SubSectionPath $Name
         }
 
-        $collection = Get-CIisCollection @getArgs
+        $collection = Get-CIisCollection @getSetArgs
 
         if (-not $collection)
         {
@@ -114,18 +137,17 @@ function Set-CIisCollection
             return
         }
 
-        $items = [List[ConfigurationElement]]::New()
+        $items = [List[hashtable]]::New()
+        $keyValues = @{}
         $keyAttrName = Get-CIisCollectionKeyName -Collection $collection
 
         if (-not $keyAttrName)
         {
-            $msg = "Failed to set IIS configuration collection ${pathMessage} because it does not have a key attribute."
+            $msg = "Failed to set IIS configuration collection ${displayPath} because it does not have a key attribute."
             Write-Error -Message $msg
             $stopProcessing = $true
             return
         }
-
-        $save = $false
     }
 
     process
@@ -137,21 +159,16 @@ function Set-CIisCollection
 
         foreach ($item in $InputObject)
         {
-            $addItem = $collection.CreateElement('add')
-            if ($item -is [IDictionary])
+            if ($item -isnot [IDictionary])
             {
-                foreach ($key in $item.Keys)
-                {
-                    $addItem.SetAttributeValue($key, $item[$key])
-                }
+                $item = @{ $keyAttrName = $item }
             }
-            else
-            {
-                $addItem.SetAttributeValue($keyAttrName, $item)
-            }
-            $items.Add($addItem)
+
+            $items.Add($item)
+            $keyValues[$item[$keyAttrName]] = $true
         }
     }
+
     end
     {
         if ($stopProcessing)
@@ -159,22 +176,16 @@ function Set-CIisCollection
             return
         }
 
-        foreach ($collectionItem in $collection)
-        {
-            if ($collectionItem -notin $items)
-            {
-                $collection.Clear()
-                $save = $true
-                break
-            }
-        }
+        $itemsToRemove =
+            $collection |
+            ForEach-Object { $_.GetAttributeValue($keyAttrName) } |
+            Where-Object { -not $keyValues.ContainsKey($_) }
 
-        foreach ($item in $items)
-        {
-            $collection.Add($item)
-        }
+        $itemsRemoved = $itemsToRemove | Remove-CIisCollectionItem @getSetArgs -SkipCommit
 
-        if ($save)
+        $itemsModified = $items | Set-CIisCollectionItem @getSetArgs -SkipCommit
+
+        if ($itemsRemoved -or $itemsModified)
         {
             Save-CIisConfiguration
         }

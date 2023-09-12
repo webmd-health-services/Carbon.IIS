@@ -76,7 +76,11 @@ function Set-CIisCollectionItem
         [Object] $InputObject,
 
         # The name of the IIS collection to modify. If not provided, will use the SectionPath as the collection.
-        [String] $CollectionName
+        [Alias('Name')]
+        [String] $CollectionName,
+
+        # ***INTERNAL***. Do not use.
+        [switch] $SkipCommit
     )
 
     begin
@@ -85,11 +89,8 @@ function Set-CIisCollectionItem
         Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
         $save = $false
-
         $msgs = [System.Collections.ArrayList] @()
-
         $collectionArgs = @{}
-
         $msgPrefix = 'IIS configuration collection '
 
         $elementPath = ''
@@ -221,7 +222,14 @@ function Set-CIisCollectionItem
                 Write-Information $msg
             }
 
-            Save-CIisConfiguration
+            if ($SkipCommit)
+            {
+                return $true
+            }
+            else
+            {
+                Save-CIisConfiguration
+            }
         }
     }
 }

@@ -5,61 +5,56 @@ BeforeAll {
     $script:sitePort = 47938
     $script:testDir = $null
 
-    function GivenItemsAreAdded
+    function WhenSetting
     {
         [CmdletBinding()]
         param(
             [Parameter(Mandatory)]
-            [object[]] $ItemsToAdd
+            [Object[]] $Item
         )
 
-        $ItemsToAdd | Set-CIisCollection -LocationPath $script:locationPath `
-                                         -SectionPath 'system.webServer/httpProtocol' `
-                                         -Name 'customHeaders'
+        $Item | Set-CIisCollection -LocationPath $script:locationPath `
+                                   -SectionPath 'system.webServer/httpProtocol' `
+                                   -Name 'customHeaders'
     }
 
-    function ThenItemsValid
+    function ThenCollectionIs
     {
         [CmdletBinding()]
         param(
             [Parameter(Mandatory)]
-            [Object[]] $addedItems
+            [hashtable[]] $Item
         )
 
-        $localCollection = Get-CIisCollection -LocationPath $script:locationPath `
-                                              -SectionPath 'system.webServer/httpProtocol' `
-                                              -Name 'customHeaders'
-        $localCollection | Should -HaveCount $addedItems.Count
+        # Make sure to include the inherited headers in our expectations.
+        $Item = & {
+            $Item |
+                ForEach-Object {
+                    if (-not $_.ContainsKey('value'))
+                    {
+                        $_['value'] = ''
+                    }
+                    $_ | Write-Output
+                } |
+                Write-Output
+        }
 
-        foreach ($item in $addedItems)
+        $localCollection = Get-CIisCollectionItem -LocationPath $script:locationPath `
+                                                  -SectionPath 'system.webServer/httpProtocol' `
+                                                  -CollectionName 'customHeaders'
+        $localCollection | Should -HaveCount $Item.Count
+
+        for ($idx = 0 ; $idx -lt $Item.Count ; ++$idx)
         {
-            $inCollection = $false
+            $actualItem = $localCollection | Select-Object -Index $idx
+            $expectedItem = $Item[$idx]
 
-            foreach ($collectionItem in $localCollection)
+            $actualItem.Attributes.Count | Should -Be $expectedItem.Count
+
+            foreach ($attrName in $expectedItem.Keys)
             {
-                if ($item -is [string] -and $collectionItem['name'] -eq $item)
-                {
-                    $inCollection = $true
-                    break
-                }
-                elseif ($item -is [hashtable])
-                {
-                    $allValid = $true
-                    foreach ($key in $item.Keys)
-                    {
-                        if ($item[$key] -ne $collectionItem.GetAttributeValue($key))
-                        {
-                            $allValid = $false
-                        }
-                    }
-                    if ($allValid)
-                    {
-                        $inCollection = $true
-                        break
-                    }
-                }
+                $actualItem.GetAttributeValue($attrName) | Should -Be $expectedItem[$attrName]
             }
-            $inCollection | Should -BeTrue
         }
     }
 }
@@ -85,8 +80,8 @@ Describe 'Set-CIisCollection' {
 
     It 'should add items with provided names' {
         $names = 'first', 'second', 'third', 'fourth'
-        GivenItemsAreAdded $names
-        ThenItemsValid $names
+        WhenSetting $names
+        ThenCollectionIs @(@{ name = 'first' }, @{ name = 'second' }, @{ name = 'third' }, @{ name = 'fourth' })
     }
 
     It 'should add items with provided attributes' {
@@ -102,33 +97,33 @@ Describe 'Set-CIisCollection' {
             "name" = "third"
             "value" = "thirdVal"
         }
-        GivenItemsAreAdded $inputs
-        ThenItemsValid $inputs
+        WhenSetting $inputs
+        ThenCollectionIs $inputs
     }
 
     It 'should add both hashtable and string values' {
         $initialItems = 'foo', @{ 'name' = 'bar' }
-        GivenItemsAreAdded $initialItems
-        ThenItemsValid $initialItems
+        WhenSetting $initialItems
+        ThenCollectionIs @(@{ name = 'foo' }, @{ name = 'bar' })
     }
 
     It 'should clear if items exist' {
         $initialName = 'sample item'
-        GivenItemsAreAdded $initialName
-        ThenItemsValid $initialName
+        WhenSetting $initialName
+        ThenCollectionIs @{ name = $initialName }
 
         $addedNames = 'first', 'second'
-        GivenItemsAreAdded $addedNames
-        ThenItemsValid $addedNames
+        WhenSetting $addedNames
+        ThenCollectionIs @{ name = 'first' },@{ name = 'second' }
     }
 
     It 'should add items back if they exist and are being set' {
         $initialNames = 'foo', 'bar'
-        GivenItemsAreAdded $initialNames
-        ThenItemsValid $initialNames
+        WhenSetting $initialNames
+        ThenCollectionIs @{ name = 'foo' }, @{ name = 'bar' }
         $newNames = 'foo', 'baz'
-        GivenItemsAreAdded $newNames
-        ThenItemsValid $newNames
+        WhenSetting $newNames
+        ThenCollectionIs @{ name = 'foo' }, @{ name = 'baz' }
     }
 
     It 'ensures user includes key attribute' {
@@ -168,4 +163,11 @@ Describe 'Set-CIisCollection' {
         }
     }
 
+    It 'does not disable inheritance' {
+        Add-CIisHttpHeader -Name 'Set-CIisCollection' -Value 'Set-CIisCollectionValue'
+
+        WhenSetting @{ name = 'Set-CIisCollection2' ; value = 'Set-CiisCollection2Value' }
+        ThenCollectionIs @{ name = 'Set-CIisCollection2' ; value = 'Set-CIisCollection2Value' }
+
+    }
 }

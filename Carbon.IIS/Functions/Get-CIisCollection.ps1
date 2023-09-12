@@ -49,7 +49,12 @@ function Get-CIisCollection
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
-    if (-not $ConfigurationElement)
+    $displayPath = ''
+    if ($ConfigurationElement)
+    {
+        $displayPath = $ConfigurationElement.ElementTagName
+    }
+    else
     {
         $getArgs = @{}
         if ($LocationPath)
@@ -62,6 +67,8 @@ function Get-CIisCollection
         {
             return
         }
+
+        $displayPath = Get-CIisDisplayPath -SectionPath $SectionPath -LocationPath $LocationPath -SubSectionPath $Name
     }
 
     if ($Name)
@@ -79,8 +86,7 @@ function Get-CIisCollection
 
     if (-not $collection)
     {
-        $displayPath = Get-CIisDisplayPath -SectionPath $SectionPath -LocationPath $LocationPath -SubSectionPath $Name
-        $msg = "Failed to get IIS configuration collection ${displayPath} because that it does not exist or is not a " +
+        $msg = "Failed to get IIS configuration collection ${displayPath} because it does not exist or is not a " +
                'collection'
         Write-Error -Message $msg -ErrorAction $ErrorActionPreference
         return

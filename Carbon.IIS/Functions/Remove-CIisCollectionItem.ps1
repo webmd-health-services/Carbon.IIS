@@ -42,7 +42,10 @@ function Remove-CIisCollectionItem
 
         # The value to be removed.
         [Parameter(Mandatory, ValueFromPipeline)]
-        [String[]] $Value
+        [String[]] $Value,
+
+        # ***INTERNAL***. Do not use.
+        [switch] $SkipCommit
     )
 
     begin
@@ -135,6 +138,11 @@ function Remove-CIisCollectionItem
         if ($stopProcessing -or -not $itemsRemoved)
         {
             return
+        }
+
+        if ($SkipCommit)
+        {
+            return $true
         }
 
         Save-CIisConfiguration
