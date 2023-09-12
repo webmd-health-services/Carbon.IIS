@@ -87,6 +87,7 @@
         'Get-CIisApplication',
         'Get-CIisAppPool',
         'Get-CIisCollection'
+        'Get-CIisCollectionItem'
         'Get-CIisCollectionKeyName'
         'Get-CIisConfigurationLocationPath',
         'Get-CIisConfigurationSection',
