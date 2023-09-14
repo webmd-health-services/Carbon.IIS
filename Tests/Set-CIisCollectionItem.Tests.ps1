@@ -134,46 +134,61 @@ Describe 'Set-CIisCollectionItem' {
     }
 
     It 'ignores missing attributes' {
-        $site = Get-CIisWebsite -Name $script:locationPath
-        $attrs = @{ logFieldName = 'Content-Type' ; sourceName = 'OriginalValue' ; sourceType = 0 ; }
-        $attrs | Set-CIisCollectionItem -ConfigurationElement $site.LogFile.CustomLogFields
+        Uninstall-CIisWebsite -Name $script:locationPath
 
-        $site = Get-CIisWebsite -Name $script:locationPath
-        $customField = $site.LogFile.CustomLogFields[0]
-        $customField.LogFieldName | Should -Be $attrs['logFieldName']
-        $customField.SourceName | Should -Be $attrs['sourceName']
-        $customField.SourceType | Should -Be $attrs['sourceType']
+        Suspend-CIisAutoCommit
+        try
+        {
+            $site = Install-CIisWebsite -Name $script:locationPath -PhysicalPath $script:testDir -PassThru
+            $attrs = @{ logFieldName = 'Content-Type' ; sourceName = 'OriginalValue' ; sourceType = 0 ; }
+            $attrs | Set-CIisCollectionItem -ConfigurationElement $site.LogFile.CustomLogFields
 
-        $attrs.Remove('sourceName')
-        $attrs | Set-CIisCollectionItem -ConfigurationElement $site.LogFile.CustomLogFields
+            $customField = $site.LogFile.CustomLogFields[0]
+            $customField.LogFieldName | Should -Be $attrs['logFieldName']
+            $customField.SourceName | Should -Be $attrs['sourceName']
+            $customField.SourceType | Should -Be $attrs['sourceType']
 
-        $site = Get-CIisWebsite -Name $script:locationPath
-        $customField = $site.LogFile.CustomLogFields[0]
-        $customField.LogFieldName | Should -Be $attrs['logFieldName']
-        $customField.SourceName | Should -Be 'OriginalValue'
-        $customField.SourceType | Should -Be $attrs['sourceType']
+            $attrs.Remove('sourceName')
+            $attrs | Set-CIisCollectionItem -ConfigurationElement $site.LogFile.CustomLogFields
 
+            $customField = $site.LogFile.CustomLogFields[0]
+            $customField.LogFieldName | Should -Be $attrs['logFieldName']
+            $customField.SourceName | Should -Be 'OriginalValue'
+            $customField.SourceType | Should -Be $attrs['sourceType']
+        }
+        finally
+        {
+            Resume-CIisAutoCommit -Save
+        }
     }
 
     It 'removes missing attributes' {
-        $site = Get-CIisWebsite -Name $script:locationPath
-        $attrs = @{ logFieldName = 'Content-Type' ; sourceName = 'OriginalValue' ; sourceType = 0 ; }
-        $attrs | Set-CIisCollectionItem -ConfigurationElement $site.LogFile.CustomLogFields
+        Uninstall-CIisWebsite -Name $script:locationPath
 
-        $site = Get-CIisWebsite -Name $script:locationPath
-        $customField = $site.LogFile.CustomLogFields[0]
-        $customField.LogFieldName | Should -Be $attrs['logFieldName']
-        $customField.SourceName | Should -Be $attrs['sourceName']
-        $customField.SourceType | Should -Be $attrs['sourceType']
+        Suspend-CIisAutoCommit
+        try
+        {
+            $site = Install-CIisWebsite -Name $script:locationPath -PhysicalPath $script:testDir -PassThru
+            $attrs = @{ logFieldName = 'Content-Type' ; sourceName = 'OriginalValue' ; sourceType = 0 ; }
+            $attrs | Set-CIisCollectionItem -ConfigurationElement $site.LogFile.CustomLogFields
 
-        $attrs.Remove('sourceName')
-        { $attrs | Set-CIisCollectionItem -ConfigurationElement $site.LogFile.CustomLogFields -Strict } |
-            Should -Throw '*the request is not supported*'
+            $customField = $site.LogFile.CustomLogFields[0]
+            $customField.LogFieldName | Should -Be $attrs['logFieldName']
+            $customField.SourceName | Should -Be $attrs['sourceName']
+            $customField.SourceType | Should -Be $attrs['sourceType']
 
-        $site = Get-CIisWebsite -Name $script:locationPath
-        $customField = $site.LogFile.CustomLogFields[0]
-        $customField.LogFieldName | Should -Be $attrs['logFieldName']
-        $customField.SourceName | Should -Be 'OriginalValue'
-        $customField.SourceType | Should -Be $attrs['sourceType']
+            $attrs.Remove('sourceName')
+            { $attrs | Set-CIisCollectionItem -ConfigurationElement $site.LogFile.CustomLogFields -Strict } |
+                Should -Throw '*the request is not supported*'
+
+            $customField = $site.LogFile.CustomLogFields[0]
+            $customField.LogFieldName | Should -Be $attrs['logFieldName']
+            $customField.SourceName | Should -Be 'OriginalValue'
+            $customField.SourceType | Should -Be $attrs['sourceType']
+        }
+        finally
+        {
+            Resume-CIisAutoCommit -Save
+        }
     }
 }

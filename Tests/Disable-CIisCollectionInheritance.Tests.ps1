@@ -69,6 +69,8 @@ Describe 'Disable-CIisCollectionInheritance' {
     AfterEach {
         $script:testNum += 1
 
+        Resume-CIisAutoCommit
+
         Uninstall-CIisWebsite -Name $script:name
     }
 
@@ -102,10 +104,21 @@ Describe 'Disable-CIisCollectionInheritance' {
     }
 
     It 'clears configuration element collections' {
-        $site = Get-CIisWebsite -Name $script:name
-        $xpath = "/configuration/system.applicationHost/sites/site[@id = $($site.Id)]/logFile/customFields"
-        $collection = $site.LogFile.CustomLogFields
-        Disable-CIisCollectionInheritance -ConfigurationElement $collection -CollectionElementXPath $xpath
+        Uninstall-CIisWebsite -Name $script:name
+
+        Suspend-CIisAutoCommit
+        try
+        {
+            $site = Install-CIisWebsite -Name $script:name -PhysicalPath $script:testDir -PassThru
+
+            $xpath = "/configuration/system.applicationHost/sites/site[@id = $($site.Id)]/logFile/customFields"
+            $collection = $site.LogFile.CustomLogFields
+            Disable-CIisCollectionInheritance -ConfigurationElement $collection -CollectionElementXPath $xpath
+        }
+        finally
+        {
+            Resume-CIisAutoCommit -Save
+        }
         ThenInheritanceDisabled -AtXPath $xpath
     }
 }
