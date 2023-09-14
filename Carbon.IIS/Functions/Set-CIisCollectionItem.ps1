@@ -8,7 +8,8 @@ function Set-CIisCollectionItem
     The `Set-CIisCollectionItem` function adds a new item or updates the configuration of an existing IIS configuration
     collection item. Pipe the item value to the function, or pass it to the `InputObject` parameter. If the collection
     items you're configuring have only one attribute/value, pass just the value. Otherwise, pass a hashtable of
-    attribute names/values.
+    attribute names/values. By default, only attributes passed in are added/set in the collection item. To delete any
+    attributes not passed, use the `Strict` switch.
 
     To configure a collection that is part of a global configuration section, pass the configuration section's path to
     the `SectionPath` parameter. If the configuration section itself isn't a collection, pass the name of the collection
@@ -78,6 +79,9 @@ function Set-CIisCollectionItem
         # The name of the IIS collection to modify. If not provided, will use the SectionPath as the collection.
         [Alias('Name')]
         [String] $CollectionName,
+
+        # If set, remove any attributes that aren't passed in.
+        [switch] $Strict,
 
         # ***INTERNAL***. Do not use.
         [switch] $SkipCommit
@@ -210,37 +214,51 @@ function Set-CIisCollectionItem
         }
         else
         {
+            $attrNameFieldLength =
+                $InputObject.Keys |
+                Select-Object -ExpandProperty 'Length' |
+                Measure-Object -Maximum |
+                Select-Object -ExpandProperty 'Maximum'
+            $attrNameFormat = "{0,-${attrNameFieldLength}}"
             foreach ($attrName in $InputObject.Keys)
             {
                 $expectedValue = $InputObject[$attrName]
                 $actualValue = $item.GetAttributeValue($attrName)
 
-                if ($null -eq $actualValue)
+                if ($expectedValue -eq $actualValue)
                 {
-                    Write-Message "    + ${attrName}  ${expectedValue}"
-                    $item.SetAttributeValue($attrName, $expectedValue)
-                    $save = $true
                     continue
                 }
-                elseif ($expectedValue -ne $actualValue)
+
+                $flag = ' '
+                $changeMsg = "${actualValue} -> ${expectedValue}"
+                $isAddingAttr = $null -eq $actualValue -or '' -eq $actualValue
+                if ($isAddingAttr)
                 {
-                    Write-Message "      ${attrName}  $($actualValue) -> ${expectedValue}"
-                    $item.SetAttributeValue($attrName, $expectedValue)
-                    $save = $true
+                    $flag = '+'
+                    $changeMsg = $expectedValue
                 }
+
+                $attrDisplayName = $attrNameFormat -f $attrName
+                Write-Message "      ${flag} ${attrDisplayName}  ${changeMsg}"
+                $item.SetAttributeValue($attrName, $expectedValue)
+                $save = $true
             }
         }
 
-        foreach ($attr in $item.Attributes)
+        if ($Strict)
         {
-            if ($InputObject.Contains($attr.Name))
+            foreach ($attr in $item.Attributes)
             {
-                continue
-            }
+                if ($InputObject.Contains($attr.Name))
+                {
+                    continue
+                }
 
-            Write-Message "    - $($attr.Name)"
-            [void]$attr.Delete()
-            $save = $true
+                Write-Message "    - $($attr.Name)"
+                [void]$attr.Delete()
+                $save = $true
+            }
         }
     }
 

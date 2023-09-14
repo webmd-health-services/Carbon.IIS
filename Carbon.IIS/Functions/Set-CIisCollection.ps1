@@ -71,7 +71,11 @@ function Set-CIisCollection
         # Pass a hashtable for each item that has more than one attribute value to set. Otherwise, pass the attribute
         # value for the default attribute.
         [Parameter(ValueFromPipeline)]
-        [Object[]] $InputObject
+        [Object[]] $InputObject,
+
+        # By default, extra attributes on collection items are ignored. If this switch is set, any attributes not passed
+        # to `Set-CIisCollection` are removed from collection items.
+        [switch] $Strict
     )
 
     begin
@@ -183,7 +187,7 @@ function Set-CIisCollection
 
         $itemsRemoved = $itemsToRemove | Remove-CIisCollectionItem @getSetArgs -SkipCommit
 
-        $itemsModified = $items | Set-CIisCollectionItem @getSetArgs -SkipCommit
+        $itemsModified = $items | Set-CIisCollectionItem @getSetArgs -SkipCommit -Strict:$Strict
 
         if ($itemsRemoved -or $itemsModified)
         {

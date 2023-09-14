@@ -132,4 +132,48 @@ Describe 'Set-CIisCollectionItem' {
         $customFields[1].SourceName | Should -Be 'sourceName2'
         $customFields[1].SourceType | Should -Be 'RequestHeader'
     }
+
+    It 'ignores missing attributes' {
+        $site = Get-CIisWebsite -Name $script:locationPath
+        $attrs = @{ logFieldName = 'Content-Type' ; sourceName = 'OriginalValue' ; sourceType = 0 ; }
+        $attrs | Set-CIisCollectionItem -ConfigurationElement $site.LogFile.CustomLogFields
+
+        $site = Get-CIisWebsite -Name $script:locationPath
+        $customField = $site.LogFile.CustomLogFields[0]
+        $customField.LogFieldName | Should -Be $attrs['logFieldName']
+        $customField.SourceName | Should -Be $attrs['sourceName']
+        $customField.SourceType | Should -Be $attrs['sourceType']
+
+        $attrs.Remove('sourceName')
+        $attrs | Set-CIisCollectionItem -ConfigurationElement $site.LogFile.CustomLogFields
+
+        $site = Get-CIisWebsite -Name $script:locationPath
+        $customField = $site.LogFile.CustomLogFields[0]
+        $customField.LogFieldName | Should -Be $attrs['logFieldName']
+        $customField.SourceName | Should -Be 'OriginalValue'
+        $customField.SourceType | Should -Be $attrs['sourceType']
+
+    }
+
+    It 'removes missing attributes' {
+        $site = Get-CIisWebsite -Name $script:locationPath
+        $attrs = @{ logFieldName = 'Content-Type' ; sourceName = 'OriginalValue' ; sourceType = 0 ; }
+        $attrs | Set-CIisCollectionItem -ConfigurationElement $site.LogFile.CustomLogFields
+
+        $site = Get-CIisWebsite -Name $script:locationPath
+        $customField = $site.LogFile.CustomLogFields[0]
+        $customField.LogFieldName | Should -Be $attrs['logFieldName']
+        $customField.SourceName | Should -Be $attrs['sourceName']
+        $customField.SourceType | Should -Be $attrs['sourceType']
+
+        $attrs.Remove('sourceName')
+        { $attrs | Set-CIisCollectionItem -ConfigurationElement $site.LogFile.CustomLogFields -Strict } |
+            Should -Throw '*the request is not supported*'
+
+        $site = Get-CIisWebsite -Name $script:locationPath
+        $customField = $site.LogFile.CustomLogFields[0]
+        $customField.LogFieldName | Should -Be $attrs['logFieldName']
+        $customField.SourceName | Should -Be 'OriginalValue'
+        $customField.SourceType | Should -Be $attrs['sourceType']
+    }
 }
