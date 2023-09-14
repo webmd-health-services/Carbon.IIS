@@ -21,6 +21,7 @@ it adds the `clear` element to the collection.
 * Function `Suspend-CIisAutoCommit` to stop Carbon.IIS from committing changes.
 * Function `Resume-CIisAutoCommit` to start Carbon.IIS commiting changes.
 * Function `Get-CIisCollectionItem` for getting the items from an IIS configuration collection.
+* Function `Uninstall-CIisApplication` for deleting IIS applications.
 
 ### Fixed
 

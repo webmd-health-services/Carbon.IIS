@@ -140,6 +140,7 @@
         'Test-CIisConfigurationSection',
         'Test-CIisSecurityAuthentication',
         'Test-CIisWebsite',
+        'Uninstall-CIisApplication',
         'Uninstall-CIisAppPool',
         'Uninstall-CIisWebsite',
         'Unlock-CIisConfigurationSection',
