@@ -55,15 +55,7 @@ Describe 'Suspend-CIisAutoCommit' {
         ) |
             ForEach-Object { @{ logFieldName = $_ ; sourceName = $_ ; sourceType = 'RequestHeader'} } |
             Set-CIisCollection -ConfigurationElement $customFields
-        # $customFields.Clear()
-        # [void]$customFields.Add('Content-Type', 'Content-Type', 'RequestHeader')
-        # [void]$customFields.Add('CLIENT-CERT-NOTAFTER', 'CLIENT-CERT-NOTAFTER', 'RequestHeader')
-        # [void]$customFields.Add('CLIENT-CERT-SERIAL', 'CLIENT-CERT-SERIAL', 'RequestHeader')
-        # [void]$customFields.Add('CLIENT-CERT-SUBJECT', 'CLIENT-CERT-SUBJECT', 'RequestHeader')
-        # [void]$customFields.Add('CLIENT-CERT-ISSUER', 'CLIENT-CERT-ISSUER', 'RequestHeader')
-        # [void]$customFields.Add('c-tp', 'c-tp', 'RequestHeader')
-        # [void]$customFields.Add('cert_header', 'cert_header', 'RequestHeader')
-        # [void]$customFields.Add('mycert', 'mycert', 'RequestHeader')
+
         Save-CIisConfiguration
         (Get-Item -Path $appHostPath).LastWriteTime | Should -Be $expectedLastWriteTime
 

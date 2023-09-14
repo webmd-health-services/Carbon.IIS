@@ -7,7 +7,8 @@ function Remove-CIisCollectionItem
     .DESCRIPTION
     The `Remove-CIisCollectionItem` function removes an item from an IIS configuration collection. Pass the collection's
     IIS configuration section path to the `SectionPath` parameter and the value to remove from the collection to the
-    `Value` parameter. This function removes that value from the collection if it exists.
+    `Value` parameter. This function removes that value from the collection if it exists. If the value does not exist,
+    the function writes an error.
 
     If removing an item from the collection for a website, application, virtual directory, pass the path to that
     location to the `LocationPath` parameter'
@@ -22,12 +23,15 @@ function Remove-CIisCollectionItem
 
     Demonstrates how to remove the 'X-CarbonRemoveItem' header from the 'SITE_NAME' location.
     #>
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName='BySectionPath')]
     param(
+        # The `[Microsoft.Web.Administration.ConfigurationElement]` object to get as a collection or the parent element
+        # of the collection element to get. If this is the parent element, pass the name of the child element collection
+        # to the `CollectionName` parameter.
         [Parameter(Mandatory, ParameterSetName='ByConfigurationElement')]
         [ConfigurationElement] $ConfigurationElement,
 
-        # The path to the section the item is located.
+        # The path to the collection's configuration section.
         [Parameter(Mandatory, ParameterSetName='BySectionPath')]
         [String] $SectionPath,
 

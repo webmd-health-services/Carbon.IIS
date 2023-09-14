@@ -13,11 +13,11 @@ function Set-CIisCollectionItem
 
     To configure a collection that is part of a global configuration section, pass the configuration section's path to
     the `SectionPath` parameter. If the configuration section itself isn't a collection, pass the name of the collection
-    to the `Name` parameter. To configure a configuration section for a specific site, directory, application, or
-    virtual directory, pass its location path to the `LocationPath` parameter. To configure a specific
+    to the `CollectionName` parameter. To configure a configuration section for a specific site, directory, application,
+    or virtual directory, pass its location path to the `LocationPath` parameter. To configure a specific
     `[Microsoft.Web.Administration.ConfigurationElement]` item (i.e. a site, application pool, etc.), pass that object
     to the `ConfigurationElement` parameter. If the configuration element itself isn't a collection, pass the name of
-    the object' collection property to the `Name` parameter.
+    the object' collection property to the `CollectionName` parameter.
 
     When making changes directly to ConfigurationElement objects, test that those changes are saved correctly to the IIS
     application host configuration. Some configuration has to be saved at the same time as its parent configuration
@@ -58,19 +58,22 @@ function Set-CIisCollectionItem
 
 
     #>
-    [CmdletBinding(DefaultParameterSetName='Global')]
+    [CmdletBinding(DefaultParameterSetName='BySectionPath')]
     param(
-        [Parameter(Mandatory, ParameterSetName='Direct')]
+        # The `[Microsoft.Web.Administration.ConfigurationElement]` object to get as a collection or the parent element
+        # of the collection element to get. If this is the parent element, pass the name of the child element collection
+        # to the `CollectionName` parameter.
+        [Parameter(Mandatory, ParameterSetName='ByConfigurationElement')]
         [ConfigurationElement] $ConfigurationElement,
 
-        # The site to add the item to
-        [Parameter(Mandatory, ParameterSetName='Location')]
-        [String] $LocationPath,
-
-        # The path for the configuration section to edit
-        [Parameter(Mandatory, ParameterSetName='Global')]
-        [Parameter(Mandatory, ParameterSetName='Location')]
+        # The path to the collection's configuration section.
+        [Parameter(Mandatory, ParameterSetName='BySectionPath')]
         [String] $SectionPath,
+
+        # The location path to the site, directory, application, or virtual directory to configure. By default, the
+        # global configuration will be updated.
+        [Parameter(ParameterSetName='BySectionPath')]
+        [String] $LocationPath,
 
         # The value for the IIS collection's identifying key.
         [Parameter(Mandatory, ValueFromPipeline)]
@@ -165,7 +168,7 @@ function Set-CIisCollectionItem
         if (-not $keyAttrName)
         {
             $msg = "Unable to find key for ${elementPath}."
-            Write-Error -Message $msg
+            Write-Error -Message $msg -ErrorAction $ErrorActionPreference
             return
         }
 

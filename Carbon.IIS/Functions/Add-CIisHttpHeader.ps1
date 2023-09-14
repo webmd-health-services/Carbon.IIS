@@ -10,7 +10,7 @@ function Add-CIisHttpHeader
     settings are updated). To add the header only to responses from a specific website, application, virtual directory,
     or directory, pass the location's path to the `LocationPath` parameter.
 
-    The function adds the HTTP header to the `system.webServvver/httpProtocol/customHeaders` configuration collection.
+    The function adds the HTTP header to the `system.webServer/httpProtocol/customHeaders` configuration collection.
 
     .EXAMPLE
     Add-CIisHttpHeader -Name 'foo' -Value 'bar'
@@ -29,14 +29,14 @@ function Add-CIisHttpHeader
     .EXAMPLE
     Add-CIisHttpHeader -LocationPath 'SITE_NAME' -Name 'X-AddHeader' -Value 'usingCarbon'
 
-    Demonstrates how to add a new HTTP header to the site `SITE_NAME`. After the above command runs, this will be in:
-    the applicationHost.config:
+    Demonstrates how to add a new HTTP header to the site `SITE_NAME`. After the above command runs, this will be in the
+    applicationHost.config:
 
         <location path="SITE_NAME">
             <system.webServer>
                 <httpProtocol>
                     <customHeaders>
-                        <add name="foo" value="bar" />
+                        <add name="X-AddHeader" value="usingCarbon" />
                     </customHeaders>
                 </httpProtocol>
             </system.webServer>
@@ -44,15 +44,16 @@ function Add-CIisHttpHeader
     #>
     [CmdletBinding(DefaultParameterSetName='Global')]
     param(
-        # The HTTP header name to add
+        # The HTTP header name to add.
         [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName)]
         [String] $Name,
 
-        # The HTTP header value to add
+        # The HTTP header value to add.
         [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName)]
         [String] $Value,
 
-        # The sitename to edit
+        # The location path to the site, directory, appliction, or virtual directory to configure. By default, headers
+        # are added to global configuration.
         [Parameter(ParameterSetName='Local')]
         [String] $LocationPath
     )
@@ -62,11 +63,11 @@ function Add-CIisHttpHeader
         Set-StrictMode -Version 'Latest'
         Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
 
-        $setConditionalArgs = @{}
+        $setArgs = @{}
 
         if ($LocationPath)
         {
-            $setConditionalArgs['LocationPath'] = $LocationPath
+            $setArgs['LocationPath'] = $LocationPath
         }
 
         $headers = [List[hashtable]]::New()
@@ -81,6 +82,6 @@ function Add-CIisHttpHeader
     {
         $headers | Set-CIisCollectionItem -SectionPath 'system.webServer/httpProtocol' `
                                           -CollectionName 'customHeaders' `
-                                          @setConditionalArgs
+                                          @setArgs
     }
 }

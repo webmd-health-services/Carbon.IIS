@@ -13,7 +13,7 @@
 * Function `Get-CIisCollectionKeyName` for getting the unique key for an IIS configuration collection.
 * Function `Remove-CIisCollectionItem` for removing an item from an IIS configuration collection.
 * Function `Set-CIisCollection` for setting an IIS configuration collection.
-* Function `Set-CIisCollectionItem` for adding/update item in an IIS configuration collection.
+* Function `Set-CIisCollectionItem` for adding/updating items in an IIS configuration collection.
 * Function `Disable-CIisCollectionInheritance` for disabling IIS configuration collections from inheriting items, i.e.
 it adds the `clear` element to the collection.
 * Function `Suspend-CIisAutoCommit` to stop Carbon.IIS from committing changes.

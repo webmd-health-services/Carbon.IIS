@@ -6,12 +6,14 @@ function Set-CIisCollection
 
     .DESCRIPTION
     The `Set-CIisCollection` function sets IIS configuration collection to a specific set of items. Pipe the collection
-    items to the function (or pass them to the `InputObject` parameter). You can pass just item vales if the collection
-    items only have single values. Otherwise, pass a hashtable of name/value pairs.
+    items to the function (or pass them to the `InputObject` parameter). To set just the item's default value/attribute,
+    pass a raw value. To set more than one of the item's attributes, pass them as a hashtable. By default, extra
+    attributets on the item are ignored and left as-is. To remove any item attributes that aren't passed to the
+    function, use the `Strict` switch.
 
     To make changes to a global configuration section, pass its path to the `SectionPath` parameter. To make changes to
-    a site, directory, application, or virtual directory, pass its pass location path to the `LocatinPath`. To make
-    changes to a specifci `[Microsoft.Web.Administration.ConfigurationElement]` object, pass it to the
+    a site, directory, application, or virtual directory, pass its pass location path to the `LocationPath`. To make
+    changes to a specific `[Microsoft.Web.Administration.ConfigurationElement]` object, pass it to the
     `ConfigurationElement` parameter.
 
     When making changes directly to ConfigurationElement objects, test that those changes are saved correctly to the IIS
@@ -41,7 +43,6 @@ function Set-CIisCollection
             <system.webServer>
                 <defaultDocument>
                     <files>
-                        <clear />
                         <add value="default.aspx" />
                         <add value="index.html" />
                     </files>
@@ -50,7 +51,7 @@ function Set-CIisCollection
         </location>
 
     #>
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName='BySectionPath')]
     param(
         # The configuration element on which to operate. If not a collection, pass the name of the collection under this
         # element to the `Name` parameter.
@@ -58,11 +59,11 @@ function Set-CIisCollection
         [ConfigurationElement] $ConfigurationElement,
 
         # The path to the collection.
-        [Parameter(Mandatory, ParameterSetName='ByPath')]
+        [Parameter(Mandatory, ParameterSetName='BySectionPath')]
         [String] $SectionPath,
 
         # The site the collection belongs to.
-        [Parameter(ParameterSetName='ByPath')]
+        [Parameter(ParameterSetName='BySectionPath')]
         [String] $LocationPath,
 
         # The name of the collection to change.
@@ -83,30 +84,7 @@ function Set-CIisCollection
         Set-StrictMode -Version 'Latest'
         Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
-        function Write-Message
-        {
-            [CmdletBinding()]
-            param(
-                [Parameter(Mandatory, ValueFromPipeline)]
-                [AllowNull()]
-                [AllowEmptyString()]
-                [String] $Message
-            )
-
-            process
-            {
-                if (-not $firstLineWritten)
-                {
-                    Write-Information "Setting IIS configuration collection ${displayPath}."
-                    $firstLineWritten = $true
-                }
-
-                Write-Information "    ${Message}"
-            }
-        }
-
         $stopProcessing = $false
-        $firstLineWritten = $false
 
         $getSetArgs = @{}
         if ($Name)
@@ -148,7 +126,7 @@ function Set-CIisCollection
         if (-not $keyAttrName)
         {
             $msg = "Failed to set IIS configuration collection ${displayPath} because it does not have a key attribute."
-            Write-Error -Message $msg
+            Write-Error -Message $msg -ErrorAction $ErrorActionPreference
             $stopProcessing = $true
             return
         }

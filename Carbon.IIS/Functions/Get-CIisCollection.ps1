@@ -2,7 +2,7 @@ function Get-CIisCollection
 {
     <#
     .SYNOPSIS
-    Gets an IIS configuration ollection.
+    Gets an IIS configuration collection.
 
     .DESCRIPTION
     The `Get-CIisCollection` function gets an IIS configuration element as a collection. Pass the collection's IIS
@@ -19,27 +19,27 @@ function Get-CIisCollection
     `Get-CIisCollectionItem`.
 
     .EXAMPLE
-    $collection = Get-CIisCollection -LocationPath 'SITE_NAME' -SectionPath 'system.webServer/httpProtocol/' -Name 'customHeaders'
+    $collection = Get-CIisCollection -LocationPath 'SITE_NAME' -SectionPath 'system.webServer/httpProtocol' -Name 'customHeaders'
 
     Demonstrates how to get the collection 'customHeaders' inside the section 'system.webServer/httpProtocol' for the
     site 'SITE_NAME'.
     #>
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName='BySectionPath')]
     param(
         # The `[Microsoft.Web.Administration.ConfigurationElement]` object to get as a collection or the parent element
         # of the collection element to get. If this is the parent element, pass the name of the child element collection
-        # to the `CollectionName` parameter.
-        [Parameter(Mandatory, ParameterSetName='Direct')]
+        # to the `Name` parameter.
+        [Parameter(Mandatory, ParameterSetName='ByConfigurationElement')]
         [ConfigurationElement] $ConfigurationElement,
 
         # The configuration section path of the collection, or, if the configuration section is a parent of the
         # collection, the configuration section path to the parent configuration section. If the configuration section
-        # is the parent of the collection, pass the collection name to the `CollectionName` parameter.
-        [Parameter(Mandatory, ParameterSetName='ByPath')]
+        # is the parent of the collection, pass the collection name to the `Name` parameter.
+        [Parameter(Mandatory, ParameterSetName='BySectionPath')]
         [String] $SectionPath,
 
         # The location path to the site, directory, application, or virtual directory to configure.
-        [Parameter(ParameterSetName='ByPath')]
+        [Parameter(ParameterSetName='BySectionPath')]
         [String] $LocationPath,
 
         # The collection's name.
@@ -92,5 +92,6 @@ function Get-CIisCollection
         return
     }
 
+    # Return the collection itself *not* the collection items. Get-CIisCollectionItem will return individual items.
     return ,$collection
 }

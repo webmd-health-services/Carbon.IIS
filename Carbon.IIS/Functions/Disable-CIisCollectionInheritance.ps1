@@ -40,9 +40,9 @@ function Disable-CIisCollectionInheritance
 
     Demonstrates how to disable inheritance on a collection under a site, directory, application, or virtual directory
     by passing the location path to the site, directory, application, or vitual directory to the `LocationPath`
-    parameer.
+    parameter.
     #>
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName='BySectionPath')]
     param(
         # The configuration element to configure. If this is the parent element of the collection to configure, pass the
         # name of the collection child element to the `Name` parameter.
@@ -58,12 +58,12 @@ function Disable-CIisCollectionInheritance
         # The configuration section's path who's inheritance to disable. Can be the path to the collection itself, or
         # the collection's parent element. If passing the parent element, pass the name of the collection to the `Name`
         # parameter.
-        [Parameter(Mandatory, ParameterSetName='ByPath')]
+        [Parameter(Mandatory, ParameterSetName='BySectionPath')]
         [String] $SectionPath,
 
         # Location path to the site, directory, application, or virtual directory that should be changed. The default is
         # to modify global configuration.
-        [Parameter(, ParameterSetName='ByPath')]
+        [Parameter(ParameterSetName='BySectionPath')]
         [String] $LocationPath,
 
         # The name of the collection.
@@ -85,9 +85,9 @@ function Disable-CIisCollectionInheritance
 
         $testArgs = @{}
         $displayPath = $collection.ElementTagName
-        if ($PSCmdlet.ParameterSetName -eq 'ByPath')
+        if ($PSCmdlet.ParameterSetName -eq 'BySectionPath')
         {
-            $displayPath = Get-CIisDisplayPath -SectionPath $sectionPath -LocationPath $LocationPath
+            $displayPath = Get-CIisDisplayPath -SectionPath $SectionPath -LocationPath $LocationPath
 
             $CollectionElementXPath = $SectionPath.Trim('/')
             if ($Name)
@@ -112,6 +112,7 @@ function Disable-CIisCollectionInheritance
         # element, so we have to crack open the applicationHost.config file to look for it. :(
         if (Test-CIisApplicationHostElement -XPath "${CollectionElementXPath}/clear" @testArgs)
         {
+            Write-Verbose "IIS configuration collection ${displayPath} inheritance already disabled."
             return
         }
 

@@ -25,22 +25,22 @@ function Get-CIisCollectionItem
     Demonstrates how to get the custom HTTP headers from the 'customHeaders' collection, which is a child of the
     "system.webServer/httpProtocol" configuration section.
     #>
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName='BySectionPath')]
     param(
         # The `[Microsoft.Web.Administration.ConfigurationElement]` object whose collection items to get, or the parent
         # element of the collection whose items to get. If this is the parent element, pass the name of the child
         # element collection to the `CollectionName` parameter.
-        [Parameter(Mandatory, ParameterSetName='Direct')]
+        [Parameter(Mandatory, ParameterSetName='ByConfigurationElement')]
         [ConfigurationElement] $ConfigurationElement,
 
         # The configuration section path of the collection, or, if the configuration section is a parent of the
         # collection, the configuration section path to the parent configuration section. If the configuration section
         # is the parent of the collection, pass the collection name to the `CollectionName` parameter.
-        [Parameter(Mandatory, ParameterSetName='ByPath')]
+        [Parameter(Mandatory, ParameterSetName='BySectionPath')]
         [String] $SectionPath,
 
         # The location path to the site, directory, application, or virtual directory to configure.
-        [Parameter(ParameterSetName='ByPath')]
+        [Parameter(ParameterSetName='BySectionPath')]
         [String] $LocationPath,
 
         # The collection's name.
