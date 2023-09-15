@@ -5,6 +5,8 @@
 
 ## 1.2.0
 
+> Released 18 Sep 2023
+
 ### Added
 
 * Function `Add-CIisHttpHeader` for adding HTTP headers by adding them to the

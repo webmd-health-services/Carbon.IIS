@@ -25,38 +25,24 @@ function Set-CIisCollectionItem
     `Resume-CIisAutoCommit` functions to ensure configuration gets committed simultaneously.
 
     .EXAMPLE
-    Add-CIisCollectionItem -SectionPath 'system.webServer/httpProtocol/customHeaders' -Value 'X-Api-Header'
+    Set-CIisCollectionItem -SectionPath 'system.webServer/defaultDocument' -CollectionName 'files' -Value 'welcome.html'
 
-    Demonstrates how to add an item to a named collection under a configuration section. After the above command runs,
-    this will be added to the applicationHost.config:
-
-        <system.webServer>
-            <httpProtocol>
-                <customHeaders>
-                    <add name='X-Api-Header' />
-                </customHeaders>
-            </httpProtocol>
-        </system.webServer>
-
+    Demonstrates how to add an item to a configuration collection under a configuration section. This example will add
+    "welcome.html" to the list of default documents.
 
     .EXAMPLE
-    Add-CIisCollectionItem -LocationPath 'SITE_NAME' -SectionPath 'system.webServer/defaultDocument' -CollectionName 'files' -Value 'hello.htm' -Attribute @{ 'name' = 'My File' }
+    Set-CIisCollectionItem -LocationPath 'example.com' -SectionPath 'system.webServer/defaultDocument' -CollectionName 'files' -Value 'welcome.html'
 
-    Demonstrates how to add an item to a named collection under a configuration section for a specific website,
-    application, virtual directory, or directory. After the above command runs, this will be in the
-    applicationHost.config:
+    Demonstrates how to add an item to a site, directory, application, or virtual directory by using the `LocationPath`
+    parameter. In this example, the "example.com" website will be configured to include "welcome.html" as a default
+    document.
 
-        <location path="SITE_NAME">
-            <system.webServer>
-                <defaultDocument>
-                    <files>
-                        <add value="hello.htm" name="My File"/>
-                    </files>
-                </defaultDocument>
-            </system.webServer>
-        </location>
+    .EXAMPLE
+    @{ 'name' = 'X-Example' ; value = 'example' } | Set-CIisCollectionItem -SectionPath 'system.webServer/httpProtocol/customHeaders' -CollectionName 'files'
 
-
+    Demonstrates how to add items that have multiple attributes by piping a hashtable of attribute names/values to
+    the function. In this example, `Set-CIIsCollectionItem` will add `X-Example` HTTP header with a value of `example`
+    to global configuration.
     #>
     [CmdletBinding(DefaultParameterSetName='BySectionPath')]
     param(

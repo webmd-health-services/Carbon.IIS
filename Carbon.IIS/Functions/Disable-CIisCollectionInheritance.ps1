@@ -70,55 +70,52 @@ function Disable-CIisCollectionInheritance
         [String] $Name
     )
 
-    process
+    Set-StrictMode -Version 'Latest'
+    Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
+
+    $PSBoundParameters.Remove('CollectionElementXPath') | Out-Null
+
+    $collection = Get-CIisCollection @PSBoundParameters
+    if (-not $collection)
     {
-        Set-StrictMode -Version 'Latest'
-        Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
-
-        $PSBoundParameters.Remove('CollectionElementXPath') | Out-Null
-
-        $collection = Get-CIisCollection @PSBoundParameters
-        if (-not $collection)
-        {
-            return
-        }
-
-        $testArgs = @{}
-        $displayPath = $collection.ElementTagName
-        if ($PSCmdlet.ParameterSetName -eq 'BySectionPath')
-        {
-            $displayPath = Get-CIisDisplayPath -SectionPath $SectionPath -LocationPath $LocationPath
-
-            $CollectionElementXPath = $SectionPath.Trim('/')
-            if ($Name)
-            {
-                $CollectionElementXPath = "${CollectionElementXPath}/$($Name.Trim('/'))"
-            }
-
-            if ($LocationPath)
-            {
-                $testArgs['LocationPath'] = $LocationPath
-            }
-        }
-
-        if (-not $collection.AllowsClear)
-        {
-            $msg = "Failed to clear collection ${displayPath} because it does not allow clearing."
-            Write-Message $msg -ErrorAction $ErrorActionPreference
-            return
-        }
-
-        # The Microsoft.Web.Administration API does not expose any way of determining if a collection has a `clear`
-        # element, so we have to crack open the applicationHost.config file to look for it. :(
-        if (Test-CIisApplicationHostElement -XPath "${CollectionElementXPath}/clear" @testArgs)
-        {
-            Write-Verbose "IIS configuration collection ${displayPath} inheritance already disabled."
-            return
-        }
-
-        Write-Information "Disabling IIS collection inheritance for ${displayPath}."
-        $collection.Clear()
-
-        Save-CIisConfiguration
+        return
     }
+
+    $testArgs = @{}
+    $displayPath = $collection.ElementTagName
+    if ($PSCmdlet.ParameterSetName -eq 'BySectionPath')
+    {
+        $displayPath = Get-CIisDisplayPath -SectionPath $SectionPath -LocationPath $LocationPath
+
+        $CollectionElementXPath = $SectionPath.Trim('/')
+        if ($Name)
+        {
+            $CollectionElementXPath = "${CollectionElementXPath}/$($Name.Trim('/'))"
+        }
+
+        if ($LocationPath)
+        {
+            $testArgs['LocationPath'] = $LocationPath
+        }
+    }
+
+    if (-not $collection.AllowsClear)
+    {
+        $msg = "Failed to clear collection ${displayPath} because it does not allow clearing."
+        Write-Message $msg -ErrorAction $ErrorActionPreference
+        return
+    }
+
+    # The Microsoft.Web.Administration API does not expose any way of determining if a collection has a `clear`
+    # element, so we have to crack open the applicationHost.config file to look for it. :(
+    if (Test-CIisApplicationHostElement -XPath "${CollectionElementXPath}/clear" @testArgs)
+    {
+        Write-Verbose "IIS configuration collection ${displayPath} inheritance already disabled."
+        return
+    }
+
+    Write-Information "Disabling IIS collection inheritance for ${displayPath}."
+    $collection.Clear()
+
+    Save-CIisConfiguration
 }
