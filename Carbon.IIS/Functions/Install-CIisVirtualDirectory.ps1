@@ -72,6 +72,12 @@ function Install-CIisVirtualDirectory
         return
     }
 
+    $appDesc = ''
+    if ($destinationApp -and $destinationApp.Path -ne '/')
+    {
+        $appDesc = " under application ""$($destinationApp.Path)"""
+    }
+
     $PhysicalPath = Resolve-CFullPath -Path $PhysicalPath
     $VirtualPath = $VirtualPath | ConvertTo-CIisVirtualPath
 
@@ -89,27 +95,32 @@ function Install-CIisVirtualDirectory
         $destinationApp = $site.Applications | Where-Object 'Path' -EQ '/'
     }
 
-    $modified = $false
-
-
-    if( -not $vdir )
+    $desc = "IIS virtual directory ""${VirtualPath}""${appDesc} under site ""${SiteName}"
+    $created = $false
+    if (-not $vdir)
     {
         [Microsoft.Web.Administration.ConfigurationElementCollection]$vdirs = $destinationApp.GetCollection()
         $vdir = $vdirs.CreateElement('virtualDirectory')
-        Write-IisVerbose $SiteName -VirtualPath $vPathMsg 'virtualPath' '' $VirtualPath
+        Write-Information "Creating ${desc}."
+        Write-Information "  + physicalPath  ${PhysicalPath}"
         $vdir['path'] = $VirtualPath
         [void]$vdirs.Add( $vdir )
-        $modified = $true
+        $created = $true
     }
 
-    if( $vdir['physicalPath'] -ne $PhysicalPath )
+    $modified = $false
+    if ($vdir['physicalPath'] -ne $PhysicalPath)
     {
-        Write-IisVerbose $SiteName -VirtualPath $vPathMsg 'physicalPath' $vdir['physicalPath'] $PhysicalPath
         $vdir['physicalPath'] = $PhysicalPath
+        if (-not $created)
+        {
+            Write-Information $desc
+            Write-Information "    physicalPath  $($vdir['physicalPath']) -> ${PhysicalPath}"
+        }
         $modified = $true
     }
 
-    if( $modified )
+    if ($created -or $modified)
     {
         Save-CIIsConfiguration
     }
