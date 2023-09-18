@@ -18,7 +18,7 @@
     RootModule = 'Carbon.IIS.psm1'
 
     # Version number of this module.
-    ModuleVersion = '1.1.0'
+    ModuleVersion = '1.2.0'
 
     # ID used to uniquely identify this module
     GUID = '157f0f80-4787-4dc0-bdee-4881c627750b'
@@ -77,15 +77,20 @@
     # Functions to export from this module. Only list public function here.
     FunctionsToExport = @(
         'Add-CIisDefaultDocument',
+        'Add-CIisHttpHeader',
         'ConvertTo-CIisVirtualPath',
+        'Disable-CIisCollectionInheritance',
         'Disable-CIisSecurityAuthentication',
         'Enable-CIisDirectoryBrowsing',
-        'Enable-CIisSecurityAuthentication',
         'Enable-CIisHttps',
+        'Enable-CIisSecurityAuthentication',
         'Get-CIisApplication',
         'Get-CIisAppPool',
-        'Get-CIisConfigurationSection',
+        'Get-CIisCollection'
+        'Get-CIisCollectionItem'
+        'Get-CIisCollectionKeyName'
         'Get-CIisConfigurationLocationPath',
+        'Get-CIisConfigurationSection',
         'Get-CIisHttpHeader',
         'Get-CIisHttpRedirect',
         'Get-CIisMimeMap',
@@ -99,11 +104,13 @@
         'Install-CIisWebsite',
         'Join-CIisPath',
         'Lock-CIisConfigurationSection',
+        'Remove-CIisCollectionItem',
         'Remove-CIisConfigurationAttribute',
         'Remove-CIisConfigurationLocation',
         'Remove-CIisMimeMap',
         'Restart-CIisAppPool',
         'Restart-CIisWebsite',
+        'Resume-CIisAutoCommit',
         'Save-CIisConfiguration',
         'Set-CIisAnonymousAuthentication',
         'Set-CIisAppPool',
@@ -111,21 +118,24 @@
         'Set-CIisAppPoolPeriodicRestart',
         'Set-CIisAppPoolProcessModel',
         'Set-CIisAppPoolRecycling',
+        'Set-CIisCollection'
+        'Set-CIisCollectionItem',
         'Set-CIisConfigurationAttribute',
         'Set-CIisHttpHeader',
         'Set-CIisHttpRedirect',
         'Set-CIisMimeMap',
         'Set-CIisWebsite',
         'Set-CIisWebsiteBinding',
+        'Set-CIisWebsiteHttpsCertificate',
         'Set-CIisWebsiteID',
         'Set-CIisWebsiteLimit',
         'Set-CIisWebsiteLogFile',
-        'Set-CIisWebsiteHttpsCertificate',
         'Set-CIisWindowsAuthentication',
         'Start-CIisAppPool',
         'Start-CIisWebsite',
         'Stop-CIisAppPool',
         'Stop-CIisWebsite',
+        'Suspend-CIisAutoCommit',
         'Test-CIisAppPool',
         'Test-CIisConfigurationSection',
         'Test-CIisSecurityAuthentication',

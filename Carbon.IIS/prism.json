@@ -2,11 +2,11 @@
     "PSModules": [
         {
             "Name": "Carbon.Core",
-            "Version": "1.*-*"
+            "Version": "1.*"
         },
         {
             "Name": "Carbon.Windows.HttpServer",
-            "Version": "1.*-*"
+            "Version": "1.*"
         }
     ],
     "PSModulesDirectoryName": "Modules"

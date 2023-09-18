@@ -55,7 +55,7 @@ function Get-CIisServerManager
         }
     }
 
-    if ($Commit)
+    if ($Commit -and -not $script:skipCommit)
     {
         try
         {
@@ -63,6 +63,7 @@ function Get-CIisServerManager
                 Get-Item -Path $script:applicationHostPath | Select-Object -ExpandProperty 'LastWriteTimeUtc'
 
             Write-Debug "$(New-MessagePrefix)CommitChanges()"
+            Write-Verbose "Committing IIS configuration changes."
             $serverMgr.CommitChanges()
 
             $startedWaitingAt = [Diagnostics.Stopwatch]::StartNew()

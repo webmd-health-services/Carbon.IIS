@@ -6,6 +6,8 @@ Set-StrictMode -Version 'Latest'
 
 
 BeforeAll {
+    Set-StrictMode -Version 'Latest'
+
     & (Join-Path -Path $PSScriptRoot 'Initialize-CarbonTest.ps1' -Resolve)
 
     $script:websiteName = ''

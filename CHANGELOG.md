@@ -3,6 +3,31 @@
 
 # Carbon.IIS Changelog
 
+## 1.2.0
+
+> Released 18 Sep 2023
+
+### Added
+
+* Function `Add-CIisHttpHeader` for adding HTTP headers by adding them to the
+`system.webServer/httpProtocol/customHeaders` configuration collection.
+* Function `Get-CIisCollection` for getting an IIS configuration collection.
+* Function `Get-CIisCollectionKeyName` for getting the unique key for an IIS configuration collection.
+* Function `Remove-CIisCollectionItem` for removing an item from an IIS configuration collection.
+* Function `Set-CIisCollection` for setting an IIS configuration collection.
+* Function `Set-CIisCollectionItem` for adding/updating items in an IIS configuration collection.
+* Function `Disable-CIisCollectionInheritance` for disabling IIS configuration collections from inheriting items, i.e.
+it adds the `clear` element to the collection.
+* Function `Suspend-CIisAutoCommit` to stop Carbon.IIS from committing changes.
+* Function `Resume-CIisAutoCommit` to start Carbon.IIS commiting changes.
+* Function `Get-CIisCollectionItem` for getting the items from an IIS configuration collection.
+
+### Fixed
+
+* Importing `Carbon.IIS` module requires running powershell as administrator. Without running as administrator the
+module would fail to import.
+
+
 ## 1.1.0
 
 > Released 16 Aug 2023

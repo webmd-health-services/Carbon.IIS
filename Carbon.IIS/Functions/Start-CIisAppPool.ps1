@@ -83,6 +83,13 @@ function Start-CIisAppPool
                 }
                 catch
                 {
+                    # We're delaying saving configuration changes, so the app pool might not exist. Don't try to start
+                    # a non-existent app pool.
+                    if ($script:skipCommit)
+                    {
+                        return
+                    }
+
                     $lastError = $_
                     Start-Sleep -Milliseconds 100
                     $appPool = Get-CIisAppPool -Name $appPool.Name
