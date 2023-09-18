@@ -5,7 +5,7 @@
 
 ## 1.2.0
 
-> Released 18 Sep 2023
+> Released 19 Sep 2023
 
 ### Added
 
@@ -23,6 +23,8 @@ it adds the `clear` element to the collection.
 * Function `Get-CIisCollectionItem` for getting the items from an IIS configuration collection.
 * Function `Uninstall-CIisApplication` for deleting IIS applications.
 * Function `Uninstall-CIisVirtualDirectory` for deleting virtual directories.
+* Function `Remove-CIisConfigurationLocation` can now remove specific configuration sections from a location instead of
+the entire location.
 
 ### Fixed
 
