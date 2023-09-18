@@ -28,6 +28,7 @@ it adds the `clear` element to the collection.
 
 * Importing `Carbon.IIS` module requires running powershell as administrator. Without running as administrator the
 module would fail to import.
+* Fixed: `ConvertTo-CIisVirtualPath` fails if the virtual path contains wildcard characters.
 
 
 ## 1.1.0

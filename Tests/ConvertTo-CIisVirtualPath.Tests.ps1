@@ -14,6 +14,7 @@ Describe 'ConvertTo-CIisVirtualPath' {
         '/Site' | ConvertTo-CIisVirtualPath -NoLeadingSlash | Should -Be 'Site'
         'Site/VDir' | ConvertTo-CIisVirtualPath -NoLeadingSlash | Should -Be 'Site/VDir'
         '' | ConvertTo-CIisVirtualPath | Should -Be '/'
+        '%*?"%<>|%' | ConvertTo-CIisVirtualPath | Should -Be '/%*?"%<>|%'
         $null | ConvertTo-CIisVirtualPath | Should -Be '/'
     }
 }
