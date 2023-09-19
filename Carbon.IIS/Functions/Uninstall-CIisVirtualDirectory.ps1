@@ -3,20 +3,27 @@ function Uninstall-CIisVirtualDirectory
 {
     <#
     .SYNOPSIS
-    Delete an IIS application.
+    Delete an IIS virtual directory.
 
     .DESCRIPTION
-    The `Uninstall-CIisApplication` function deletes an application. Pass the application's site name to the `SiteName`
-    parameter. Pass the application's virtual path to the `VirtualPath` parameter. If the application exists, it is
-    deleted. If it doesn't exist, nothing happens.
+    The `Uninstall-CIisVirtualDirectory` function deletes a virtual directory. Pass the virtual directory's site name to
+    the `SiteName` parameter. Pass the virtual directory's virtual path to the `VirtualPath` parameter. If the virtual
+    directory exists, it is deleted. If it doesn't exist, nothing happens. If the virtual directory is under an
+    application, pass the application's path to the `ApplicationPath` parameter.
 
     The function will not delete a site's default, root application at virtual path `/` and will instead write an error.
 
     .EXAMPLE
-    Uninstall-CIisApplication -SiteName 'site' -VirtualPath '/some/app'
+    Uninstall-CIisVirtualDirectory -SiteName 'site' -VirtualPath '/some/vdir'
 
-    Demonstrates how to use this function to delete an IIS application. In this example, the `/some/app` application
-    under the `site` site will be removed, if it exists.
+    Demonstrates how to use this function to delete an IIS virtual directory. In this example, the `/some/vdir` virtual
+    directory under the `site` site will be removed, if it exists.
+
+    .EXAMPLE
+    Uninstall-CIisVirtualDirectory -SiteName 'site' -ApplicationPath 'app' -VirtualPath '/some/vdir'
+
+    Demonstrates how to use this function to delete an IIS virtual directory that exists under an application. In this
+    example, the `/some/vdir` virtual directory under the `site` site's '/app' app will be removed, if it exists.
     #>
     [CmdletBinding()]
     [OutputType([Microsoft.Web.Administration.Application])]
