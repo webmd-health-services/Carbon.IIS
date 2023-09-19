@@ -141,7 +141,7 @@ Describe 'Set-CIisConfigurationAttribute' {
     It 'should fail if attribute does not exist' {
         WhenSettingAttribute -WithArg @{ Name = 'fubar' ; Value = 'snafu' ; ErrorAction = 'SilentlyContinue' }
         ThenAttributes -DoesNotInclude @('fubar')
-        $Global:Error | Should -Match 'that attribute doesn''t exist on that element'
+        $Global:Error | Should -Match 'that attribute doesn''t exist'
     }
 
     It 'should set global configuration section attribute using configuration element' {

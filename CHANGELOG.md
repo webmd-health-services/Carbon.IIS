@@ -5,7 +5,7 @@
 
 ## 1.2.0
 
-> Released 19 Sep 2023
+> Released 20 Sep 2023
 
 ### Added
 
@@ -25,6 +25,8 @@ it adds the `clear` element to the collection.
 * Function `Uninstall-CIisVirtualDirectory` for deleting virtual directories.
 * Function `Remove-CIisConfigurationLocation` can now remove specific configuration sections from a location instead of
 the entire location.
+* Function `Remove-CIisConfigurationATtribute` can now remove attributes on any configuration element, e.g. sites,
+application pools, applications, virtual directories, etc.
 
 ### Fixed
 

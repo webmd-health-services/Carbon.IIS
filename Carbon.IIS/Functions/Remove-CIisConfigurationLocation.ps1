@@ -74,7 +74,7 @@ function Remove-CIisConfigurationLocation
         return
     }
 
-    $desc = "IIS configuration section ""$($section.SectionPath)"" for location ""$($section.LocationPath)""."
+    $desc = Get-CIisDescription -ConfigurationElement $section
     if (-not (Test-CIisApplicationHostElement -XPath $section.SectionPath -LocationPath $section.LocationPath))
     {
         $msg = "Failed to delete ${desc} because that configuration section does not exist for that location."
@@ -82,7 +82,7 @@ function Remove-CIisConfigurationLocation
         return
     }
 
-    $msg = "Removing IIS configuration section ""$($section.SectionPath)"" for location ""$($section.LocationPath)""."
+    $msg = "Removing ${desc}."
     Write-Information $msg
     $section.Delete()
     Save-CIisConfiguration

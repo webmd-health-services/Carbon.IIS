@@ -13,9 +13,15 @@ BeforeAll {
 
     function GivenNonDefaultAttributes
     {
+        [CmdletBinding(DefaultParameterSetName='BySectionPath')]
         param(
+            [Parameter(Position=0)]
             [hashtable] $Values,
 
+            [Parameter(ParameterSetName='ByConfigurationElement')]
+            [Microsoft.Web.Administration.ConfigurationElement] $ForElement,
+
+            [Parameter(ParameterSetName='BySectionPath')]
             [String] $ForVirtualPath = ''
         )
 
@@ -29,7 +35,15 @@ BeforeAll {
             }
         }
 
-        Set-CIisAnonymousAuthentication ($script:siteName,$ForVirtualPath | Join-CIisPath) @Values
+        if ($ForElement)
+        {
+            Set-CIisConfigurationAttribute -ConfigurationElement $ForElement -Attribute $Values
+        }
+        else
+        {
+            $locationPath = $script:siteName,$ForVirtualPath | Join-CIisPath
+            Set-CIisAnonymousAuthentication -LocationPath $locationPath @Values
+        }
     }
 
     function GivenVirtualPath
@@ -81,28 +95,45 @@ BeforeAll {
 
     function WhenRemoving
     {
+        [Diagnostics.CodeAnalysis.SuppressMessage('PSShouldProcess', '')]
         [CmdletBinding(SupportsShouldProcess)]
         param(
             [Parameter(Position=0)]
             [String[]] $Attributes = @('enabled', 'logonMethod', 'password', 'userName'),
 
+            [Parameter(ParameterSetName='BySectionPath')]
             [String] $ForVirtualPath,
+
+            [Parameter(Mandatory, ParameterSetName='ByConfigurationElement')]
+            [Microsoft.Web.Administration.ConfigurationElement] $FromElement,
+
+            [Parameter(Mandatory, ParameterSetName='ByConfigurationElement')]
+            [String] $ElementXpath,
 
             [switch] $ByPiping
         )
 
-        $locationPath = Join-CIisPath -Path $script:siteName, $ForVirtualPath
         $Global:Error.Clear()
-        if( $ByPiping )
+
+        $removeArgs = @{}
+        if ($FromElement)
         {
-            $Attributes |
-                Remove-CIisConfigurationAttribute -LocationPath $locationPath  -SectionPath $script:sectionPath
+            $removeArgs['ConfigurationElement'] = $FromElement
+            $removeArgs['ElementXpath'] = $ElementXpath
         }
         else
         {
-            Remove-CIisConfigurationAttribute -LocationPath $locationPath `
-                                              -SectionPath $script:sectionPath `
-                                              -Name $Attributes
+            $removeArgs['SectionPath'] = $script:sectionPath
+            $removeArgs['LocationPath'] = Join-CIisPath -Path $script:siteName, $ForVirtualPath
+        }
+
+        if( $ByPiping )
+        {
+            $Attributes | Remove-CIisConfigurationAttribute @removeArgs
+        }
+        else
+        {
+            Remove-CIisConfigurationAttribute @removeArgs -Name $Attributes
         }
     }
 }
@@ -176,6 +207,24 @@ Describe 'Remove-CIisConfigurationAttribute' {
         Start-Sleep -Seconds 1
         WhenRemoving
         (Get-Item -Path $appHostConfigPath).LastWriteTimeUtc | Should -Be $appHostInfo.LastWriteTimeUtc
+    }
+
+    It 'updates configuration element' {
+        $vdir = Get-CIisVirtualDirectory -SiteName $script:siteName -ApplicationPath '/' -VirtualPath '/'
+        GivenNonDefaultAttributes @{ logonMethod = [Microsoft.Web.Administration.AuthenticationLogonMethod]::Network } `
+                                  -ForElement $vdir
+
+        $vdir = Get-CIisVirtualDirectory -SiteName $script:siteName -ApplicationPath '/' -VirtualPath '/'
+        $xpath = "system.applicationHost/sites/site[@name = '${script:siteName}']/application[@path = '/']" +
+                 "/virtualDirectory[@path = '/']"
+        WhenRemoving 'logonMethod' -FromElement $vdir -ElementXPath $xpath
+        ThenCommittedToAppHost
+        ThenAttributesSetToDefault
+
+        Mock -CommandName 'Save-CIisConfiguration' -ModuleName 'Carbon.IIS'
+        $vdir = Get-CIisVirtualDirectory -SiteName $script:siteName -ApplicationPath '/' -VirtualPath '/'
+        WhenRemoving 'logonMethod' -FromElement $vdir -ElementXPath $xpath
+        Should -Not -Invoke 'Save-CIisConfiguration' -ModuleName 'Carbon.IIS'
     }
 
 }
