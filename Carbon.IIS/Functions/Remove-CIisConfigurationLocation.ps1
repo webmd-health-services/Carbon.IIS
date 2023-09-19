@@ -38,7 +38,9 @@ function Remove-CIisConfigurationLocation
         [String] $LocationPath,
 
         # OBSOLETE. Use the `LocationPath` parameter instead.
-        [String] $VirtualPath
+        [String] $VirtualPath,
+
+        [String] $SectionPath
     )
 
     Set-StrictMode -Version 'Latest'
@@ -51,14 +53,37 @@ function Remove-CIisConfigurationLocation
 
     if (-not (Get-CIisConfigurationLocationPath -LocationPath $LocationPath))
     {
-        $msg = "Configuration location ""$($LocationPath)"" does not exist."
+        $msg = "IIS configuration location ""${LocationPath}"" does not exist."
         Write-Error -Message $msg -ErrorAction $ErrorActionPreference
         return
     }
 
-    (Get-CIisServerManager).GetApplicationHostConfiguration().RemoveLocationPath($LocationPath)
-    $target = "$($LocationPath)"
-    $action = "Remove IIS Location"
-    $infoMsg = "Removing ""$($LocationPath)"" IIS location configuration."
-    Save-CIisConfiguration -Target $target -Action $action -Message $infoMsg
+    if (-not $SectionPath)
+    {
+        (Get-CIisServerManager).GetApplicationHostConfiguration().RemoveLocationPath($LocationPath)
+        $target = "$($LocationPath)"
+        $action = "Remove IIS Location"
+        $infoMsg = "Removing ""$($LocationPath)"" IIS location configuration."
+        Save-CIisConfiguration -Target $target -Action $action -Message $infoMsg
+        return
+    }
+
+    $section = Get-CIisConfigurationSection -LocationPath $LocationPath -SectionPath $SectionPath
+    if (-not $section)
+    {
+        return
+    }
+
+    $desc = "IIS configuration section ""$($section.SectionPath)"" for location ""$($section.LocationPath)""."
+    if (-not (Test-CIisApplicationHostElement -XPath $section.SectionPath -LocationPath $section.LocationPath))
+    {
+        $msg = "Failed to delete ${desc} because that configuration section does not exist for that location."
+        Write-Error -Message $msg -ErrorAction $ErrorActionPreference
+        return
+    }
+
+    $msg = "Removing IIS configuration section ""$($section.SectionPath)"" for location ""$($section.LocationPath)""."
+    Write-Information $msg
+    $section.Delete()
+    Save-CIisConfiguration
 }

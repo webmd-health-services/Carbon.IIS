@@ -60,6 +60,41 @@ BeforeAll {
         Get-CIisConfigurationLocationPath -LocationPath "$($ForSite)/$($AndVirtualPath)" |
             Should -Not:(-not $Not) -BeNullOrEmpty
     }
+
+    function ThenLocationConfigSection
+    {
+        [CmdletBinding()]
+        param(
+            [Parameter(Mandatory, Position=0)]
+            [String] $SectionPath,
+
+            [Parameter(Mandatory)]
+            [String] $ForSite,
+
+            [switch] $Not,
+
+            [Parameter(Mandatory, ParameterSetName='Exists')]
+            [switch] $Exists
+        )
+
+        $sectionExists = InModuleScope 'Carbon.IIS' {
+            param(
+                [String] $Xpath,
+                [String] $LocationPath
+            )
+            Test-CIisApplicationHostElement @PSBoundParameters
+        } -ArgumentList $SectionPath, $ForSite
+
+        if ($Not)
+        {
+            $sectionExists | Should -BeFalse
+        }
+        else
+        {
+            $sectionExists | Should -BeTrue
+        }
+    }
+
 }
 
 Describe 'Remove-CIisConfigurationLocation' {
@@ -117,5 +152,32 @@ Describe 'Remove-CIisConfigurationLocation' {
         WhenRemoving -WithArgs @{ SiteName = $siteName ; WhatIf = $true }
         ThenLocation -ForSite $siteName -Exists
         ThenAppHostConfig -Not -ModifiedSince $script:timeBeforeRemove
+    }
+
+    It 'removes specific section path instead of entire location' {
+        $siteName = 'RemoveConfigLocationFour'
+        GivenWebsiteWithLocationConfiguration $siteName
+        $sectionPath = 'system.webServer/security/ipSecurity'
+        $ipSec = Get-CIisConfigurationSection -SectionPath $sectionPath -LocationPath $siteName
+        $ipSec.SetAttributeValue('allowUnlisted', $false)
+        Save-CIisConfiguration
+
+        WhenRemoving -WithArgs @{ LocationPath = $siteName ; SectionPath = $sectionPath }
+        ThenLocation -ForSite $siteName -Exists
+        ThenLocationConfigSection $sectionPath -ForSite $siteName -Not -Exists
+        $xpath = 'system.webServer/httpProtocol/customHeaders/add[@name = ''X-Carbon.IIS-RemoveConfigLocation'']'
+        ThenLocationConfigSection $xpath -ForSite $siteName -Exists
+    }
+
+    It 'only removes if the section is missing from application host configuration file' {
+        $siteName = 'RemoveConfigLocationFive'
+        GivenWebsiteWithLocationConfiguration $siteName
+        $sectionPath = 'system.webServer/httpProtocol'
+        WhenRemoving -WithArgs @{ LocationPath = $siteName ; SectionPath = $sectionPath }
+        ThenLocation -ForSite $siteName -Exists
+        ThenLocationConfigSection $sectionPath -ForSite $siteName -Not -Exists
+        Mock -CommandName 'Save-CIisConfiguration' -ModuleName 'Carbon.IIS'
+        WhenRemoving -WithArgs @{ LocationPath = $siteName ; SectionPath = $sectionPath } -ErrorAction Ignore
+        Should -Not -Invoke 'Save-CIisConfiguration' -ModuleName 'Carbon.IIS'
     }
 }
