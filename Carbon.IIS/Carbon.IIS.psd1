@@ -140,7 +140,9 @@
         'Test-CIisConfigurationSection',
         'Test-CIisSecurityAuthentication',
         'Test-CIisWebsite',
+        'Uninstall-CIisApplication',
         'Uninstall-CIisAppPool',
+        'Uninstall-CIisVirtualDirectory',
         'Uninstall-CIisWebsite',
         'Unlock-CIisConfigurationSection',
         'Wait-CIisAppPoolWorkerProcess'

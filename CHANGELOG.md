@@ -21,11 +21,14 @@ it adds the `clear` element to the collection.
 * Function `Suspend-CIisAutoCommit` to stop Carbon.IIS from committing changes.
 * Function `Resume-CIisAutoCommit` to start Carbon.IIS commiting changes.
 * Function `Get-CIisCollectionItem` for getting the items from an IIS configuration collection.
+* Function `Uninstall-CIisApplication` for deleting IIS applications.
+* Function `Uninstall-CIisVirtualDirectory` for deleting virtual directories.
 
 ### Fixed
 
 * Importing `Carbon.IIS` module requires running powershell as administrator. Without running as administrator the
 module would fail to import.
+* Fixed: `ConvertTo-CIisVirtualPath` fails if the virtual path contains wildcard characters.
 
 
 ## 1.1.0

@@ -92,7 +92,15 @@ function ConvertTo-CIisVirtualPath
             Write-Debug "$($indent)   |-  $($Path)"
         }
 
+        # [IO.Path]::GetFullPath fails if a path contains certain characters, so we need to escape them, use
+        # GetFullPath, then unescape them.
         $prevPath = $Path
+        $charsToEscape = @('%', '"', '*', '<', '>', '?', '|')
+        foreach ($invalidChar in $charsToEscape)
+        {
+            $escapeSequence = "%$([byte][char]$invalidChar)"
+            $Path = $Path -replace [regex]::Escape($invalidChar),$escapeSequence
+        }
         if( [IO.Path]::GetFullPath.OverloadDefinitions.Count -eq 1 )
         {
             $Path = Join-Path -Path $root -ChildPath $Path
@@ -101,6 +109,11 @@ function ConvertTo-CIisVirtualPath
         else
         {
             $Path = [IO.Path]::GetFullPath($Path, $root)
+        }
+        foreach ($invalidChar in $charsToEscape)
+        {
+            $escapeSequence = "%$([byte][char]$invalidChar)"
+            $Path = $Path -replace $escapeSequence, $invalidChar
         }
         $Path = $Path.Substring($root.Length)
         if( $Path -ne $prevPath )
