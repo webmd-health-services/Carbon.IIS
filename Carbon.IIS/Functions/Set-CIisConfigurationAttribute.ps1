@@ -232,15 +232,10 @@ function Set-CIisConfigurationAttribute
 
         if (-not $currentAttr)
         {
-            $locationPathMsg = ''
-            if ($Element.LocationPath)
-            {
-                $locationPathMsg = " at location ""$($Element.LocationPath)"""
-            }
-            "Unable to set attribute ""$($Name)"" on configuration element ""$($Element.SectionPath)""" +
-                "$($locationPathMsg) because that attribute doesn't exist on that element. Valid attributes are: " +
-                "$(($Element.Attributes | Select-Object -ExpandProperty 'Name') -join ', ')." |
-                Write-Error -ErrorAction $ErrorActionPreference
+            $desc = Get-CIisDescription -ConfigurationElement $Element
+            $msg = "Unable to set attribute ""$($Name)"" on ${desc} because that attribute doesn't exist. Valid " +
+                   "attributes are: $(($Element.Attributes | Select-Object -ExpandProperty 'Name') -join ', ')."
+            Write-Error -Message $msg -ErrorAction $ErrorActionPreference
             return
         }
 
@@ -439,19 +434,7 @@ function Set-CIisConfigurationAttribute
 
     if (-not $Target)
     {
-        if( $SectionPath )
-        {
-            $Target = $sectionPath
-        }
-        else
-        {
-            $Target = $ConfigurationElement.GetType().Name
-        }
-
-        if ($LocationPath)
-        {
-            $Target = "$($Target) at location ""$($LocationPath)"""
-        }
+        $Target = Get-CIisDescription -ConfigurationElement $ConfigurationElement
     }
 
     if ($Name)
@@ -483,7 +466,7 @@ function Set-CIisConfigurationAttribute
 
     if ($updatedNames)
     {
-        Write-Information "Configuring $($Target):"
+        Write-Information $Target
         $infoMessages | ForEach-Object { Write-Information $_ }
 
         if (-not $WhatIfPreference)
