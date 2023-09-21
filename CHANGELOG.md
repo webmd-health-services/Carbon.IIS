@@ -5,7 +5,7 @@
 
 ## 1.2.0
 
-> Released 20 Sep 2023
+> Released 21 Sep 2023
 
 ### Added
 
