@@ -74,6 +74,10 @@ function Set-CIisCollection
         [Parameter(ValueFromPipeline)]
         [Object[]] $InputObject,
 
+        # The attribute name for the attribute that uniquely identifies each item in a collection. This is usually
+        # automatically detected.
+        [String] $UniqueKeyAttributeName,
+
         # By default, extra attributes on collection items are ignored. If this switch is set, any attributes not passed
         # to `Set-CIisCollection` are removed from collection items.
         [switch] $Strict
@@ -121,14 +125,25 @@ function Set-CIisCollection
 
         $items = [List[hashtable]]::New()
         $keyValues = @{}
-        $keyAttrName = Get-CIisCollectionKeyName -Collection $collection
 
-        if (-not $keyAttrName)
+        if (-not $UniqueKeyAttributeName)
         {
-            $msg = "Failed to set IIS configuration collection ${displayPath} because it does not have a key attribute."
-            Write-Error -Message $msg -ErrorAction $ErrorActionPreference
-            $stopProcessing = $true
-            return
+            $UniqueKeyAttributeName = Get-CIisCollectionKeyName -Collection $collection
+
+            if (-not $UniqueKeyAttributeName)
+            {
+                $msg = "Failed to set IIS configuration collection ${displayPath} because it does not have a unique " +
+                       'key attribute. Use the "UniqueKeyAttributeName" parameter to specify the attribute name.'
+                Write-Error -Message $msg -ErrorAction $ErrorActionPreference
+                $stopProcessing = $true
+                return
+            }
+        }
+
+        $removeSetArgs = @{}
+        if ($UniqueKeyAttributeName)
+        {
+            $removeSetArgs['UniqueKeyAttributeName'] = $UniqueKeyAttributeName
         }
     }
 
@@ -143,11 +158,11 @@ function Set-CIisCollection
         {
             if ($item -isnot [IDictionary])
             {
-                $item = @{ $keyAttrName = $item }
+                $item = @{ $UniqueKeyAttributeName = $item }
             }
 
             $items.Add($item)
-            $keyValues[$item[$keyAttrName]] = $true
+            $keyValues[$item[$UniqueKeyAttributeName]] = $true
         }
     }
 
@@ -160,12 +175,12 @@ function Set-CIisCollection
 
         $itemsToRemove =
             $collection |
-            ForEach-Object { $_.GetAttributeValue($keyAttrName) } |
+            ForEach-Object { $_.GetAttributeValue($UniqueKeyAttributeName) } |
             Where-Object { -not $keyValues.ContainsKey($_) }
 
-        $itemsRemoved = $itemsToRemove | Remove-CIisCollectionItem @getSetArgs -SkipCommit
+        $itemsRemoved = $itemsToRemove | Remove-CIisCollectionItem @getSetArgs @removeSetArgs -SkipCommit
 
-        $itemsModified = $items | Set-CIisCollectionItem @getSetArgs -SkipCommit -Strict:$Strict
+        $itemsModified = $items | Set-CIisCollectionItem @getSetArgs @removeSetArgs -SkipCommit -Strict:$Strict
 
         if ($itemsRemoved -or $itemsModified)
         {

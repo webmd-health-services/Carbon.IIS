@@ -48,6 +48,10 @@ function Remove-CIisCollectionItem
         [Parameter(Mandatory, ValueFromPipeline)]
         [String[]] $Value,
 
+        # The attribute name for the attribute that uniquely identifies each item in a collection. This is usually
+        # automatically detected.
+        [String] $UniqueKeyAttributeName,
+
         # ***INTERNAL***. Do not use.
         [switch] $SkipCommit
     )
@@ -89,15 +93,19 @@ function Remove-CIisCollectionItem
             return
         }
 
-        $keyAttrName = Get-CIisCollectionKeyName -Collection $collection
-
-        if (-not $keyAttrName)
+        if (-not $UniqueKeyAttributeName)
         {
-            $stopProcessing = $true
-            $msg = "Failed to remove items from IIS configuration collection ${displayPath} because that collection " +
-                   'doesn''t have a key attribute.'
-            Write-Error -Message $msg -ErrorAction $ErrorActionPreference
-            return
+            $UniqueKeyAttributeName = Get-CIisCollectionKeyName -Collection $collection
+
+            if (-not $UniqueKeyAttributeName)
+            {
+                $stopProcessing = $true
+                $msg = "Failed to remove items from IIS configuration collection ${displayPath} because that " +
+                       'collection doesn''t have a unique key attribute. Use the "UniqueKeyAttributeName" parameter ' +
+                       'to specify the attribute name.'
+                Write-Error -Message $msg -ErrorAction $ErrorActionPreference
+                return
+            }
         }
 
         $firstLine = "IIS configuration collection ${displayPath}"
@@ -121,7 +129,7 @@ function Remove-CIisCollectionItem
 
         foreach ($valueItem in $Value)
         {
-            $itemToRemove = $collection | Where-Object { $_.GetAttributeValue($keyAttrName) -eq $valueItem }
+            $itemToRemove = $collection | Where-Object { $_.GetAttributeValue($UniqueKeyAttributeName) -eq $valueItem }
 
             if (-not $itemToRemove)
             {

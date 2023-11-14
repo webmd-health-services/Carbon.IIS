@@ -191,4 +191,26 @@ Describe 'Set-CIisCollectionItem' {
             Resume-CIisAutoCommit -Save
         }
     }
+
+    It 'requires collection have a unique key attribute' {
+        Mock -CommandName 'Get-CIisCollectionKeyName' -ModuleName 'Carbon.IIS'
+        {
+            Set-CIisCollectionItem -LocationPath $script:locationPath `
+                                   -SectionPath 'system.webServer/httpProtocol' `
+                                   -CollectionName 'customHeaders' `
+                                   -InputObject 'no-key' `
+                                   -ErrorAction 'Stop'
+        } | Should -Throw -ExpectedMessage '*does not have a unique key attribute*'
+    }
+
+    It 'customizes unique key attribute name' {
+        {
+                @{ statusCode = 401 ; prefixLanguageFilePath = '%SystemDrive%\inetpub\custerr' ; path = '401.htm' } |
+                    Set-CIisCollectionItem -LocationPath $script:locationPath `
+                                           -SectionPath 'system.webServer/httpErrors' `
+                                           -UniqueKeyAttributeName 'statusCode' `
+                                           -ErrorAction Stop
+            } | Should -Not -Throw
+    }
+
 }

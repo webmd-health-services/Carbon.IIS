@@ -69,6 +69,10 @@ function Set-CIisCollectionItem
         [Alias('Name')]
         [String] $CollectionName,
 
+        # The attribute name for the attribute that uniquely identifies each item in a collection. This is usually
+        # automatically detected.
+        [String] $UniqueKeyAttributeName,
+
         # If set, remove any attributes that aren't passed in.
         [switch] $Strict,
 
@@ -149,15 +153,18 @@ function Set-CIisCollectionItem
             return
         }
 
-        $keyAttrName = Get-CIisCollectionKeyName -Collection $collection
-
-        if (-not $keyAttrName)
+        if (-not $UniqueKeyAttributeName)
         {
-            $msg = "Unable to find key for ${elementPath}."
-            Write-Error -Message $msg -ErrorAction $ErrorActionPreference
-            return
-        }
+            $UniqueKeyAttributeName = Get-CIisCollectionKeyName -Collection $collection
 
+            if (-not $UniqueKeyAttributeName)
+            {
+                $msg = "Failed to set IIS configuration collection ${displayPath} because it does not have a unique " +
+                       'key attribute. Use the "UniqueKeyAttributeName" parameter to specify the attribute name.'
+                Write-Error -Message $msg -ErrorAction $ErrorActionPreference
+                return
+            }
+        }
     }
 
     process
@@ -169,30 +176,31 @@ function Set-CIisCollectionItem
 
         if ($InputObject -isnot [IDictionary])
         {
-            $InputObject = @{ $keyAttrName = $InputObject }
+            $InputObject = @{ $UniqueKeyAttributeName = $InputObject }
         }
 
-        if (-not $InputObject.Contains($keyAttrName))
+        if (-not $InputObject.Contains($UniqueKeyAttributeName))
         {
             $msg = "Failed to add item to collection ""$($collection.Path)"" because the attributes of the item are " +
-                   "missing a value for the key attribute ""${keyAttrName}""."
+                   "missing a value for the key attribute ""${UniqueKeyAttributeName}""."
             Write-Error -Message $msg -ErrorAction $ErrorActionPreference
             return
         }
 
-        $keyValue = $InputObject[$keyAttrName]
+        $keyValue = $InputObject[$UniqueKeyAttributeName]
 
-        $item = $collection | Where-Object { $_.GetAttributeValue($keyAttrName) -eq $keyValue }
+        $item = $collection | Where-Object { $_.GetAttributeValue($UniqueKeyAttributeName) -eq $keyValue }
 
         if (-not $item)
         {
             $keyValueWritten = $true
             Write-Message "  + ${keyValue}"
 
-            $item = $collection.CreateElement('add')
+            $addElementName = $collection.Schema.AddElementNames
+            $item = $collection.CreateElement($addElementName)
             foreach ($attrName in $InputObject.Keys)
             {
-                if ($attrName -ne $keyAttrName)
+                if ($attrName -ne $UniqueKeyAttributeName)
                 {
                     Write-Message "    + ${attrName}  $($InputObject[$attrName])"
                 }

@@ -3,6 +3,22 @@
 
 # Carbon.IIS Changelog
 
+## 1.3.0
+
+> Released 14 Nov 2023
+
+### Added
+
+* The schema for some collection items (e.g. `system.webServer/httpErrors`) is missing unique key attribute names. Added
+parameter `UniqueKeyAttributeName` to functions `Remove-CIisCollectionItem`, `Set-CIisCollection`,
+`Set-CIisCollectionItem` to allow manually specifying the unique key attribute name.
+
+### Fixed
+
+* `Set-CIisCollection` and `Set-CIisCollectionItem` fail to operate on collections whose add element name isn't
+`add`.
+
+
 ## 1.2.0
 
 > Released 25 Sep 2023
