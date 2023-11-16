@@ -126,14 +126,24 @@ Describe 'Set-CIisCollection' {
         ThenCollectionIs @{ name = 'foo' }, @{ name = 'baz' }
     }
 
-    It 'ensures user includes key attribute' {
+    It 'validates unique key attribute exists' {
         Mock -CommandName 'Get-CIisCollectionKeyName' -ModuleName 'Carbon.IIS'
         {
             'hello-world' | Set-CIisCollection -LocationPath $script:locationPath `
                                                -SectionPath 'system.webServer/httpProtocol' `
                                                -Name 'customHeaders' `
                                                -ErrorAction 'Stop'
-            } | Should -Throw -ExpectedMessage '*does not have a key attribute*'
+            } | Should -Throw -ExpectedMessage '*does not have a unique key attribute*'
+    }
+
+    It 'customizes unique key attribute name' {
+        {
+                @{ statusCode = 401 ; prefixLanguageFilePath = '%SystemDrive%\inetpub\custerr' ; path = '401.htm' } |
+                    Set-CIisCollection -LocationPath $script:locationPath `
+                                       -SectionPath 'system.webServer/httpErrors' `
+                                       -UniqueKeyAttributeName 'statusCode' `
+                                       -ErrorAction Stop
+            } | Should -Not -Throw
     }
 
     It 'sets the collection using a configuration element' {
@@ -168,6 +178,5 @@ Describe 'Set-CIisCollection' {
 
         WhenSetting @{ name = 'Set-CIisCollection2' ; value = 'Set-CiisCollection2Value' }
         ThenCollectionIs @{ name = 'Set-CIisCollection2' ; value = 'Set-CIisCollection2Value' }
-
     }
 }

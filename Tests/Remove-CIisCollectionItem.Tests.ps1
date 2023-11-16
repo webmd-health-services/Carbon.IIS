@@ -103,7 +103,17 @@ Describe 'Remove-CIisCollectionItem' {
                                       -CollectionName 'customHeaders' `
                                       -Value 'no-key' `
                                       -ErrorAction 'Stop'
-        } | Should -Throw -ExpectedMessage '*doesn''t have a key attribute*'
+        } | Should -Throw -ExpectedMessage '*doesn''t have a unique key attribute*'
+    }
+
+    It 'customizes unique key attribute name' {
+        {
+                @{ statusCode = 401 ; prefixLanguageFilePath = '%SystemDrive%\inetpub\custerr' ; path = '401.htm' } |
+                    Set-CIisCollection -LocationPath $script:locationPath `
+                                       -SectionPath 'system.webServer/httpErrors' `
+                                       -UniqueKeyAttributeName 'statusCode' `
+                                       -ErrorAction Stop
+            } | Should -Not -Throw
     }
 
     It 'removes items from configuration element collection' {
