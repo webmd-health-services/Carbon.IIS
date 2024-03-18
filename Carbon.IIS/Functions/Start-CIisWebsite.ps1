@@ -11,6 +11,9 @@ function Start-CIisWebsite
     website to report that it has started. You can change the amount of time it waits with the `Timeout` parameter. If
     the website doesn't start before the timeout expires, the function writes an error.
 
+    The World Wide Web Publishing Service (W3SVC) must be running for a website to start. The `Start-CIisWebsite` will
+    attempt to start the W3SVC if it exists and isn't running.
+
     .EXAMPLE
     Start-CIisWebsite -Name 'Default Website'
 
@@ -58,6 +61,13 @@ function Start-CIisWebsite
         if (-not $websites)
         {
             return
+        }
+
+        $w3Svc = Get-Service 'W3SVC' -ErrorAction Ignore
+        if ($w3Svc -and $w3Svc.Status -ne [ServiceControllerStatus]::Running)
+        {
+            Write-Information "Starting ""$($w3Svc.DisplayName)"" ($($w3Svc.Name))."
+            Start-Service -Name 'W3SVC'
         }
 
         $timer = [Diagnostics.Stopwatch]::New()

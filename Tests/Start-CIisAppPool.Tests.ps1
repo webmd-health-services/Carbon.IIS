@@ -163,4 +163,12 @@ Describe 'Start-CIisAppPool' {
         $script:appPoolName | WhenStarting
         ThenAppPool $script:appPoolName -IsStarted
     }
+
+    It 'starts WAS service' {
+        Get-Service 'W3SVC' | Stop-Service
+        Get-Service 'WAS' | Stop-Service
+        GivenAppPool $script:appPoolName -IsStopped
+        $script:appPoolName | WhenStarting
+        ThenAppPool $script:appPoolName -IsStarted
+    }
 }

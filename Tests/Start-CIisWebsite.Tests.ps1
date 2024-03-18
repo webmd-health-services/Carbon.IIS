@@ -174,4 +174,12 @@ Describe 'Start-CIisWebsite' {
         $script:websiteName | WhenStarting
         ThenWebsite $script:websiteName -IsStarted
     }
+
+    It 'starts the W3SVC' {
+        Get-Service -Name 'W3SVC' | Stop-Service
+        Get-Service -Name 'WAS' | Stop-Service
+        GivenWebsite $script:websiteName -IsStopped
+        $script:websiteName | WhenStarting
+        ThenWebsite $script:websiteName -IsStarted
+    }
 }
