@@ -17,7 +17,7 @@ Application pools fail to start if WAS isn't running.
 
 * Information message written by `Install-CIisVirtualDirectory` missing a closing quote around virtual directory's
 website name.
-
+* `Remove-CIisCollectionItem` always writes an information message even when there is nothing to delete.
 
 ## 1.3.0
 
