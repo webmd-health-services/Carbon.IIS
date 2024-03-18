@@ -95,7 +95,7 @@ function Install-CIisVirtualDirectory
         $destinationApp = $site.Applications | Where-Object 'Path' -EQ '/'
     }
 
-    $desc = "IIS virtual directory ""${VirtualPath}""${appDesc} under site ""${SiteName}"
+    $desc = "IIS virtual directory ""${VirtualPath}""${appDesc} under site ""${SiteName}"""
     $created = $false
     if (-not $vdir)
     {

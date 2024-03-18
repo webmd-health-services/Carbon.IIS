@@ -13,6 +13,12 @@ Application pools fail to start if WAS isn't running.
   Websites fail to start if W3SVC isn't running.
 
 
+### Fixed
+
+* Information message written by `Install-CIisVirtualDirectory` missing a closing quote around virtual directory's
+website name.
+
+
 ## 1.3.0
 
 > Released 14 Nov 2023
