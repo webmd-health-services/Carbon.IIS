@@ -3,6 +3,22 @@
 
 # Carbon.IIS Changelog
 
+## 1.4.0
+
+### Added
+
+* The `Start-CIisAppPool` function now starts the Windows Process Activation Service (WAS) if it is not running.
+Application pools fail to start if WAS isn't running.
+* The `Start-CIisWebsite` function now starts the World Wide Web Publishing Service (W3SVC) if it is not running.
+  Websites fail to start if W3SVC isn't running.
+
+
+### Fixed
+
+* Information message written by `Install-CIisVirtualDirectory` missing a closing quote around virtual directory's
+website name.
+* `Remove-CIisCollectionItem` always writes an information message even when there is nothing to delete.
+
 ## 1.3.0
 
 > Released 14 Nov 2023

@@ -16,6 +16,7 @@ using module '.\Carbon.IIS.Enums.psm1'
 using namespace System.Collections
 using namespace System.Collections.Generic
 using namespace System.Management.Automation
+using namespace System.ServiceProcess
 using namespace Microsoft.Web.Administration
 
 #Requires -Version 5.1

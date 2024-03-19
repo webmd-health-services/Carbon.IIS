@@ -12,6 +12,9 @@ function Start-CIisAppPool
     change the amount of time it waits with the `Timeout` parameter. If the application pool doesn't start before the
     timeout expires, the function writes an error.
 
+    The Windows Process Activation Service (WAS) must be running in order for an application pool to start. The
+    `Start-CIisAppPool` function will attempt to start the WAS if it exists and isn't running.
+
     .EXAMPLE
     Start-CIisAppPool -Name 'Default App Pool'
 
@@ -59,6 +62,13 @@ function Start-CIisAppPool
         if (-not $appPools)
         {
             return
+        }
+
+        $waSvc = Get-Service -Name 'WAS' -ErrorAction Ignore
+        if ($waSvc -and $waSvc.Status -ne [ServiceControllerStatus]::Running)
+        {
+            Write-Information "Starting ""$($waSvc.DisplayName)"" ($($waSvc.Name))."
+            Start-Service -Name 'WAS'
         }
 
         $timer = [Diagnostics.Stopwatch]::New()

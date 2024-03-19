@@ -121,12 +121,6 @@ function Remove-CIisCollectionItem
             return
         }
 
-        if (-not $firstLineWritten)
-        {
-            Write-Information $firstLine
-            $firstLineWritten = $true
-        }
-
         foreach ($valueItem in $Value)
         {
             $itemToRemove = $collection | Where-Object { $_.GetAttributeValue($UniqueKeyAttributeName) -eq $valueItem }
@@ -137,6 +131,12 @@ function Remove-CIisCollectionItem
                        'because it doesn''t exist in the collection.'
                 Write-Error $msg -ErrorAction $ErrorActionPreference
                 return
+            }
+
+            if (-not $firstLineWritten)
+            {
+                Write-Information $firstLine
+                $firstLineWritten = $true
             }
 
             Write-Information "  - $($valueItem)"
