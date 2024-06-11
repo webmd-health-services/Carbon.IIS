@@ -3,7 +3,17 @@
 
 # Carbon.IIS Changelog
 
+## 1.5.0
+
+### Added
+
+* `Rename-CIisAppPool` to rename IIS application pools.
+* `Rename-CIisWebsite` to rename IIS websites.
+
+
 ## 1.4.0
+
+> Released 19 Mar 2024
 
 ### Added
 
