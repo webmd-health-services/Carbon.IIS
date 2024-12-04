@@ -8,6 +8,5 @@
             "Name": "Carbon.Windows.HttpServer",
             "Version": "1.*"
         }
-    ],
-    "PSModulesDirectoryName": "Modules"
+    ]
 }

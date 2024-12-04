@@ -1,5 +1,4 @@
 <!--markdownlint-disable no-duplicate-heading-->
-<!--markdownlint-disable MD012 no-multiple-blanks-->
 
 # Carbon.IIS Changelog
 
@@ -10,6 +9,9 @@
 * `Rename-CIisAppPool` to rename IIS application pools.
 * `Rename-CIisWebsite` to rename IIS websites.
 
+### Changed
+
+Reduced directory depth of internal, private, nested modules.
 
 ## 1.4.0
 
@@ -18,10 +20,9 @@
 ### Added
 
 * The `Start-CIisAppPool` function now starts the Windows Process Activation Service (WAS) if it is not running.
-Application pools fail to start if WAS isn't running.
+  Application pools fail to start if WAS isn't running.
 * The `Start-CIisWebsite` function now starts the World Wide Web Publishing Service (W3SVC) if it is not running.
   Websites fail to start if W3SVC isn't running.
-
 
 ### Fixed
 
@@ -43,7 +44,6 @@ parameter `UniqueKeyAttributeName` to functions `Remove-CIisCollectionItem`, `Se
 
 * `Set-CIisCollection` and `Set-CIisCollectionItem` fail to operate on collections whose add element name isn't
 `add`.
-
 
 ## 1.2.0
 
@@ -76,13 +76,11 @@ application pools, applications, virtual directories, etc.
 module would fail to import.
 * Fixed: `ConvertTo-CIisVirtualPath` fails if the virtual path contains wildcard characters.
 
-
 ## 1.1.0
 
 > Released 16 Aug 2023
 
 Added `Set-CIisWebsiteBinding` function for configuring a website's existing bindings.
-
 
 ## 1.0.1
 
@@ -90,7 +88,6 @@ Added `Set-CIisWebsiteBinding` function for configuring a website's existing bin
 
 Fixed: `Install-CIisWebsite` doesn't show information messages about changes to a website's bindings if passed duplicate
 bindings.
-
 
 ## 1.0.0
 
