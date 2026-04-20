@@ -96,11 +96,10 @@ function Set-CIisCollection
             $getSetArgs['Name'] = $Name
         }
 
-        $displayPath = ''
+        $displayPath = Get-CIisDisplayPath -Argument $PSBoundParameters
         if ($ConfigurationElement)
         {
             $getSetArgs['ConfigurationElement'] = $ConfigurationElement
-            $displayPath = $ConfigurationElement.ElementTagName
         }
         else
         {
@@ -110,9 +109,6 @@ function Set-CIisCollection
             {
                 $getSetArgs['LocationPath'] = $LocationPath
             }
-
-            $displayPath =
-                Get-CIisDisplayPath -SectionPath $SectionPath -LocationPath $LocationPath -SubSectionPath $Name
         }
 
         $collection = Get-CIisCollection @getSetArgs

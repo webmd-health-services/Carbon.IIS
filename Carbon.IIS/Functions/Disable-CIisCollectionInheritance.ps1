@@ -82,16 +82,16 @@ function Disable-CIisCollectionInheritance
     }
 
     $testArgs = @{}
-    $displayPath = $collection.ElementTagName
+    $displayPath = Get-CIisDisplayPath -Argument $PSBoundParameters
     if ($PSCmdlet.ParameterSetName -eq 'BySectionPath')
     {
-        $displayPath = Get-CIisDisplayPath -SectionPath $SectionPath -LocationPath $LocationPath
-
         $CollectionElementXPath = $SectionPath.Trim('/')
         if ($Name)
         {
             $CollectionElementXPath = "${CollectionElementXPath}/$($Name.Trim('/'))"
         }
+
+        $displayPath = Get-CIisDisplayPath -SectionPath $CollectionElementXPath -LocationPath $LocationPath
 
         if ($LocationPath)
         {

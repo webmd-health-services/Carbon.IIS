@@ -49,12 +49,9 @@ function Get-CIisCollection
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
-    $displayPath = ''
-    if ($ConfigurationElement)
-    {
-        $displayPath = $ConfigurationElement.ElementTagName
-    }
-    else
+    $displayPath = Get-CIisDisplayPath -Argument $PSBoundParameters
+
+    if (-not $ConfigurationElement)
     {
         $getArgs = @{}
         if ($LocationPath)
@@ -67,8 +64,6 @@ function Get-CIisCollection
         {
             return
         }
-
-        $displayPath = Get-CIisDisplayPath -SectionPath $SectionPath -LocationPath $LocationPath -SubSectionPath $Name
     }
 
     if ($Name)

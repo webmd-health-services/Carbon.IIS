@@ -61,28 +61,7 @@ function Remove-CIisCollectionItem
         Set-StrictMode -Version 'Latest'
         Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
-        $getArgs = @{}
-        if ($CollectionName)
-        {
-            $getArgs['Name'] = $CollectionName
-        }
-
-        $displayPath = ''
-        if ($ConfigurationElement)
-        {
-            $getArgs['ConfigurationElement'] = $ConfigurationElement
-            $displayPath = $ConfigurationElement.ElementTagName
-        }
-        else
-        {
-            $getArgs['SectionPath'] = $SectionPath
-            if ($LocationPath)
-            {
-                $getArgs['LocationPath'] = $LocationPath
-            }
-            $displayPath =
-                Get-CIisDisplayPath -SectionPath $SectionPath -LocationPath $LocationPath -SubSectionPath $CollectionName
-        }
+        $displayPath = Get-CIisDisplayPath -Argument $PSBoundParameters
 
         $stopProcessing = $false
 

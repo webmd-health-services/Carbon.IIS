@@ -232,7 +232,7 @@ function Set-CIisConfigurationAttribute
 
         if (-not $currentAttr)
         {
-            $desc = Get-CIisDescription -ConfigurationElement $Element
+            $desc = Get-CIisDescription -ConfigurationElement $Element -LocationPath $LocationPath
             $msg = "Unable to set attribute ""$($Name)"" on ${desc} because that attribute doesn't exist. Valid " +
                    "attributes are: $(($Element.Attributes | Select-Object -ExpandProperty 'Name') -join ', ')."
             Write-Error -Message $msg -ErrorAction $ErrorActionPreference
@@ -434,7 +434,7 @@ function Set-CIisConfigurationAttribute
 
     if (-not $Target)
     {
-        $Target = Get-CIisDescription -ConfigurationElement $ConfigurationElement
+        $Target = Get-CIisDescription -ConfigurationElement $ConfigurationElement -LocationPath $LocationPath
     }
 
     if ($Name)

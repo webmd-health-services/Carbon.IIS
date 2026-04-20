@@ -9,7 +9,6 @@ function Get-CIisDescription
         [Parameter(Mandatory, ParameterSetName='BySectionPath')]
         [String] $SectionPath,
 
-        [Parameter(ParameterSetName='BySectionPath')]
         [String] $LocationPath,
 
         [Parameter(ParameterSetName='BySectionPath')]
@@ -19,66 +18,31 @@ function Get-CIisDescription
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
 
-    function Get-LocationDescription
+    $displayPath = Get-CIisDisplayPath -Argument $PSBoundParameters
+
+    $type = 'configuration section'
+
+    # Not a configuration section, so let's add a little more information.
+    if ($ConfigurationElement -and -not ($ConfigurationElement | Get-Member -Name 'SectionPath'))
     {
-        [CmdletBinding()]
-        param(
-            [String] $LocationPath
-        )
+        $type = ''
 
-        if (-not $LocationPath)
+        $attrDesc = ''
+        $name = $ConfigurationElement.Attributes['name']
+        if ($name)
         {
-            return ''
+            $attrDesc = " $($name.Value)"
         }
-
-        return " for location ""${LocationPath}"""
-    }
-
-    if ($ConfigurationElement)
-    {
-        $SectionPath = ''
-        $LocationPath = ''
-        $SubSectionPath = ''
-
-        if ($ConfigurationElement | Get-Member -Name 'SectionPath')
+        else
         {
-            $SectionPath = $ConfigurationElement.SectionPath
-        }
-
-        $locationDesc = ''
-        if ($ConfigurationElement | Get-Member -Name 'LocationPath')
-        {
-            $LocationPath = $ConfigurationElement.LocationPath
-        }
-
-        if (-not $SectionPath)
-        {
-            $locationDesc = Get-LocationDescription -LocationPath $LocationPath
-
-            $name = $ConfigurationElement.Attributes['name']
-            if ($name)
+            $path = $ConfigurationElement.Attributes['path']
+            if ($path)
             {
-                $name = " ""$($name.Value)"""
+                $attrDesc = " $($path.Value)"
             }
-            else
-            {
-                $name = $ConfigurationElement.Attributes['path']
-                if ($name)
-                {
-                    $name = " $($name.Value)"
-                }
-            }
-            return "IIS configuration element $($ConfigurationElement.ElementTagName)${name}${locationDesc}"
         }
+        $displayPath = "${displayPath}${attrDesc}"
     }
 
-    $sectionDesc = $SectionPath.Trim('/')
-    if ($SubSectionPath)
-    {
-        $sectionDesc = "${sectionDesc}/$($SubSectionPath.Trim('/'))"
-    }
-
-    $locationDesc = Get-LocationDescription -LocationPath $LocationPath
-
-    return "IIS configuration section ${sectionDesc}${locationDesc}"
+    return "IIS ${type} ${displayPath}"
 }

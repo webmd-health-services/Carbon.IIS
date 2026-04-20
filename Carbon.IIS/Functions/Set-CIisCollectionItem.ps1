@@ -96,13 +96,13 @@ function Set-CIisCollectionItem
             if (-not $firstLineWritten)
             {
                 Write-Information $firstLine
-                Set-Variable -Name 'firstLineWritten' -Value $true -Scope 1
+                Set-Variable -Name 'firstLineWritten' -Value $true -Scope 1 -WhatIf:$false
             }
 
             if (-not $keyValueWritten)
             {
                 Write-Information "    ${keyValue}"
-                Set-Variable -Name 'keyValueWritten' -Value $true -Scope 1
+                Set-Variable -Name 'keyValueWritten' -Value $true -Scope 1 -WhatIf:$false
             }
 
             Write-Information $Message
@@ -115,24 +115,14 @@ function Set-CIisCollectionItem
         $save = $false
         $collectionArgs = @{}
 
-        $elementPath = ''
+        $displayPath = Get-CIisDisplayPath -Argument $PSBoundParameters
+        $firstLine = "${firstLine}${displayPath}"
         if ($ConfigurationElement)
         {
-            $firstLine = "${firstLine}$($ConfigurationElement.ElementTagName)"
             $collectionArgs['ConfigurationElement'] = $ConfigurationElement
-            $elementPath = $ConfigurationElement.ElementTagName
-            if (Get-Member -Name 'SectionPath' -InputObject $ConfigurationElement)
-            {
-                $elementPath = $ConfigurationElement.SectionPath
-            }
         }
         else
         {
-            $displayPath = Get-CIisDisplayPath -SectionPath $SectionPath `
-                                               -LocationPath $locationPath `
-                                               -SubSectionPath $CollectionName
-            $firstLine = "${firstLine}${displayPath}"
-            $elementPath = $SectionPath
             $collectionArgs['SectionPath'] = $SectionPath
             if ($LocationPath)
             {
@@ -142,7 +132,7 @@ function Set-CIisCollectionItem
 
         if ($CollectionName)
         {
-            $elementPath = "${elementPath}/$($CollectionName)"
+            $displayPath = "${displayPath}/${CollectionName}"
             $collectionArgs['Name'] = $CollectionName
         }
 

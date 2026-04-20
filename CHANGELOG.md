@@ -2,7 +2,15 @@
 
 # Carbon.IIS Changelog
 
+## 1.6.0
+
+### Changed
+
+Made information messages more consistent.
+
 ## 1.5.0
+
+> Released 4 Dec 2024
 
 ### Added
 

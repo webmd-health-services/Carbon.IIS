@@ -83,7 +83,7 @@ function Remove-CIisConfigurationAttribute
         $desc = ''
         if ($ConfigurationElement)
         {
-            $desc = Get-CIisDescription -ConfigurationElement $ConfigurationElement
+            $desc = Get-CIisDescription -ConfigurationElement $ConfigurationElement -LocationPath $LocationPath
         }
         else
         {
