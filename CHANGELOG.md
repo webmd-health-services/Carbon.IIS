@@ -8,6 +8,10 @@
 
 Made information messages more consistent.
 
+### Fixed
+
+Remove-CIisCollectionItem fails to remove items after failing to remove an item that doesn't exist.
+
 ## 1.5.0
 
 > Released 4 Dec 2024

@@ -109,7 +109,7 @@ function Remove-CIisCollectionItem
                 $msg = "Failed to remove item ""${valueItem}"" from IIS configuration collection ${displayPath} " +
                        'because it doesn''t exist in the collection.'
                 Write-Error $msg -ErrorAction $ErrorActionPreference
-                return
+                continue
             }
 
             if (-not $firstLineWritten)
