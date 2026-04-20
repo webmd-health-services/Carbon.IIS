@@ -49,7 +49,7 @@ BeforeAll {
             $websiteShouldRespond = $false
         }
         Get-CIisWebsite -Name $Named | Select-Object -ExpandProperty 'State' | Should -Be $expectedState
-        { Invoke-WebRequest $script:siteUrl | Out-Null } | Should -Not:$websiteShouldRespond -Throw
+        { Invoke-WebRequest $script:siteUrl -UseBasicParsing | Out-Null } | Should -Not:$websiteShouldRespond -Throw
         $Global:Error.Clear()
     }
 
@@ -63,7 +63,7 @@ BeforeAll {
             [switch] $Restarted
         )
 
-        Invoke-WebRequest $script:siteUrl | Out-Null
+        Invoke-WebRequest $script:siteUrl -UseBasicParsing | Out-Null
 
         $website = Get-CIisWebsite -Name $Named
         $website | Should -Not -BeNullOrEmpty

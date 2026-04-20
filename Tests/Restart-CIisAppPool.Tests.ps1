@@ -39,7 +39,7 @@ BeforeAll {
         {
             Start-CIisAppPool -Name $Named
             $expectedState = 'Started'
-            Invoke-WebRequest $script:siteUrl | Out-Null
+            Invoke-WebRequest $script:siteUrl -UseBasicParsing | Out-Null
         }
         elseif ($IsStopped)
         {
@@ -66,7 +66,7 @@ BeforeAll {
             [switch] $Restarted
         )
 
-        Invoke-WebRequest $script:siteUrl | Out-Null
+        Invoke-WebRequest $script:siteUrl -UseBasicParsing | Out-Null
 
         $appPool = Get-CIisAppPool -Name $Named
         $appPool | Should -Not -BeNullOrEmpty

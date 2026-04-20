@@ -71,7 +71,7 @@ else
 }
 
 $ProgressPreference = 'SilentlyContinue'
-$docPage = Invoke-WebRequest -Uri $DocumentationUrl -TimeoutSec 5
+$docPage = Invoke-WebRequest -Uri $DocumentationUrl -TimeoutSec 5 -UseBasicParsing
 if( -not $docPage -or $docPage.Content -notmatch '<title>([^<]*)</title>' )
 {
     $msg = "Failed to extract title from HTML at $($DocumentationUrl)."

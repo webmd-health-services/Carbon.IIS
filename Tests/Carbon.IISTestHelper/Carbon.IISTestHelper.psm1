@@ -79,7 +79,7 @@ function Assert-UrlContent
         {
             $Global:Error.Clear()
             $ProgressPreference = 'SilentlyContinue'
-            $response = Invoke-WebRequest -Uri $Url
+            $response = Invoke-WebRequest -Uri $Url -UseBasicParsing
             $msg = "    $($duration.ToSecondsString())  $($response.StatusCode) $($response.StatusDescription)"
             Write-Debug $msg
 
