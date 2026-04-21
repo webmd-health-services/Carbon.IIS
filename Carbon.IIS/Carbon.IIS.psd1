@@ -144,6 +144,7 @@
         'Test-CIisWebsite',
         'Uninstall-CIisApplication',
         'Uninstall-CIisAppPool',
+        'Uninstall-CIisCollectionItem',
         'Uninstall-CIisVirtualDirectory',
         'Uninstall-CIisWebsite',
         'Unlock-CIisConfigurationSection',

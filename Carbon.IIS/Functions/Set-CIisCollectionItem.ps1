@@ -113,31 +113,16 @@ function Set-CIisCollectionItem
         $keyValueWritten = $false
 
         $save = $false
-        $collectionArgs = @{}
 
         $displayPath = Get-CIisDisplayPath -Argument $PSBoundParameters
         $firstLine = "${firstLine}${displayPath}"
-        if ($ConfigurationElement)
-        {
-            $collectionArgs['ConfigurationElement'] = $ConfigurationElement
-        }
-        else
-        {
-            $collectionArgs['SectionPath'] = $SectionPath
-            if ($LocationPath)
-            {
-                $collectionArgs['LocationPath'] = $LocationPath
-            }
-        }
 
         if ($CollectionName)
         {
             $displayPath = "${displayPath}/${CollectionName}"
-            $collectionArgs['Name'] = $CollectionName
         }
 
-        $collection = Get-CIisCollection @collectionArgs
-
+        $collection = Get-CIisCollection -Argument $PSBoundParameters
         if (-not $collection)
         {
             return

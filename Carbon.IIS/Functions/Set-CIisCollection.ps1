@@ -90,29 +90,9 @@ function Set-CIisCollection
 
         $stopProcessing = $false
 
-        $getSetArgs = @{}
-        if ($Name)
-        {
-            $getSetArgs['Name'] = $Name
-        }
-
         $displayPath = Get-CIisDisplayPath -Argument $PSBoundParameters
-        if ($ConfigurationElement)
-        {
-            $getSetArgs['ConfigurationElement'] = $ConfigurationElement
-        }
-        else
-        {
-            $getSetArgs['SectionPath'] = $SectionPath
 
-            if ($LocationPath)
-            {
-                $getSetArgs['LocationPath'] = $LocationPath
-            }
-        }
-
-        $collection = Get-CIisCollection @getSetArgs
-
+        $collection = Get-CIisCollection -Argument $PSBoundParameters
         if (-not $collection)
         {
             $stopProcessing = $true
@@ -174,9 +154,11 @@ function Set-CIisCollection
             ForEach-Object { $_.GetAttributeValue($UniqueKeyAttributeName) } |
             Where-Object { -not $keyValues.ContainsKey($_) }
 
-        $itemsRemoved = $itemsToRemove | Remove-CIisCollectionItem @getSetArgs @removeSetArgs -SkipCommit
+        $removeArgs = Get-CIisCommandArgument -Name 'Remove-CIisCollectionItem' -Argument $PSBoundParameters -Exclude 'InputObject'
+        $itemsRemoved = $itemsToRemove | Remove-CIisCollectionItem @removeArgs -SkipCommit
 
-        $itemsModified = $items | Set-CIisCollectionItem @getSetArgs @removeSetArgs -SkipCommit -Strict:$Strict
+        $setArgs = Get-CIisCommandArgument -Name 'Set-CIisCollectionItem' -Argument $PSBoundParameters -Exclude 'InputObject'
+        $itemsModified = $items | Set-CIisCollectionItem @setArgs -SkipCommit -Strict:$Strict
 
         if ($itemsRemoved -or $itemsModified)
         {

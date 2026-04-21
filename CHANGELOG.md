@@ -4,6 +4,11 @@
 
 ## 1.6.0
 
+### Added
+
+`Uninstall-CIisCollectionItem` function for removing items from configuration collections without writing an error if
+the item doesn't exist.
+
 ### Changed
 
 Made information messages more consistent.

@@ -5,7 +5,6 @@ BeforeAll {
     $script:sitePort = 47038
     $script:testDir = $null
 
-
     function HasItemWithValue
     {
         [CmdletBinding()]

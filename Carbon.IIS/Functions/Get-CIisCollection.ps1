@@ -38,16 +38,28 @@ function Get-CIisCollection
         [Parameter(Mandatory, ParameterSetName='BySectionPath')]
         [String] $SectionPath,
 
-        # The location path to the site, directory, application, or virtual directory to configure.
-        [Parameter(ParameterSetName='BySectionPath')]
+        # The location path to the site, directory, application, or virtual directory to configure. If passing a
+        # configuration element, only used to log the location of the configuration element.
         [String] $LocationPath,
 
         # The collection's name.
-        [String] $Name
+        [Alias('CollectionName')]
+        [String] $Name,
+
+        # Internal. Do not use.
+        [Parameter(Mandatory, ParameterSetName='ByPSBoundParameters')]
+        [hashtable] $Argument
     )
 
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
+
+    if ($Argument)
+    {
+        $getArgs = Get-CIisCommandArgument -Command $PSCmdlet.MyInvocation.MyCommand -Argument $Argument
+        Get-CIisCollection @getArgs
+        return
+    }
 
     $displayPath = Get-CIisDisplayPath -Argument $PSBoundParameters
 

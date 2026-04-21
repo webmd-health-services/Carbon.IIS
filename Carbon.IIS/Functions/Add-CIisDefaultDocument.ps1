@@ -34,23 +34,7 @@ function Add-CIisDefaultDocument
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
-    $section = Get-CIisConfigurationSection -LocationPath $LocationPath -SectionPath 'system.webServer/defaultDocument'
-    if( -not $section )
-    {
-        return
-    }
-
-    [Microsoft.Web.Administration.ConfigurationElementCollection] $files = $section.GetCollection('files')
-    $defaultDocElement = $files | Where-Object { $_["value"] -eq $FileName }
-    if ($defaultDocElement)
-    {
-        return
-    }
-
-    Write-Information "IIS:$($section.LocationPath):$($section.SectionPath)  + $($FileName)"
-    $defaultDocElement = $files.CreateElement('add')
-    $defaultDocElement["value"] = $FileName
-    $files.Add( $defaultDocElement )
-    Save-CIisConfiguration
+    $sectionPath = 'system.webServer/defaultDocument'
+    $FileName | Set-CIisCollectionItem -SectionPath $sectionPath -LocationPath $LocationPath -CollectionName 'files'
 }
 

@@ -17,13 +17,25 @@ function Get-CIisCollectionKeyName
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)]
-        [ConfigurationElement] $Collection
+        [ConfigurationElement] $Collection,
+
+        [String] $LocationPath
     )
 
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
-    return $Collection.CreateElement().Attributes |
-                Where-Object { $_.Schema.IsUniqueKey } |
-                Select-Object -ExpandProperty 'name'
+    $name =
+        $Collection.CreateElement().Attributes |
+        Where-Object { $_.Schema.IsUniqueKey } |
+        Select-Object -ExpandProperty 'name'
+
+    if ($name)
+    {
+        return $name
+    }
+
+    $displayPath = Get-CIisDisplayPath -ConfigurationElement $Collection -LocationPath $LocationPath
+    $msg = "IIS configuration collection ${displayPath} doesn't have a unique key attribute."
+    Write-Error -Message $msg -ErrorAction $ErrorActionPreference
 }
