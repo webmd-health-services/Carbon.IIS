@@ -67,7 +67,7 @@ Build:
   .OnlyBy: BuildServer
 
 - Pester:
-    InformationAction: SilentlyContinue
+    .InformationAction: SilentlyContinue
     Configuration:
         Run:
             Path: Tests\*.Tests.ps1
