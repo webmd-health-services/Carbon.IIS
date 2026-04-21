@@ -15,30 +15,21 @@ services:
 environment:
   WHISKEY_DISABLE_ERROR_FORMAT: True
   matrix:
-  - job_name: Windows PowerShell 5 / .NET 4.6.2 / Windows 2012R2
-    job_group: ps
-    appveyor_build_worker_image: Visual Studio 2013
-
-  - job_name: Windows PowerShell 5 / .NET 4.8 / Windows 2012R2
-    job_group: ps
-    appveyor_build_worker_image: Visual Studio 2015
-
-  - job_name: Windows PowerShell 5 / .NET 4.8 / Windows 2016
+  - job_name: Windows PowerShell 5.1 on Windows Server 2016
     job_group: ps
     appveyor_build_worker_image: Visual Studio 2017
 
-  - job_name: Windows PowerShell 5 / .NET 4.8 / Windows 2019
+  - job_name: Windows PowerShell 5.1 on Windows Server 2019
     job_group: ps
     appveyor_build_worker_image: Visual Studio 2022
 
-  - job_name: PowerShell 7 / Windows 2019
+  # PowerShell 7 on Windows only available on Windows Server 2019 build image
+  - job_name: PowerShell 7 on Windows Server 2019
     job_group: pwsh
     appveyor_build_worker_image: Visual Studio 2022
 
-
 artifacts:
 - path: .output\*
-
 
 for:
 # Build in Windows PowerShell
